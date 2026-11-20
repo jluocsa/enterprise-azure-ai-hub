@@ -11,22 +11,22 @@ You are invoked inside an isolated Git worktree already checked out to a dedicat
 
 ## Mandatory Guardrails (Never Violate)
 
-1. **Protected Governance Files (Read-Only):** Never modify `scripts/check-sanitized.mjs`, `scripts/auto-improve-daemon.mjs`, `.github/workflows/*`, `.github/agents/*`, or `LICENSE`.
+1. **Protected Governance Files (Read-Only):** Never modify `scripts/check-sanitized.mjs`, `scripts/auto-improve-daemon.mjs`, `scripts/auto-improve-service.mjs`, `scripts/run-python.mjs`, `scripts/deploy-gh-pages.mjs`, `.github/workflows/*`, `.github/agents/*`, or `LICENSE`.
 2. **Evidence Tagging Discipline:**
    - Tag published Microsoft Learn / Azure specifications with `<span class="ev-badge ev-m">[M]</span>` and cite authoritative official docs.
    - Tag reference patterns with `<span class="ev-badge ev-arch">[Arch]</span>`, proposed release SLOs with `<span class="ev-badge ev-agree">[Agree]</span>`, and empirical probes with `<span class="ev-badge ev-val">[Validate]</span>`.
-3. **Deterministic Gates First:** Prefer deterministic Python/Node/KQL/Bicep checks over LLM-only judges.
+3. **Deterministic & Cross-Platform Gates First:** Prefer deterministic Python/Node/KQL/Bicep checks over LLM-only judges. Whenever wiring a Python script into `package.json`, always invoke `node scripts/run-python.mjs <script.py>` instead of bare `python3` so verification runs identically on Windows, macOS, and Linux.
 4. **100% Sanitization:** Never introduce customer names, stakeholder names, internal sales acronyms, internal email addresses, or raw UUID/GUID strings.
 5. **Surgical Scope:** Implement **exactly one** focused, high-value, verifiable improvement per cycle (avoid sprawling rewrites or deleting existing validated content).
 
 ## Execution Steps
 
-1. **Baseline Check & History Scan:**
-   - Run `git --no-pager log -n 8 --oneline` to see recently landed improvements so you never duplicate recent work.
-   - Run `npm run verify` before making edits to confirm a clean baseline.
+1. **Baseline Check & Self-Improvement Memory Scan:**
+   - Review the **Self-Improvement Memory & Priority Brief** provided in your prompt (recently merged PRs, under-served priority tracks, queued `next_backlog` candidates from prior cycles, and any past ARB rejection guardrails).
+   - Run `git --no-pager log -n 8 --oneline` and `npm run verify` before making edits to confirm a clean baseline.
 2. **Observe & Select:**
    - Inspect Playbooks 01–04 (`docs/playbooks/`), Decision Studio (`docs/.vitepress/theme/components/`), MIT Kits (`docs/public/kits/`), White Papers (`docs/papers/`), and Operating Model (`docs/operating-model/`).
-   - Pick the single highest-ROI safe improvement (e.g., new deterministic validation script/rule, calculator precision/preset/residency toggle, copy-ready Bicep/KQL/CLI kit, accessibility keyboard navigation, cross-link completeness, or deeper Microsoft Learn-grounded guidance).
+   - Favor under-served priority tracks or high-impact queued backlog items so coverage improves evenly across the entire Hub.
 3. **Implement & Verify:**
    - Make clean, minimal edits matching existing Fluent 2 / VitePress component and Markdown conventions.
    - Run `npm run verify` (and any new self-tests you added). Fix any error immediately until `npm run verify` exits `0`.
@@ -45,6 +45,7 @@ You are invoked inside an isolated Git worktree already checked out to a dedicat
        "sources_cited": [
          "<official Microsoft Learn URL if applicable>"
        ],
+       "self_reflection": "<1 sentence summarizing what deterministic test or build check verified this change>",
        "next_backlog": [
          "<next opportunity 1>",
          "<next opportunity 2>"

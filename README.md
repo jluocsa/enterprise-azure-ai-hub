@@ -43,40 +43,53 @@ enterprise-azure-ai-hub/
 │     ├─ favicon.svg / og-card.png       # Custom brand identity & OpenGraph social card
 │     └─ kits/                           # 5 runnable Python, APIM XML & KQL release-gate kits
 ├─ scripts/
+│  ├─ auto-improve-daemon.mjs            # Continuous self-improvement dual-agent engine & memory ledger
+│  ├─ auto-improve-service.mjs           # Cross-platform background service & OS watchdog (Win/macOS/Linux)
+│  ├─ check-links.py                     # Deterministic HTML route, download & anchor integrity gate
 │  ├─ check-sanitized.mjs                # Automated confidentiality, GUID, email & lockfile gate
-│  └─ deploy-gh-pages.mjs                # Runs verify suite & publishes static build to gh-pages
+│  ├─ deploy-gh-pages.mjs                # Runs verify suite & publishes static build to gh-pages
+│  └─ run-python.mjs                     # Cross-platform Python 3 resolver (UTF-8 safe on Windows)
 ├─ CONTRIBUTING.md                       # Multi-author workflow & 3-gate pre-publication checklist
 └─ .github/
    ├─ CODEOWNERS                         # Per-track review ownership
+   ├─ agents/                            # hub-improver & hub-arb-reviewer agent definitions
    ├─ pull_request_template.md           # Sanitization, ARB & IP disposition attestation
-   └─ workflows/deploy.yml               # Sanitization -> Kit smoke tests -> VitePress build -> Pages
+   └─ workflows/                         # Continuous dual-agent loop + gh-pages verification
 ```
 
 ## Local Development & Verification
 
 ```bash
 npm install
-npm run verify            # Gate 1 (Sanitization) + Gate 2 (Kit CLI tests) + Gate 3 (VitePress build)
+npm run verify            # Gate 1 (Sanitization) + Gate 2 (Kit CLI tests) + Gate 3 (VitePress build + Links)
+npm run check:daemon      # Self-tests for Python resolver, daemon guards, track balancer & OS watchdog
 npm run docs:dev          # Launch local VitePress dev server with hot reload
 npm run deploy:pages      # Run full verification and publish static site to origin/gh-pages
 ```
 
-## Continuous Online GitHub Actions Dual-Agent Loop
+## Built-In Continuous Self-Improvement Agent (Cross-Platform Service + GitHub Actions)
 
-All autonomous improvement, PR review/auto-approval, squash-merging, and `gh-pages` publishing run **100% online in GitHub Actions (`ubuntu-latest`)** via `.github/workflows/autonomous-improvement-loop.yml`—nothing runs in the background on a local developer machine:
+The Hub includes a **closed-loop dual-agent self-improvement system** (`scripts/auto-improve-daemon.mjs` + `scripts/auto-improve-service.mjs`) that can run **24/7 continuously in the background** on Windows (hidden Task Scheduler watchdog + detached daemon), macOS (`LaunchAgent`), Linux (`systemd --user`), or GitHub Actions (`.github/workflows/autonomous-improvement-loop.yml`):
 
-1. **Author Agent (`hub-improver`):** Runs on GitHub-hosted `ubuntu-latest` VMs on a continuous 30-minute schedule + self-chaining dispatch, creates an isolated `improve/auto-YYYYMMDD-HHMMSS` branch, verifies `npm run verify`, and opens a Draft PR.
-2. **Built-In GitHub Actions ARB Auto-Approver (`hub-arb-reviewer` + `github-actions[bot]`):** Evaluates deterministic gates (`check:sanitized`, `check:kits`, `docs:build`, `check:links`) plus read-only `<arb_verdict>` review, posts an official `APPROVED` review as `github-actions[bot]`, marks the PR ready, squash-merges to `main`, and deploys `gh-pages`.
+1. **Closed-Loop Memory & Track Balancer:** Synthesizes recently merged PRs, queued `next_backlog` items from prior cycles, past ARB rejection lessons, and least-recently-improved track rankings across all 6 Hub tracks.
+2. **Author Agent (`hub-improver`):** Works inside an isolated Git worktree (`improve/auto-YYYYMMDD-HHMMSS`), enforces hard `--deny-tool` boundaries on governance files, verifies `npm run verify`, and opens a Draft PR.
+3. **Independent Read-Only ARB Reviewer (`hub-arb-reviewer`):** Audits the PR diff against the 3-Gate Pre-Publication Checklist (`<arb_verdict>`), approves and squash-merges passing PRs to `main`, and automatically deploys the updated static site to `origin/gh-pages`.
 
 ```bash
-# Inspect online GitHub Actions runs & auto-merged PRs
-gh run list -R jluocsa/enterprise-azure-ai-hub --limit 10
-gh pr list -R jluocsa/enterprise-azure-ai-hub --state all --limit 10
+# Install persistent auto-start watchdog + start continuous background daemon immediately
+npm run agent:install
 
-# Trigger an online cycle immediately on GitHub
-gh workflow run autonomous-improvement-loop.yml -R jluocsa/enterprise-azure-ai-hub -f mode=full-cycle
+# Check live daemon PID, current phase, completed cycles, merged PRs & queued backlog
+npm run agent:status
+npm run agent:logs
 
-# Pause or resume online continuous execution in 1 command
+# Pause, resume, run a single cycle, or stop cleanly
+npm run agent:pause
+npm run agent:resume
+npm run agent:once
+npm run agent:stop
+
+# Pause or resume remotely across all environments via GitHub repository variable
 gh variable set PAUSE_AUTO_IMPROVE --body true  -R jluocsa/enterprise-azure-ai-hub
 gh variable set PAUSE_AUTO_IMPROVE --body false -R jluocsa/enterprise-azure-ai-hub
 ```

@@ -15,10 +15,10 @@ Reject (`"verdict": "REJECT"`) if **any** of the following fail:
 
 1. **Gate 1 — Sanitization & Governance Integrity:**
    - Contains any customer identifier, individual stakeholder name, internal email address, internal org/sales acronym, confidentiality banner, or raw tenant/subscription GUID.
-   - Modifies or weakens protected governance files (`scripts/check-sanitized.mjs`, `scripts/auto-improve-daemon.mjs`, `.github/workflows/*`, `.github/agents/*`, `LICENSE`).
-2. **Gate 2 — Architectural & Source Discipline:**
+   - Modifies or weakens protected governance files (`scripts/check-sanitized.mjs`, `scripts/auto-improve-daemon.mjs`, `scripts/auto-improve-service.mjs`, `scripts/run-python.mjs`, `scripts/deploy-gh-pages.mjs`, `.github/workflows/*`, `.github/agents/*`, `LICENSE`).
+2. **Gate 2 — Architectural, Cross-Platform & Source Discipline:**
    - Blurs opinions into platform SLAs instead of separating `[M]` Microsoft Learn specs, `[Arch]` patterns, `[Agree]` SLOs, and `[Validate]` probes.
-   - Introduces broken Markdown/Vue syntax, dead links, inaccurate Azure AI / Foundry math, or destructive deletion of existing validated chapters.
+   - Introduces broken Markdown/Vue syntax, dead links, inaccurate Azure AI / Foundry math, bare `python3` in `package.json` (must use `node scripts/run-python.mjs`), or destructive deletion of existing validated chapters.
 3. **Gate 3 — IP & Prior-Art Safety:**
    - Discloses un-cleared invention disclosures or private customer architecture artifacts instead of reusable, Learn-grounded patterns.
 
