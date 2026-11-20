@@ -83,3 +83,16 @@ description: Structuring non-flaky CI/CD evaluation pipelines for tool-using and
 | `otel_capture_message_content` | Optional; must be a boolean when present and triggers `ARG007` when `true` under metadata-only enforcement. |
 
 All supplied ACL/privacy flags must be booleans even when their enforcement is disabled. Structurally invalid turns produce `ARG001` failures and exit `1` (including under `--json`); malformed JSON produces a line-numbered `ARG001` error on stderr and exit `2`. Diagnostics for malformed evidence identify the row/field without echoing raw turn content. The zero-dependency `python3 docs/public/kits/agent_release_gate.py --self-test` regression suite is included in `npm run verify`.
+
+### Fail-Closed Acceptance Configuration
+
+<span class="ev-badge ev-arch">[Arch]</span> The CLI validates acceptance configuration before reading trace evidence, without coercing strings, booleans, or fractional token thresholds. Invalid configuration exits `2` with a field-specific stderr diagnostic and no success-shaped JSON output, including under `--json`.
+
+| Contract field | Accepted configuration |
+| :--- | :--- |
+| `max_p95_ms` | Finite number `>0`; numeric strings, booleans, `NaN`, and infinities are rejected. |
+| `min_pass2_cached_tokens` | Integer `>0`; no strings, booleans, or fractional values. |
+| `required_tools`, `forbidden_tools` | Arrays of non-empty strings, not a single string; `[]` explicitly disables that list. |
+| `require_acl_trimming`, `forbid_raw_prompt_logging` | Explicit JSON booleans; `"false"`, `0`, and `null` are invalid. |
+
+The contract root must be a JSON object. Omitted fields retain existing defaults (`15000` ms, `1024` cached tokens, the built-in forbidden tools, no required tools, and both ACL/privacy controls enabled); Studio metadata such as `contract_version` and `track` remains compatible. CLI-only `--max-p95-ms` and `--min-cached-tokens` obey the same positive-threshold rules; `--contract` continues to take precedence over those flags. Missing/unreadable files, invalid UTF-8, and malformed JSON also exit `2` without a traceback. These checks validate configuration integrity, not whether an explicitly chosen threshold is an appropriate release SLO <span class="ev-badge ev-agree">[Agree]</span>.

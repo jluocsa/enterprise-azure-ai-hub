@@ -170,16 +170,50 @@ def evaluate_trace(
     return failures
 
 
-def load_contract(contract_path: Path) -> dict[str, Any]:
-    raw = json.loads(contract_path.read_text(encoding="utf-8"))
+def validate_contract(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise ValueError("contract must be a JSON object.")
+
+    max_p95_ms = raw.get("max_p95_ms", 15000.0)
+    if (
+        type(max_p95_ms) not in (int, float)
+        or max_p95_ms <= 0
+        or (isinstance(max_p95_ms, float) and not math.isfinite(max_p95_ms))
+    ):
+        raise ValueError("max_p95_ms must be a finite number > 0.")
+
+    min_cached = raw.get("min_pass2_cached_tokens", 1024)
+    if type(min_cached) is not int or min_cached <= 0:
+        raise ValueError("min_pass2_cached_tokens must be an integer > 0.")
+
+    for field in ("required_tools", "forbidden_tools"):
+        if field in raw:
+            tools = raw[field]
+            if not isinstance(tools, list) or any(
+                not isinstance(tool, str) or not tool.strip() for tool in tools
+            ):
+                raise ValueError(f"{field} must be an array of non-empty strings.")
+
+    for field in ("require_acl_trimming", "forbid_raw_prompt_logging"):
+        if field in raw and type(raw[field]) is not bool:
+            raise ValueError(f"{field} must be an explicit boolean.")
+
     return {
-        "max_p95_ms": float(raw.get("max_p95_ms", 15000.0)),
-        "min_pass2_cached_tokens": int(raw.get("min_pass2_cached_tokens", 1024)),
+        "max_p95_ms": max_p95_ms,
+        "min_pass2_cached_tokens": min_cached,
         "forbidden_tools": set(raw.get("forbidden_tools", list(DEFAULT_FORBIDDEN_TOOLS))),
         "required_tools": set(raw.get("required_tools", [])),
-        "require_acl_trimming": bool(raw.get("require_acl_trimming", True)),
-        "forbid_raw_prompt_logging": bool(raw.get("forbid_raw_prompt_logging", True)),
+        "require_acl_trimming": raw.get("require_acl_trimming", True),
+        "forbid_raw_prompt_logging": raw.get("forbid_raw_prompt_logging", True),
     }
+
+
+def load_contract(contract_path: Path) -> dict[str, Any]:
+    try:
+        raw = json.loads(contract_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        raise ValueError("contract must contain valid JSON.") from None
+    return validate_contract(raw)
 
 
 def run_self_test() -> int:
@@ -289,6 +323,38 @@ def run_self_test() -> int:
     finally:
         tmp_path.unlink(missing_ok=True)
 
+    defaults = validate_contract({})
+    assert evaluate_trace(valid_records, **defaults) == []
+    assert defaults["forbidden_tools"] == DEFAULT_FORBIDDEN_TOOLS
+    assert validate_contract({
+        "contract_version": "2.0", "track": "Playbook 04",
+        "max_p95_ms": 0.5, "min_pass2_cached_tokens": 1,
+        "required_tools": [], "forbidden_tools": [],
+        "require_acl_trimming": False, "forbid_raw_prompt_logging": False,
+    }) == {
+        "max_p95_ms": 0.5, "min_pass2_cached_tokens": 1,
+        "required_tools": set(), "forbidden_tools": set(),
+        "require_acl_trimming": False, "forbid_raw_prompt_logging": False,
+    }
+
+    invalid_contracts = [(value, "JSON object") for value in (None, [], "contract", 1, True)]
+    for field, values in (
+        ("max_p95_ms", [None, True, "15000", 0, -1, math.nan, math.inf, -math.inf]),
+        ("min_pass2_cached_tokens", [None, True, "1024", 0, -1, 1.5, 1024.0, math.nan, math.inf]),
+        ("required_tools", [None, "retrieve", {}, [None], [1], [True], [[]], [""], [" "]]),
+        ("forbidden_tools", [None, "raw_shell_root", {}, [None], [1], [True], [[]], [""], [" "]]),
+        ("require_acl_trimming", [None, "false", 0, 1, [], {}]),
+        ("forbid_raw_prompt_logging", [None, "false", 0, 1, [], {}]),
+    ):
+        invalid_contracts.extend(({field: value}, field) for value in values)
+    for contract, expected_message in invalid_contracts:
+        try:
+            validate_contract(contract)
+        except ValueError as exc:
+            assert expected_message in str(exc), (contract, exc)
+        else:
+            raise AssertionError(f"Expected invalid contract to be rejected: {contract!r}")
+
     with tempfile.TemporaryDirectory() as directory:
         trace = Path(directory) / "trace.jsonl"
         for evidence, expected_code in (
@@ -315,7 +381,64 @@ def run_self_test() -> int:
         )
         assert result.returncode == 2 and "[ARG001] line-2" in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (ARG001 fail-closed schema + ARG002–ARG007 + JSON contract/CLI verified).")
+        trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
+        contract_file = Path(directory) / "contract.json"
+        for content, expected_code, diagnostic in (
+            (b"{}", 0, ""),
+            (b'{"contract_version":"2.0","required_tools":["knowledge_base_retrieve"]}', 0, ""),
+            (b'{"max_p95_ms":NaN}', 2, "max_p95_ms"),
+            (b'{"min_pass2_cached_tokens":0}', 2, "min_pass2_cached_tokens"),
+            (b'{"forbidden_tools":"raw_shell_root"}', 2, "forbidden_tools"),
+            (b'{"require_acl_trimming":"false"}', 2, "require_acl_trimming"),
+            (b"[]", 2, "JSON object"),
+            (b"{broken", 2, "valid JSON"),
+            (b"\xff", 2, "UTF-8"),
+        ):
+            contract_file.write_bytes(content)
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace),
+                 "--contract", str(contract_file), "--json"],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == expected_code, result
+            if expected_code:
+                assert diagnostic in result.stderr and not result.stdout, result
+                assert "Traceback" not in result.stderr, result
+            else:
+                assert json.loads(result.stdout)["passed"] is True, result
+
+        for unavailable in (Path(directory) / "missing.json", Path(directory)):
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace),
+                 "--contract", str(unavailable), "--json"],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == 2 and "UTF-8 acceptance contract" in result.stderr, result
+            assert not result.stdout and "Traceback" not in result.stderr, result
+
+        contract_file.write_text("{}", encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve()), str(trace),
+             "--contract", str(contract_file), "--max-p95-ms", "1",
+             "--min-cached-tokens", "0", "--json"],
+            capture_output=True, text=True, check=False,
+        )
+        assert result.returncode == 0 and json.loads(result.stdout)["passed"] is True, result
+
+        trace.write_text("{broken", encoding="utf-8")
+        for flag, value in (
+            ("--max-p95-ms", "nan"), ("--max-p95-ms", "inf"),
+            ("--max-p95-ms", "0"), ("--min-cached-tokens", "0"),
+            ("--min-cached-tokens", "-1"),
+        ):
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace), flag, value, "--json"],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
+            assert not result.stdout and "Traceback" not in result.stderr, result
+
+    print("✅ agent_release_gate.py self-test PASSED (fail-closed contracts/CLI + ARG001 schema + ARG002–ARG007 verified).")
     return 0
 
 
@@ -335,6 +458,21 @@ def main() -> int:
     if not args.trace_path:
         parser.error("Provide a trace_path JSONL file or pass --self-test.")
 
+    try:
+        if args.contract:
+            kwargs = load_contract(Path(args.contract))
+        else:
+            kwargs = validate_contract({
+                "max_p95_ms": args.max_p95_ms,
+                "min_pass2_cached_tokens": args.min_cached_tokens,
+            })
+    except (OSError, UnicodeError):
+        print("Error: could not read UTF-8 acceptance contract.", file=sys.stderr)
+        return 2
+    except ValueError as exc:
+        print(f"Error: invalid acceptance contract: {exc}", file=sys.stderr)
+        return 2
+
     path = Path(args.trace_path)
     if not path.is_file():
         print(f"Error: file not found: {path}", file=sys.stderr)
@@ -349,18 +487,6 @@ def main() -> int:
         except json.JSONDecodeError:
             print(f"Error: [ARG001] line-{line_number}: invalid JSON execution record.", file=sys.stderr)
             return 2
-    if args.contract:
-        contract_file = Path(args.contract)
-        if not contract_file.is_file():
-            print(f"Error: contract file not found: {contract_file}", file=sys.stderr)
-            return 2
-        kwargs = load_contract(contract_file)
-    else:
-        kwargs = {
-            "max_p95_ms": args.max_p95_ms,
-            "min_pass2_cached_tokens": args.min_cached_tokens,
-        }
-
     failures = evaluate_trace(records, **kwargs)
 
     if args.json:
