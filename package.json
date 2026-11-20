@@ -11,9 +11,19 @@
     "check:sanitized": "node scripts/check-sanitized.mjs",
     "check:kits": "python3 docs/public/kits/pcr_lint.py --help >/dev/null && python3 docs/public/kits/agent_release_gate.py --self-test",
     "deploy:pages": "node scripts/deploy-gh-pages.mjs",
-    "verify": "npm run check:sanitized && npm run check:kits && npm run docs:build"
+    "verify": "npm run check:sanitized && npm run check:kits && npm run docs:build",
+    "check:daemon": "node scripts/auto-improve-daemon.mjs --self-test",
+    "agent:install": "node scripts/auto-improve-service.mjs --install",
+    "agent:uninstall": "node scripts/auto-improve-service.mjs --uninstall",
+    "agent:status": "node scripts/auto-improve-service.mjs --status",
+    "agent:logs": "node scripts/auto-improve-service.mjs --logs",
+    "agent:pause": "node scripts/auto-improve-service.mjs --pause",
+    "agent:resume": "node scripts/auto-improve-service.mjs --resume",
+    "agent:review": "node scripts/auto-improve-daemon.mjs --review-only",
+    "agent:once": "node scripts/auto-improve-daemon.mjs --once"
   },
   "devDependencies": {
+    "@github/copilot": "^1.0.114",
     "vitepress": "^1.6.4"
   }
 }
