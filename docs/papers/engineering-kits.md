@@ -98,6 +98,8 @@ Companion download: <a :href="withBase('/kits/bcp_snapshot_gate.py')" download t
 
 Zero-dependency Python 3 CLI (`ARG001–ARG007`) verifying offline `trace.jsonl` evaluation runs against CLI flags or a JSON acceptance contract exported from the [Interactive Sandbox & Eval Contract Builder](/studio/#agent-eval)—checking schema integrity (`ARG001`), required/forbidden tool governance (`ARG002`), `100%` resolved `[cite:ID]` grounding (`ARG003`), Pass-2 `cached_tokens >= 1,024` parity (`ARG004`), p95 latency budgets (`ARG005`), Foundry IQ ACL security trimming (`ARG006`), and metadata-only OTel privacy (`ARG007`).
 
+`ARG003` also rejects malformed `[cite:` markers (empty/invalid IDs, nested markers, or missing closing brackets) rather than silently ignoring them. See the [citation syntax contract](/playbooks/agentic-rag-evals/04-deterministic-eval-contracts#fail-closed-citation-syntax-arg003) for the accepted ID alphabet and semantic-review boundaries <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 agent_release_gate.py --self-test
 python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json
