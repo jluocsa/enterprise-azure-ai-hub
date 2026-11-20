@@ -95,4 +95,12 @@ When a `PTU-M` deployment crosses its normalized TPM saturation ceiling, Azure O
 
 Configure your target model regime, spillover behavior, and FinOps governance below to generate ready-to-deploy APIM policy XML (or download the standalone kit from [Engineering Kits](/papers/engineering-kits#apim-policy)):
 
+### Body-Safe Per-Attempt Routing
+
+The generated policy and downloadable kit use **explicit** `foundry-ptu-primary` then `foundry-standard-spillover` backend IDs, defined above, rather than the mixed-SKU pool. A pool can select Standard on the first attempt when the PTU breaker is open; an inbound PTU-only rewrite would then strip Standard's fields too. Use the pool alternative only when all members accept the same body, or place a SKU-aware adapter behind it <span class="ev-badge ev-arch">[Arch]</span>.
+
+Capture the original request as a string **before** stripping fields. `preserveContent: true` preserves a body read, but returning a different body from `set-body` replaces the forwarded request; it does not save an original copy for retries ([set-body reference](https://learn.microsoft.com/en-us/azure/api-management/set-body-policy)) <span class="ev-badge ev-m">[M]</span>. The retry block executes once before testing its retry condition ([retry reference](https://learn.microsoft.com/en-us/azure/api-management/retry-policy)) <span class="ev-badge ev-m">[M]</span>. Therefore, restore the saved string and select Standard only when a previous response is `429` or `503`, before the second `forward-request`. This retains `prompt_cache_options`, nested breakpoints, and `prompt_cache_key` on the Standard leg without reserializing the original body. Keep request replay buffering enabled even when response streaming is disabled <span class="ev-badge ev-arch">[Arch]</span>.
+
+`npm run check:apim` checks both the downloadable kit and rendered Studio default for XML syntax and this static routing/restoration contract, with mutation regressions for missing/late snapshots, pooled routing, lost restoration, and unbuffered replay. It does **not** execute C# or certify live APIM behavior. Before release, probe `429`, `503`, an already-open PTU breaker, and successful `200` streaming: confirm Standard receives the original cache fields, PTU receives the stripped body, and no retry occurs after stream headers. Transport/on-error failures are outside this response-based retry contract <span class="ev-badge ev-val">[Validate]</span>.
+
 <ApimPolicyBuilder />

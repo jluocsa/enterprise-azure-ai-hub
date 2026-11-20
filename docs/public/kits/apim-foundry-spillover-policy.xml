@@ -25,8 +25,9 @@
     </azure-openai-emit-token-metric>
     <azure-openai-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="450000" estimate-prompt-tokens="true" />
 
-    <!-- 4. Route to Declarative Backend Pool (Priority 1: PTU-M + Circuit Breaker -> Priority 2: Standard PAYG) -->
-    <set-backend-service backend-id="foundry-ptu-with-payg-spillover-pool" />
+    <!-- 4. Snapshot Before Rewriting; Explicit Routing Keeps the Body Matched to Each SKU -->
+    <set-variable name="original-request-body" value="@(context.Request.Body.As&lt;string&gt;(preserveContent: true))" />
+    <set-backend-service backend-id="foundry-ptu-primary" />
 
     <!-- 5. SKU-Aware Guard: Strip Unsupported Breakpoint Fields When Targeting GPT-5.6 PTU-M -->
     <choose>
@@ -50,8 +51,14 @@
   </inbound>
 
   <backend>
-    <!-- Pre-Stream 429 / 503 Transparent Retry onto Priority-2 PAYG; Unbuffered SSE Streaming -->
-    <retry condition="@(context.Response.StatusCode == 429 || context.Response.StatusCode == 503)" count="1" interval="0" first-fast-retry="true">
+    <!-- Restore the Original Body Only on Pre-Stream 429 / 503 Standard PAYG Retry -->
+    <retry condition="@(context.Response != null &amp;&amp; (context.Response.StatusCode == 429 || context.Response.StatusCode == 503))" count="1" interval="1" first-fast-retry="true">
+      <choose>
+        <when condition="@(context.Response != null &amp;&amp; (context.Response.StatusCode == 429 || context.Response.StatusCode == 503))">
+          <set-backend-service backend-id="foundry-standard-spillover" />
+          <set-body>@((string)context.Variables["original-request-body"])</set-body>
+        </when>
+      </choose>
       <forward-request timeout="180" buffer-request-body="true" buffer-response="false" />
     </retry>
   </backend>

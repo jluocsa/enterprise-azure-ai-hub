@@ -40,10 +40,13 @@ const policyXml = computed(() => {
     )
   }
 
-  lines.push(
-    `    <!-- 4. Route Primary Traffic to Backend Pool (PTU-M Priority 1 -> PAYG Priority 2) -->`,
-    `    <set-backend-service backend-id="${enableSpillover.value ? 'foundry-ptu-with-payg-spillover-pool' : 'foundry-ptu-primary'}" />`
-  )
+  if (enableSpillover.value) {
+    lines.push(
+      `    <!-- 4. Snapshot the Original Body Before Any PTU-Only Rewrite -->`,
+      `    <set-variable name="original-request-body" value="@(context.Request.Body.As&lt;string&gt;(preserveContent: true))" />`
+    )
+  }
+  lines.push(`    <set-backend-service backend-id="foundry-ptu-primary" />`)
 
   if (modelGeneration.value === 'gpt-5.6-ptu') {
     lines.push(
@@ -69,9 +72,15 @@ const policyXml = computed(() => {
 
   if (enableSpillover.value) {
     lines.push(
-      `    <!-- Retry 429 / 503 onto Priority-2 Standard PAYG Backend Without Breaking SSE Streams -->`,
-      `    <retry condition="@(context.Response.StatusCode == 429 || context.Response.StatusCode == 503)" count="1" interval="0" first-fast-retry="true">`,
-      `      <forward-request timeout="120" ${streamSafe.value ? 'buffer-request-body="true" buffer-response="false"' : ''} />`,
+      `    <!-- Restore Original Body on Pre-Stream 429 / 503 Standard PAYG Retry -->`,
+      `    <retry condition="@(context.Response != null &amp;&amp; (context.Response.StatusCode == 429 || context.Response.StatusCode == 503))" count="1" interval="1" first-fast-retry="true">`,
+      `      <choose>`,
+      `        <when condition="@(context.Response != null &amp;&amp; (context.Response.StatusCode == 429 || context.Response.StatusCode == 503))">`,
+      `          <set-backend-service backend-id="foundry-standard-spillover" />`,
+      `          <set-body>@((string)context.Variables["original-request-body"])</set-body>`,
+      `        </when>`,
+      `      </choose>`,
+      `      <forward-request timeout="120" buffer-request-body="true" ${streamSafe.value ? 'buffer-response="false"' : ''} />`,
       `    </retry>`
     )
   } else {

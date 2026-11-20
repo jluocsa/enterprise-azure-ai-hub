@@ -45,6 +45,8 @@ Raw download: <a :href="withBase('/kits/ptu-cache-release-gate.kql')" download t
 
 Production Azure API Management policy XML enforcing Managed Identity bearer auth, out-of-band `x-cost-center` FinOps telemetry extraction & header stripping, GPT-5.6 PTU-M breakpoint stripping, `429`/`503` `Retry-After` spillover to Standard PAYG, and `buffer-response="false"` unbuffered SSE streaming.
 
+The kit snapshots the original request before PTU-only rewriting, then explicitly selects Standard and restores that original string on a pre-stream `429`/`503` retry. Use the two individual backend IDs, **not** the mixed-SKU pool, so pool selection cannot send a stripped PTU body to Standard. See [per-attempt routing and validation boundaries](/playbooks/apim-gateway/03-circuit-breakers-sku-rewrites#body-safe-per-attempt-routing) <span class="ev-badge ev-arch">[Arch]</span>.
+
 Raw download: <a :href="withBase('/kits/apim-foundry-spillover-policy.xml')" download target="_blank" rel="noopener"><strong><code>Download apim-foundry-spillover-policy.xml</code></strong></a>
 
 <<< @/public/kits/apim-foundry-spillover-policy.xml{xml}
