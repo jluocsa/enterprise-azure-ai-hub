@@ -7,7 +7,7 @@ Verifies offline agent execution evidence (JSONL turns) against deterministic
 production acceptance contracts:
   [ARG001] Schema integrity: required turn fields & terminal status=='ok'
   [ARG002] Tool governance: zero forbidden tools + optional required grounding tools
-  [ARG003] Citation grounding: 100% of inline [cite:ID] markers resolve to retrieved_doc_ids
+  [ARG003] Citation grounding: well-formed inline [cite:ID] markers resolve to retrieved_doc_ids
   [ARG004] Two-pass prefix cache parity: pass>=2 turns with >=1,024 input tokens hit KV cache
   [ARG005] Latency SLO: p95 turn duration stays within configured budget
   [ARG006] Foundry IQ ACL trimming (A5): non-empty RAG retrievals never report acl_trimmed=False
@@ -135,6 +135,10 @@ def evaluate_trace(
         answer = rec["assistant_response"]
         retrieved = set(rec["retrieved_doc_ids"])
         cited = CITATION_RE.findall(answer)
+        if answer.count("[cite:") != len(cited):
+            failures.append(
+                f"[ARG003] {case_id}: malformed inline citation marker; expected [cite:ID] with a non-empty ID using only A-Z, a-z, 0-9, _, ., :, #, or -."
+            )
         for cid in cited:
             if cid not in retrieved:
                 failures.append(
@@ -248,6 +252,25 @@ def run_self_test() -> int:
     assert evaluate_trace(valid_records, required_tools={"knowledge_base_retrieve"}) == [], (
         "Expected clean golden trace to pass."
     )
+
+    citation_record = {**valid_records[0], "retrieved_doc_ids": ["doc_A.2:#-"]}
+    for answer in ("", "No citation markers.", "[cite:doc_A.2:#-][cite:doc_A.2:#-]"):
+        assert evaluate_trace([{**citation_record, "assistant_response": answer}]) == []
+
+    malformed_answers = (
+        "Source [cite:].",
+        "Source [cite:doc a].",
+        "Source [cite:doc/a].",
+        "Source [cite:doc-\u00e9].",
+        "Source [cite:doc-a",
+        "Source [cite:doc-a\n].",
+        "Source [cite:[cite:doc_A.2:#-]].",
+        "Valid [cite:doc_A.2:#-], then malformed [cite:].",
+    )
+    for answer in malformed_answers:
+        errs = evaluate_trace([{**citation_record, "assistant_response": answer}])
+        assert any(e.startswith("[ARG003]") and "malformed" in e for e in errs), (answer, errs)
+        assert answer not in "\n".join(errs), "Malformed answer content must not enter diagnostics."
 
     for malformed in (None, [], "not-an-object", 7, {"status": "ok"}):
         errs = evaluate_trace([malformed])
@@ -374,6 +397,20 @@ def run_self_test() -> int:
             if expected_code:
                 assert any(e.startswith("[ARG001]") for e in output["failures"]), output
 
+        trace.write_text(json.dumps({
+            **citation_record, "assistant_response": "Private marker [cite:private/doc].",
+        }), encoding="utf-8")
+        for output_flags in ([], ["--json"]):
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == 1 and not result.stderr, result
+            assert "[ARG003]" in result.stdout and "private/doc" not in result.stdout, result
+            if output_flags:
+                output = json.loads(result.stdout)
+                assert output["passed"] is False and output["record_count"] == 1, output
+
         trace.write_text(json.dumps(valid_records[0]) + "\n{broken\n", encoding="utf-8")
         result = subprocess.run(
             [sys.executable, str(Path(__file__).resolve()), str(trace), "--json"],
@@ -438,7 +475,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (fail-closed contracts/CLI + ARG001 schema + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 

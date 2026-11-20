@@ -84,6 +84,12 @@ description: Structuring non-flaky CI/CD evaluation pipelines for tool-using and
 
 All supplied ACL/privacy flags must be booleans even when their enforcement is disabled. Structurally invalid turns produce `ARG001` failures and exit `1` (including under `--json`); malformed JSON produces a line-numbered `ARG001` error on stderr and exit `2`. Diagnostics for malformed evidence identify the row/field without echoing raw turn content. The zero-dependency `python3 docs/public/kits/agent_release_gate.py --self-test` regression suite is included in `npm run verify`.
 
+### Fail-Closed Citation Syntax (`ARG003`)
+
+<span class="ev-badge ev-arch">[Arch]</span> Every literal, case-sensitive `[cite:` opener in `assistant_response` must form a complete `[cite:ID]` marker. IDs must contain one or more ASCII letters, digits, or `_ . : # -` characters (no spaces). Empty IDs, whitespace, unsupported characters, nested markers, and missing closing brackets produce `ARG003` and exit `1`, including under `--json`, rather than disappearing from the resolution check. Malformed-marker diagnostics do not echo the answer or malformed ID; well-formed IDs still must exactly match `retrieved_doc_ids`.
+
+Repeated valid markers remain allowed. Answers without citation markers remain structurally valid: this gate verifies marker syntax and ID resolution, **not** citation completeness, source relevance, or whether the cited document supports the answer. Keep those semantic checks in the calibrated quality review above.
+
 ### Fail-Closed Acceptance Configuration
 
 <span class="ev-badge ev-arch">[Arch]</span> The CLI validates acceptance configuration before reading trace evidence, without coercing strings, booleans, or fractional token thresholds. Invalid configuration exits `2` with a field-specific stderr diagnostic and no success-shaped JSON output, including under `--json`.
