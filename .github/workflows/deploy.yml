@@ -1,10 +1,10 @@
 name: Verify & Publish Industrialization Hub
 
+# Default publishing runs locally via `npm run deploy:pages` (which enforces
+# Gate 1 sanitization, Gate 2 Python kit self-tests, and Gate 3 VitePress build
+# before pushing static HTML to `gh-pages`). Enable `push` / `pull_request`
+# triggers below when GitHub-hosted Actions runners are active on the account.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -39,7 +39,6 @@ jobs:
       - name: Touch .nojekyll
         run: touch docs/.vitepress/dist/.nojekyll
       - name: Publish Static Build to gh-pages
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
