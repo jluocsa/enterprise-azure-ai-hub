@@ -1,10 +1,6 @@
 name: Verify & Publish Industrialization Hub
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -17,25 +13,40 @@ concurrency:
 jobs:
   verify-and-publish:
     if: ${{ vars.PAUSE_DEPLOY != 'true' }}
-    runs-on: ${{ fromJSON(vars.HUB_RUNNERS || '["self-hosted", "hub-agent"]') }}
+    runs-on: ubuntu-latest
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
       VITEPRESS_BASE: ${{ endsWith(github.repository, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Install Dependencies
         run: npm ci --registry https://registry.npmjs.org
+      - name: Load Sanitization Denylist Secret (if configured)
+        env:
+          SANITIZE_LOCAL_DENYLIST: ${{ secrets.SANITIZE_LOCAL_DENYLIST }}
+        run: |
+          if [ -n "$SANITIZE_LOCAL_DENYLIST" ]; then
+            printf '%s\n' "$SANITIZE_LOCAL_DENYLIST" > .sanitize-local.txt
+          fi
       - name: Gate 1 — Automated Sanitization & Confidentiality Check
         run: npm run check:sanitized
-      - name: Gate 2 — Engineering Kit & Daemon Self-Tests
+      - name: Gate 2 — Engineering Kit, Link & Daemon Self-Tests
         run: npm run check:kits && npm run check:daemon
       - name: Gate 3 — Production VitePress Build & Link Verification
-        run: npm run docs:build
+        run: npm run docs:build && npm run check:links
+      - name: Clean Ephemeral Denylist
+        if: always()
+        run: rm -f .sanitize-local.txt
       - name: Publish Static Build to gh-pages
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/deploy-gh-pages.mjs
-
