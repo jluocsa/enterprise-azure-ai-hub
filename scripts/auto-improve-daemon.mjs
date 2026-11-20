@@ -24,7 +24,6 @@ const COPILOT_BIN = path.join(ROOT, 'node_modules', '.bin', 'copilot')
 const PROTECTED_EXACT = new Set([
   'scripts/check-sanitized.mjs',
   'scripts/auto-improve-daemon.mjs',
-  'scripts/auto-improve-service.mjs',
   'LICENSE',
   '.github/CODEOWNERS',
 ])

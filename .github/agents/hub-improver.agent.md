@@ -11,7 +11,7 @@ You are invoked inside an isolated Git worktree already checked out to a dedicat
 
 ## Mandatory Guardrails (Never Violate)
 
-1. **Protected Governance Files (Read-Only):** Never modify `scripts/check-sanitized.mjs`, `scripts/auto-improve-daemon.mjs`, `scripts/auto-improve-service.mjs`, `.github/agents/*`, or `LICENSE`.
+1. **Protected Governance Files (Read-Only):** Never modify `scripts/check-sanitized.mjs`, `scripts/auto-improve-daemon.mjs`, `.github/workflows/*`, `.github/agents/*`, or `LICENSE`.
 2. **Evidence Tagging Discipline:**
    - Tag published Microsoft Learn / Azure specifications with `<span class="ev-badge ev-m">[M]</span>` and cite authoritative official docs.
    - Tag reference patterns with `<span class="ev-badge ev-arch">[Arch]</span>`, proposed release SLOs with `<span class="ev-badge ev-agree">[Agree]</span>`, and empirical probes with `<span class="ev-badge ev-val">[Validate]</span>`.
