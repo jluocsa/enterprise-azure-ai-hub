@@ -61,4 +61,23 @@ npm run docs:dev          # Launch local VitePress dev server with hot reload
 npm run deploy:pages      # Run full verification and publish static site to origin/gh-pages
 ```
 
+## Continuous Dual-Agent Improvement & Auto-Review Loop
+
+This repository includes a continuous, self-governing **Dual-Agent Industrialization Loop** (`scripts/auto-improve-daemon.mjs` + `.github/agents/`) managed by a macOS `LaunchAgent` (`com.jluocsa.enterprise-azure-ai-hub.auto-improve`):
+
+1. **Author Agent (`hub-improver`):** Works in an isolated Git worktree on `improve/auto-YYYYMMDD-HHMM` (with hard `--deny-tool` blocks on `git push`, `gh`, and protected governance scripts), implements one surgical improvement, verifies `npm run verify`, and opens a Draft PR.
+2. **Independent ARB Reviewer Agent (`hub-arb-reviewer`):** Runs in strict read-only mode (`view`, `grep`, `glob` only) after outer deterministic gates pass (`check:sanitized` + `check:kits` + `docs:build` + protected-path verification). Emits a structured `<arb_verdict>` JSON scorecard; when approved, posts the review on the PR, marks it ready, squash-merges to `main`, and publishes the updated static site to `gh-pages`.
+
+```bash
+npm run agent:install     # Install & start background macOS LaunchAgent (KeepAlive=true at login)
+npm run agent:status      # Inspect live PID, cycle count, merged PRs, and next scheduled run
+npm run agent:logs        # View recent daemon & ARB review logs
+npm run agent:review      # Run Phase A only (review, approve, merge & publish open auto PRs)
+npm run agent:once        # Run one complete review + improve + review/publish cycle manually
+npm run agent:pause       # Pause continuous loop safely between cycles
+npm run agent:resume      # Resume continuous loop
+npm run agent:uninstall   # Stop and remove the macOS LaunchAgent
+```
+
+
 > **Disclaimer:** Community architecture guidance grounded in public [Microsoft Learn](https://learn.microsoft.com/en-us/azure/foundry/) documentation. Personal and community views of the contributors; not official Microsoft product documentation or contractual SLA guidance.
