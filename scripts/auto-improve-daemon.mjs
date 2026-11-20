@@ -134,6 +134,7 @@ function pathsConfig() {
 function log(msg) {
   const line = `[${new Date().toISOString()}] ${msg}`
   console.log(line)
+  if (process.env.HUB_DAEMON_STDIO_LOGGED === '1') return
   try {
     const { logPath } = pathsConfig()
     if (fs.existsSync(logPath) && fs.statSync(logPath).size > 5 * 1024 * 1024) {

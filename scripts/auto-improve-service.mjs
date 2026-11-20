@@ -105,6 +105,7 @@ function startDetachedDaemon(paths) {
       stdio: ['ignore', outFd, outFd],
       env: {
         ...process.env,
+        HUB_DAEMON_STDIO_LOGGED: '1',
         GIT_TERMINAL_PROMPT: '0',
         GCM_INTERACTIVE: 'never',
         PYTHONUTF8: '1',
