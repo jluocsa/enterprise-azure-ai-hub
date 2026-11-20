@@ -33,8 +33,12 @@ export function checkProtectedFiles(changedPaths) {
   const violations = []
   for (const rel of changedPaths) {
     const norm = rel.replace(/\\/g, '/').replace(/^\.\//, '')
-    if (PROTECTED_EXACT.has(norm) || norm.startsWith('.github/agents/')) {
-      violations.push(`Protected governance path modified: ${norm}`)
+    if (
+      PROTECTED_EXACT.has(norm) ||
+      norm.startsWith('.github/agents/') ||
+      norm.startsWith('.github/workflows/')
+    ) {
+      violations.push(`Protected governance/workflow path modified: ${norm}`)
     }
   }
   return violations
@@ -127,11 +131,25 @@ function updateState(patch) {
   } catch {}
 }
 
+function appendStepSummary(markdown) {
+  const summaryFile = process.env.GITHUB_STEP_SUMMARY
+  if (!summaryFile) return
+  try {
+    fs.appendFileSync(summaryFile, `${markdown}\n\n`, 'utf8')
+  } catch {}
+}
+
 function runCmd(cmd, args, { cwd = ROOT, env = process.env, timeout = 300000, allowFail = false } = {}) {
+  const enrichedPath = [
+    '/opt/homebrew/bin',
+    '/usr/local/bin',
+    env.PATH || process.env.PATH || '/usr/bin:/bin',
+  ].join(':')
   const res = spawnSync(cmd, args, {
     cwd,
     env: {
       ...env,
+      PATH: enrichedPath,
       GIT_TERMINAL_PROMPT: '0',
       CI: '1',
     },
@@ -396,27 +414,33 @@ export async function reviewAndPromoteOpenPrs() {
           return
         }
 
-        // 5. Post ARB Review (try --approve if distinct reviewer token is supplied; fallback to --comment for same-owner account)
+        // 5. Post Official GitHub Actions Bot Approval (--approve via AUTO_REVIEWER_GH_TOKEN = secrets.GITHUB_TOKEN)
         const reviewerEnv = process.env.AUTO_REVIEWER_GH_TOKEN
           ? { ...process.env, GH_TOKEN: process.env.AUTO_REVIEWER_GH_TOKEN }
           : process.env
+
+        if (pr.isDraft) {
+          runCmd('gh', ['pr', 'ready', String(pr.number), '-R', REPO_SLUG])
+        }
 
         const approveAttempt = runCmd(
           'gh',
           ['pr', 'review', String(pr.number), '-R', REPO_SLUG, '--approve', '--body', reviewBody],
           { env: reviewerEnv, allowFail: true }
         )
-        if (approveAttempt.status !== 0) {
+        if (approveAttempt.status === 0) {
+          log(`Posted official APPROVED review on PR #${pr.number} via reviewer identity.`)
+        } else {
+          log(`Fallback review comment (${(approveAttempt.stderr || '').trim().slice(0, 120)})`)
           runCmd('gh', ['pr', 'review', String(pr.number), '-R', REPO_SLUG, '--comment', '--body', reviewBody])
-        }
-
-        if (pr.isDraft) {
-          runCmd('gh', ['pr', 'ready', String(pr.number), '-R', REPO_SLUG])
         }
 
         runCmd('gh', ['pr', 'merge', String(pr.number), '-R', REPO_SLUG, '--squash', '--delete-branch'])
         mergedCount++
         log(`✅ PR #${pr.number} approved and squash-merged into main!`)
+        appendStepSummary(
+          `### ✅ Auto-Approved & Merged PR [#${pr.number}](${pr.url})\n- **Title:** ${pr.title}\n- **Branch:** \`${pr.headRefName}\`\n\n${reviewBody}`
+        )
         updateState({
           lastMergedPrUrl: pr.url,
           lastMergedAt: new Date().toISOString(),
@@ -487,6 +511,8 @@ export async function runImprovementCycle() {
           'write(scripts/auto-improve*)',
           '--deny-tool',
           'write(.github/agents/*)',
+          '--deny-tool',
+          'write(.github/workflows/*)',
           '--deny-tool',
           'write(LICENSE)',
           '--disable-builtin-mcps',
@@ -615,6 +641,9 @@ export async function runImprovementCycle() {
       const m = prOut.match(/\/pull\/(\d+)/)
       createdPrNumber = m ? Number(m[1]) : null
       log(`Opened Draft PR: ${prOut}`)
+      appendStepSummary(
+        `### 🚀 Opened Candidate PR [${prOut}](${prOut})\n- **Title:** ${prTitle}\n- **Track:** \`${proposal.track}\`\n- **Impact:** ${proposal.why_high_roi}`
+      )
     }
   )
 
@@ -696,6 +725,12 @@ async function main() {
 
   if (mode === '--review-only') {
     await reviewAndPromoteOpenPrs()
+    updateState({ status: 'idle', lastCycleAt: new Date().toISOString() })
+    return
+  }
+
+  if (mode === '--improve-only') {
+    await runImprovementCycle()
     updateState({ status: 'idle', lastCycleAt: new Date().toISOString() })
     return
   }
