@@ -25,6 +25,8 @@ Zero-dependency Python 3 AST + regex scanner checking Python, TypeScript, JavaSc
 
 Scan-integrity failures (`PCR000`) return exit code `1` rather than a false-green result: missing/inaccessible targets, unsupported explicit file types, empty/excluded-only directories, unreadable/non-UTF-8 sources, and Python parse errors. Run `python pcr_lint.py --self-test` to exercise these failure paths and the six readiness rules; `--json` preserves structured findings for CI <span class="ev-badge ev-arch">[Arch]</span>.
 
+For Python calls, `PCR001` also rejects blank or non-string key literals (including `None`, booleans, numbers, bytes, and containers). This local readiness policy checks statically known values only; variables, function results, and interpolated values still require runtime validation and cache-hit probes. See the [rule catalog and scope](/playbooks/prompt-caching/validate/12-ci-lint-deepeval) <span class="ev-badge ev-arch">[Arch]</span>.
+
 Raw download: <a :href="withBase('/kits/pcr_lint.py')" download target="_blank" rel="noopener"><strong><code>Download pcr_lint.py</code></strong></a>
 
 <<< @/public/kits/pcr_lint.py{python}

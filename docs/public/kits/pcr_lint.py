@@ -64,7 +64,7 @@ def scan_python_ast(path: Path, source: str) -> list[Finding]:
         call_src = ast.unparse(node) if hasattr(ast, "unparse") else ""
         kw_names = {kw.arg: kw.value for kw in node.keywords if kw.arg}
 
-        # PCR001: Missing or per-user/request prompt_cache_key on responses/chat.completions create
+        # PCR001: Missing, invalid literal, or per-user/request prompt_cache_key
         if func_src.endswith(("responses.create", "completions.create")):
             if "prompt_cache_key" not in kw_names:
                 findings.append(
@@ -76,8 +76,26 @@ def scan_python_ast(path: Path, source: str) -> list[Finding]:
                     )
                 )
             else:
-                key_expr = ast.unparse(kw_names["prompt_cache_key"]) if hasattr(ast, "unparse") else ""
-                if DYNAMIC_KEY_RE.search(key_expr):
+                key_node = kw_names["prompt_cache_key"]
+                invalid_literal = False
+                try:
+                    key_value = ast.literal_eval(key_node)
+                except ValueError:
+                    # Non-literal expressions still need runtime type/value validation.
+                    pass
+                else:
+                    invalid_literal = not isinstance(key_value, str) or not key_value.strip()
+                key_expr = ast.unparse(key_node) if hasattr(ast, "unparse") else ""
+                if invalid_literal:
+                    findings.append(
+                        Finding(
+                            "PCR001",
+                            rel,
+                            node.lineno,
+                            "prompt_cache_key literal must be a non-blank string; use a stable family/version/shard key.",
+                        )
+                    )
+                elif DYNAMIC_KEY_RE.search(key_expr):
                     findings.append(
                         Finding(
                             "PCR001",
@@ -254,6 +272,24 @@ def run_self_test() -> int:
     expected = {"PCR001", "PCR002", "PCR003", "PCR004", "PCR005", "PCR006"}
     assert expected.issubset(rules), f"Expected all {expected}, got {rules}"
 
+    invalid_keys = (
+        "None", "''", repr(" \t\n"), "False", "True", "0", "-1", "1.5",
+        "b'family:v1:s0'", "[]", "()", "{}", "{'family'}",
+    )
+    for api in ("responses.create", "chat.completions.create"):
+        for expression in invalid_keys:
+            source = f"client.{api}(prompt_cache_key={expression})\n"
+            findings = scan_python_ast(Path("invalid-key.py"), source)
+            assert len(findings) == 1 and findings[0].rule == "PCR001", (api, expression, findings)
+            assert "non-blank string" in findings[0].message, findings
+        for expression in (
+            "'family:node:v1:s0'", "cache_key", "build_key()", "f'family:v1:s{shard}'",
+        ):
+            source = f"client.{api}(prompt_cache_key={expression})\n"
+            assert scan_python_ast(Path("valid-key.py"), source) == [], (api, expression)
+        source = f"client.{api}(prompt_cache_key=f'family:{{user_id}}')\n"
+        assert any(f.rule == "PCR001" for f in scan_python_ast(Path("dynamic-key.py"), source))
+
     with TemporaryDirectory() as tmp:
         root = Path(tmp)
         clean = root / "clean.py"
@@ -311,7 +347,25 @@ def run_self_test() -> int:
             walk.side_effect = denied_walk
             assert scan_path(empty)[0].rule == "PCR000"
 
-    print("✅ pcr_lint.py self-test PASSED (PCR000 fail-closed scans + PCR001–PCR006 verified).")
+        key_source = root / "invalid-key.py"
+        for expression in ("None", "''", "42", "[]"):
+            key_source.write_text(
+                f"client.responses.create(prompt_cache_key={expression})\n", encoding="utf-8"
+            )
+            for flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(SELF_PATH), str(key_source), *flags],
+                    capture_output=True, text=True, encoding="utf-8", check=False,
+                )
+                assert result.returncode == 1, (expression, flags, result)
+                assert "PASSED" not in result.stdout, result.stdout
+                if flags:
+                    findings = json.loads(result.stdout)
+                    assert len(findings) == 1 and findings[0]["rule"] == "PCR001", findings
+                else:
+                    assert "[PCR001]" in result.stdout, result.stdout
+
+    print("✅ pcr_lint.py self-test PASSED (PCR000 scan integrity, PCR001 key literals + PCR001–PCR006 verified).")
     return 0
 
 

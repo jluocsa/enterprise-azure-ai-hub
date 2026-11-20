@@ -70,12 +70,14 @@ The scanner fails closed with `PCR000` and exit code `1` for missing/inaccessibl
 
 | Rule ID | Defect Flagged | AST / Regex Detection Specification (Python, C#, TypeScript) | Readiness Item |
 | :--- | :--- | :--- | :--- |
-| `PCR001` | Missing or high-cardinality `prompt_cache_key` | Calls to `responses.create` / `chat.completions.create` on `gpt-5.6*` or `gpt-6*` missing `prompt_cache_key`, or interpolating `user_id`, `request_id`, `uuid4()`, `engagement_id`, `matter_id`, `client_id`, or `cost_center` into the key. | `C6`, `C7` |
+| `PCR001` | Missing, invalid literal, or high-cardinality `prompt_cache_key` | Python `responses.create` / `chat.completions.create` calls missing the key, supplying a blank/non-string literal, or referencing `user_id`, `request_id`, `uuid4()`, `engagement_id`, `matter_id`, `client_id`, or `cost_center` in the key expression. | `C6`, `C7` |
 | `PCR002` | Dynamic values in Position 1 system/developer prompt | Interpolation of `datetime.now`, `DateTime.UtcNow`, `Date.now`, `timestamp`, `uuid`, or per-request context (`req_ctx`) inside the leading `system` / `developer` block. | `C2` |
 | `PCR003` | Non-deterministic `tools[]` or JSON schema order | Building `tools` from unsorted sets/dicts or serializing tool/context JSON in Positions 1–4 without `sort_keys=True` (or canonical C#/TS serializer settings). | `C3` |
 | `PCR004` | RAG chunks or live MCP data ahead of static prefix | Prompt builders placing `rag_chunks`, `search_results`, or live enterprise MCP outputs before static instructions, ontology blocks, or tool schemas. | `C4` |
 | `PCR005` | Invalid breakpoint, retention, or `reasoning.context` | Sending `prompt_cache_breakpoint` to pre-5.6 (HTTP `400`) or `5.6` PTU-M (unsupported); sending deprecated `prompt_cache_retention` to `5.6+`; or unpinned multi-turn `reasoning.context`. | `C8`, `C9`, `C10` |
 | `PCR006` | Missing telemetry extraction for cache tokens | LLM client wrappers logging `input_tokens` / `prompt_tokens` while omitting `input_tokens_details` / `prompt_tokens_details.cached_tokens` and `cache_write_tokens`. | `C11` |
+
+`PCR001` treats `None`, empty/whitespace-only strings, booleans, numbers, bytes, and literal containers as invalid keys, returning exit code `1` in text and `--json` modes. This is a local readiness policy requiring an explicit non-blank string, not a claim that the service requires a key for every request. Non-literal variables, function results, and interpolated values are not evaluated; validate their resolved type/value in application tests and retain Layer 2 cache-hit probes. The Python AST rule does not validate equivalent TypeScript/JavaScript/C# calls <span class="ev-badge ev-arch">[Arch]</span>.
 
 ## 2. Layer 2: Unified DeepEval Quality + 2-Pass Cache Contract Test
 
