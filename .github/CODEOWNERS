@@ -1,0 +1,13 @@
+# Global Hub Governance, Sanitization Gate & Theme
+* @jluocsa
+/scripts/check-sanitized.mjs @jluocsa
+/docs/operating-model/ @jluocsa
+/docs/studio/ @jluocsa
+
+# Playbook Track Owners (Add co-author GitHub handles per track)
+/docs/playbooks/prompt-caching/ @jluocsa
+/docs/playbooks/apim-gateway/ @jluocsa
+/docs/playbooks/multi-region-bcp/ @jluocsa
+/docs/playbooks/agentic-rag-evals/ @jluocsa
+/docs/papers/ @jluocsa
+/docs/public/kits/ @jluocsa

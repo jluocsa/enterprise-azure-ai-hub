@@ -1,0 +1,19 @@
+{
+  "name": "enterprise-azure-ai-hub",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Enterprise Azure AI Solution Industrialization Hub — Customer-Zero validated playbooks, interactive PTU/TCO & BCP decision studio, regulated compliance profiles, and executable MIT release gates for Microsoft Foundry and Azure AI.",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "check:sanitized": "node scripts/check-sanitized.mjs",
+    "check:kits": "python3 docs/public/kits/pcr_lint.py --help >/dev/null && python3 docs/public/kits/agent_release_gate.py --self-test",
+    "deploy:pages": "node scripts/deploy-gh-pages.mjs",
+    "verify": "npm run check:sanitized && npm run check:kits && npm run docs:build"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

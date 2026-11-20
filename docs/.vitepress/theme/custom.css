@@ -1,0 +1,858 @@
+/* ==========================================================================
+   Enterprise Azure AI — Solution Industrialization Hub (v2.0)
+   Fluent 2 / Microsoft Foundry & Azure Architecture Center Design System
+   ========================================================================== */
+
+:root {
+  --vp-font-family-base: "Segoe UI Variable Text", "Segoe UI Variable Display", "Segoe UI",
+    -apple-system, BlinkMacSystemFont, Inter, "Helvetica Neue", Arial, sans-serif;
+  --vp-font-family-mono: "Cascadia Code", "Cascadia Mono", ui-monospace, SFMono-Regular,
+    Menlo, Monaco, Consolas, monospace;
+
+  /* Azure Communication Blue + Foundry Teal + Executive Slate */
+  --vp-c-brand-1: #0067b8;
+  --vp-c-brand-2: #0078d4;
+  --vp-c-brand-3: #005a9e;
+  --vp-c-brand-soft: rgba(0, 120, 212, 0.10);
+
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f4f7fb;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: #f7f9fc;
+
+  --vp-c-text-1: #0f172a;
+  --vp-c-text-2: #475569;
+  --vp-c-text-3: #64748b;
+  --vp-c-divider: #e2e8f0;
+  --vp-c-gutter: #e2e8f0;
+
+  --ms-accent-teal: #0f766e;
+  --ms-accent-cyan: #0284c7;
+  --ms-accent-violet: #6d28d9;
+  --ms-accent-amber: #b45309;
+  --ms-surface-card: #ffffff;
+  --ms-surface-elevated: #ffffff;
+  --ms-surface-subtle: #f4f7fb;
+  --ms-border-subtle: #e2e8f0;
+  --ms-border-strong: #cbd5e1;
+  --ms-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(0, 29, 61, 0.04);
+  --ms-shadow-md: 0 6px 16px rgba(15, 23, 42, 0.06), 0 18px 38px rgba(0, 29, 61, 0.08);
+  --ms-shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.08), 0 24px 54px rgba(0, 52, 102, 0.11);
+  --ms-hero-bg:
+    radial-gradient(900px 420px at 84% 12%, rgba(0, 183, 195, 0.11), transparent 65%),
+    radial-gradient(820px 420px at 14% 8%, rgba(0, 120, 212, 0.11), transparent 62%),
+    linear-gradient(180deg, #eef5fc 0%, #f7fafd 62%, #ffffff 100%);
+  --ms-hero-grid-line: rgba(0, 103, 184, 0.062);
+}
+
+.dark {
+  --vp-c-brand-1: #4cc2ff;
+  --vp-c-brand-2: #2899f5;
+  --vp-c-brand-3: #0078d4;
+  --vp-c-brand-soft: rgba(76, 194, 255, 0.14);
+
+  --vp-c-bg: #0a101a;
+  --vp-c-bg-alt: #0e1624;
+  --vp-c-bg-elv: #131e30;
+  --vp-c-bg-soft: #111b2b;
+
+  --vp-c-text-1: #f1f5f9;
+  --vp-c-text-2: #94a3b8;
+  --vp-c-text-3: #64748b;
+  --vp-c-divider: #1e2d42;
+  --vp-c-gutter: #1b283b;
+
+  --ms-accent-teal: #2dd4bf;
+  --ms-accent-cyan: #38bdf8;
+  --ms-accent-violet: #a78bfa;
+  --ms-accent-amber: #fbbf24;
+  --ms-surface-card: #111b2b;
+  --ms-surface-elevated: #152236;
+  --ms-surface-subtle: #0d1522;
+  --ms-border-subtle: #1f2f46;
+  --ms-border-strong: #334968;
+  --ms-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.34);
+  --ms-shadow-md: 0 10px 30px rgba(0, 0, 0, 0.48);
+  --ms-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.58);
+  --ms-hero-bg:
+    radial-gradient(920px 440px at 85% 12%, rgba(45, 212, 191, 0.11), transparent 65%),
+    radial-gradient(840px 420px at 14% 8%, rgba(56, 189, 248, 0.14), transparent 62%),
+    linear-gradient(180deg, #081223 0%, #0a101a 74%, #0a101a 100%);
+  --ms-hero-grid-line: rgba(76, 194, 255, 0.065);
+}
+
+/* --- Signature Top Azure/Foundry Accent Ribbon & Navbar Chrome --- */
+.VPNav {
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg, #0078d4 0%, #00b7c3 52%, #6d28d9 100%) 1;
+}
+
+.VPNavBar {
+  backdrop-filter: saturate(180%) blur(16px);
+}
+
+.VPNavBar .VPNavBarTitle .logo {
+  width: 24px;
+  height: 24px;
+  margin-right: 9px;
+}
+
+.VPNavBar .VPNavBarTitle .title {
+  font-weight: 650;
+  letter-spacing: -0.018em;
+}
+
+.VPNavBar .DocSearch-Button {
+  border-radius: 7px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  height: 34px;
+}
+
+.VPNavBar .DocSearch-Button:hover {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-bg);
+}
+
+/* Prevent horizontal navbar overflow on 768px–1180px tablet/split-screen widths */
+@media (min-width: 768px) and (max-width: 1180px) {
+  .VPNavBar .VPNavBarTitle .logo {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+  }
+  .VPNavBar .VPNavBarTitle .title {
+    font-size: 0.84rem;
+  }
+  .VPNavBar .VPNavBarSearch {
+    padding-left: 6px;
+  }
+  .VPNavBar .DocSearch-Button {
+    padding: 0 7px;
+  }
+  .VPNavBar .DocSearch-Button-Keys {
+    display: none;
+  }
+  .VPNavBar .VPNavBarMenuLink,
+  .VPNavBar .VPFlyout .button {
+    padding: 0 6px;
+    font-size: 0.8rem;
+  }
+}
+
+/* --- Microsoft Learn Style Sidebar & Active Indicator --- */
+.VPSidebar {
+  background-color: var(--vp-c-bg-alt) !important;
+}
+
+.VPSidebarItem.level-0 > .item > .text {
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vp-c-text-2);
+}
+
+.VPSidebarItem.is-link > .item {
+  padding-left: 10px;
+  margin-left: -10px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.VPSidebarItem.is-link.is-active > .item {
+  border-left-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.VPSidebarItem.is-link.is-active > .item > .link > .text {
+  font-weight: 600;
+}
+
+/* --- Clean Full-Width Doc Container --- */
+.VPDoc .aside,
+.VPLocalNavOutlineDropdown {
+  display: none !important;
+}
+
+.VPDoc.has-sidebar .container {
+  max-width: 1140px !important;
+}
+
+.VPDoc .content-container {
+  max-width: 1000px !important;
+}
+
+/* --- Interior Documentation Typography, Tables & Callouts --- */
+.vp-doc h1 {
+  font-weight: 680;
+  letter-spacing: -0.026em;
+  line-height: 1.18;
+}
+
+.vp-doc h2 {
+  font-weight: 640;
+  letter-spacing: -0.018em;
+  border-top-color: var(--vp-c-divider);
+  padding-top: 22px;
+  margin-top: 34px;
+}
+
+.vp-doc h3 {
+  font-weight: 620;
+  letter-spacing: -0.012em;
+}
+
+.vp-doc p,
+.vp-doc li {
+  line-height: 1.66;
+}
+
+.vp-doc :not(pre) > code {
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.84em;
+  border: 1px solid rgba(100, 116, 139, 0.18);
+}
+
+/* Responsive Enterprise Tables */
+.vp-doc table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 18px 0 24px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 9px;
+  font-size: 0.87rem;
+  box-shadow: var(--ms-shadow-sm);
+}
+
+@media (min-width: 1280px) {
+  .vp-doc table {
+    display: table;
+  }
+}
+
+.vp-doc td,
+.vp-doc th {
+  overflow-wrap: break-word;
+}
+
+.vp-doc tr {
+  border-top: none;
+  background-color: var(--vp-c-bg);
+}
+
+.vp-doc tr:nth-child(2n) {
+  background-color: var(--vp-c-bg-soft);
+}
+
+.vp-doc th {
+  background-color: var(--vp-c-bg-alt);
+  color: var(--vp-c-text-1);
+  font-size: 0.77rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+  padding: 11px 14px;
+  border: none;
+  border-bottom: 1px solid var(--vp-c-divider);
+  text-align: left;
+}
+
+.vp-doc td {
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid var(--vp-c-divider);
+  vertical-align: top;
+}
+
+.vp-doc tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.vp-doc tbody tr:hover td {
+  background-color: var(--vp-c-brand-soft);
+}
+
+/* Microsoft Learn Style Callouts */
+.vp-doc .custom-block {
+  border: 1px solid var(--vp-c-divider);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 15px 18px;
+  background-color: var(--vp-c-bg-soft);
+}
+
+.vp-doc .custom-block.info {
+  border-left-color: #0078d4;
+}
+.vp-doc .custom-block.tip {
+  border-left-color: #0f766e;
+}
+.vp-doc .custom-block.warning {
+  border-left-color: #d97706;
+}
+.vp-doc .custom-block.danger {
+  border-left-color: #dc2626;
+}
+.dark .vp-doc .custom-block.tip {
+  border-left-color: #2dd4bf;
+}
+.dark .vp-doc .custom-block.warning {
+  border-left-color: #fbbf24;
+}
+
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+
+/* --- Four-Tier Evidence Discipline Badges --- */
+.ev-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  border: 1px solid transparent;
+}
+
+.ev-m {
+  background: rgba(0, 120, 212, 0.10);
+  border-color: rgba(0, 120, 212, 0.25);
+  color: #005a9e;
+}
+.dark .ev-m {
+  background: rgba(76, 194, 255, 0.14);
+  border-color: rgba(76, 194, 255, 0.30);
+  color: #7dd3fc;
+}
+
+.ev-arch {
+  background: rgba(15, 118, 110, 0.10);
+  border-color: rgba(15, 118, 110, 0.25);
+  color: #0f766e;
+}
+.dark .ev-arch {
+  background: rgba(45, 212, 191, 0.14);
+  border-color: rgba(45, 212, 191, 0.30);
+  color: #5eead4;
+}
+
+.ev-agree {
+  background: rgba(180, 83, 9, 0.10);
+  border-color: rgba(180, 83, 9, 0.25);
+  color: #9a3412;
+}
+.dark .ev-agree {
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.30);
+  color: #fcd34d;
+}
+
+.ev-val {
+  background: rgba(109, 40, 217, 0.10);
+  border-color: rgba(109, 40, 217, 0.25);
+  color: #5b21b6;
+}
+.dark .ev-val {
+  background: rgba(167, 139, 250, 0.14);
+  border-color: rgba(167, 139, 250, 0.30);
+  color: #c4b5fd;
+}
+
+/* --- Theme-Adaptive Architecture Blueprint SVG Frame --- */
+.arch-diagram {
+  margin: 18px 0 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--ms-border-subtle);
+  border-top: 3px solid var(--vp-c-brand-1);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fcfdff 0%, #f8fafd 100%);
+  box-shadow: var(--ms-shadow-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.arch-diagram svg {
+  display: block;
+  width: 100%;
+  min-width: 580px;
+  height: auto;
+}
+
+/* Native Dark-Mode Adaptation for Inline Blueprint SVGs */
+.dark .arch-diagram {
+  background: linear-gradient(180deg, #0f1928 0%, #0c1421 100%);
+  border-color: var(--ms-border-subtle);
+  border-top-color: var(--vp-c-brand-1);
+}
+
+.dark .arch-diagram svg rect[fill="#edf3fb"],
+.dark .arch-diagram svg rect[fill="#eff6ff"],
+.dark .arch-diagram svg rect[fill="#f0f6fc"] {
+  fill: #13233b;
+  stroke: #3b82f6;
+}
+
+.dark .arch-diagram svg rect[fill="#eaf4f5"],
+.dark .arch-diagram svg rect[fill="#eaf7f5"],
+.dark .arch-diagram svg rect[fill="#ecfdf5"] {
+  fill: #0f292a;
+  stroke: #2dd4bf;
+}
+
+.dark .arch-diagram svg rect[fill="#fff7eb"],
+.dark .arch-diagram svg rect[fill="#fffbeb"] {
+  fill: #291f11;
+  stroke: #f59e0b;
+}
+
+.dark .arch-diagram svg rect[fill="#fef2f2"],
+.dark .arch-diagram svg rect[fill="#fff1f2"] {
+  fill: #2c1519;
+  stroke: #f87171;
+}
+
+.dark .arch-diagram svg rect[fill="#f5f3ff"],
+.dark .arch-diagram svg rect[fill="#ede9fe"] {
+  fill: #1e1836;
+  stroke: #a78bfa;
+}
+
+.dark .arch-diagram svg rect[fill="#f8fafc"],
+.dark .arch-diagram svg rect[fill="#fff"],
+.dark .arch-diagram svg rect[fill="#ffffff"] {
+  fill: #162235;
+  stroke: #475569;
+}
+
+.dark .arch-diagram svg rect[fill="#dbeafe"] {
+  fill: #1e3a8a;
+}
+
+.dark .arch-diagram svg rect[fill="#fef3c7"] {
+  fill: #78350f;
+}
+
+.dark .arch-diagram svg text[fill="#183e62"],
+.dark .arch-diagram svg text[fill="#143d65"],
+.dark .arch-diagram svg text[fill="#1e40af"],
+.dark .arch-diagram svg text[fill="#1d4ed8"],
+.dark .arch-diagram svg text[fill="#0f172a"] {
+  fill: #93c5fd;
+}
+
+.dark .arch-diagram svg text[fill="#115e59"],
+.dark .arch-diagram svg text[fill="#115e63"],
+.dark .arch-diagram svg text[fill="#0e7279"],
+.dark .arch-diagram svg text[fill="#0f766e"] {
+  fill: #5eead4;
+}
+
+.dark .arch-diagram svg text[fill="#92400e"],
+.dark .arch-diagram svg text[fill="#8a4b0f"],
+.dark .arch-diagram svg text[fill="#b45309"] {
+  fill: #fcd34d;
+}
+
+.dark .arch-diagram svg text[fill="#991b1b"],
+.dark .arch-diagram svg text[fill="#b91c1c"] {
+  fill: #fca5a5;
+}
+
+.dark .arch-diagram svg text[fill="#5b21b6"],
+.dark .arch-diagram svg text[fill="#6d28d9"] {
+  fill: #c4b5fd;
+}
+
+.dark .arch-diagram svg text[fill="#334e68"],
+.dark .arch-diagram svg text[fill="#35556f"],
+.dark .arch-diagram svg text[fill="#355d65"],
+.dark .arch-diagram svg text[fill="#475569"] {
+  fill: #cbd5e1;
+}
+
+.dark .arch-diagram svg text[fill="#526c80"],
+.dark .arch-diagram svg text[fill="#64748b"] {
+  fill: #94a3b8;
+}
+
+.dark .arch-diagram svg path[stroke="#0f766e"] {
+  stroke: #2dd4bf;
+}
+
+.dark .arch-diagram svg path[stroke="#b45309"],
+.dark .arch-diagram svg path[stroke="#be7730"] {
+  stroke: #fbbf24;
+}
+
+.dark .arch-diagram svg line[stroke="#cbd5e1"] {
+  stroke: #334155;
+}
+
+/* ==========================================================================
+   Shared Layout & Executive Button Tokens
+   ========================================================================== */
+
+.ms-container {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+@media (max-width: 639px) {
+  .ms-container {
+    padding: 0 18px;
+  }
+}
+
+.ms-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--vp-c-brand-soft);
+  border: 1px solid rgba(0, 120, 212, 0.24);
+  color: var(--vp-c-brand-1);
+  font-size: 0.71rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.ms-eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vp-c-brand-2);
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.18);
+}
+
+.ms-hero-accent {
+  display: block;
+  margin-top: 4px;
+  background: linear-gradient(95deg, #0067b8 0%, #0078d4 45%, #0f766e 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .ms-hero-accent {
+  background: linear-gradient(95deg, #60a5fa 0%, #4cc2ff 48%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ms-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9.5px 18px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.89rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none !important;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease, color 0.15s ease;
+}
+
+.ms-btn-primary {
+  background: linear-gradient(180deg, #0078d4 0%, #0067b8 100%);
+  border: 1px solid #0067b8;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 103, 184, 0.28);
+}
+
+.ms-btn-primary:hover {
+  background: linear-gradient(180deg, #006cbe 0%, #005a9e 100%);
+  border-color: #005a9e;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 103, 184, 0.34);
+}
+
+.ms-btn-secondary {
+  background: var(--ms-surface-card);
+  border: 1px solid var(--ms-border-strong);
+  color: var(--vp-c-text-1) !important;
+  box-shadow: var(--ms-shadow-sm);
+}
+
+.ms-btn-secondary:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1) !important;
+  transform: translateY(-1px);
+}
+
+.ms-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--ms-border-subtle);
+  color: var(--vp-c-text-2) !important;
+}
+
+.ms-btn-ghost:hover {
+  background: var(--ms-surface-card);
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1) !important;
+}
+
+.ms-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  animation: msLivePulse 2.4s infinite;
+}
+
+@keyframes msLivePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.50);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* ==========================================================================
+   PageBrief.vue & IntakeScorecard.vue — Subpage Visual System
+   ========================================================================== */
+
+.pb-brief {
+  margin: 18px 0 26px;
+  border-radius: 10px;
+  border: 1px solid var(--ms-border-subtle);
+  border-top: 3px solid #0078d4;
+  background: linear-gradient(180deg, var(--vp-c-bg-soft) 0%, var(--ms-surface-card) 100%);
+  box-shadow: var(--ms-shadow-sm);
+  overflow: hidden;
+}
+
+.pb-brief-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ms-border-subtle);
+  background: var(--ms-surface-subtle);
+}
+
+.pb-journey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.pb-journey-step {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--vp-c-text-3);
+  border: 1px solid transparent;
+}
+
+.pb-journey-step.is-current {
+  background: #0078d4;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.pb-brief-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--vp-c-brand-1);
+}
+
+.pb-brief-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0078d4;
+}
+
+.pb-brief-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pb-chip {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--ms-surface-card);
+  border: 1px solid var(--ms-border-subtle);
+  color: var(--vp-c-text-2);
+}
+
+.pb-chip-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 118, 110, 0.08);
+  border-color: rgba(15, 118, 110, 0.24);
+  color: #0f766e;
+}
+
+.dark .pb-chip-verified {
+  background: rgba(45, 212, 191, 0.12);
+  border-color: rgba(45, 212, 191, 0.28);
+  color: #5eead4;
+}
+
+.pb-brief-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 860px) {
+  .pb-brief-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pb-brief-col {
+  padding: 14px 16px;
+  border-right: 1px solid var(--ms-border-subtle);
+}
+
+.pb-brief-col:last-child {
+  border-right: none;
+}
+
+@media (max-width: 860px) {
+  .pb-brief-col {
+    border-right: none;
+    border-bottom: 1px solid var(--ms-border-subtle);
+  }
+  .pb-brief-col:last-child {
+    border-bottom: none;
+  }
+}
+
+.pb-brief-col-accent {
+  background: rgba(0, 120, 212, 0.035);
+}
+
+.dark .pb-brief-col-accent {
+  background: rgba(76, 194, 255, 0.05);
+}
+
+.pb-col-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vp-c-brand-1);
+}
+
+.pb-brief-col p {
+  margin: 0 !important;
+  font-size: 0.84rem;
+  line-height: 1.52 !important;
+  color: var(--vp-c-text-1);
+}
+
+/* Footer Polish */
+.VPFooter {
+  background-color: var(--vp-c-bg-alt) !important;
+  border-top: 1px solid var(--vp-c-divider) !important;
+}
+
+.VPFooter .message,
+.VPFooter .copyright {
+  font-size: 0.82rem !important;
+  line-height: 1.65 !important;
+  color: var(--vp-c-text-2) !important;
+}
+
+.VPFooter a {
+  color: var(--vp-c-brand-1) !important;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.VPFooter a:hover {
+  text-decoration: underline !important;
+}
+
+/* Clean Executive Print / Save-as-PDF Layout */
+@media print {
+  .VPNav,
+  .VPLocalNav,
+  .VPSidebar,
+  .VPDocAside,
+  .VPFooter,
+  .VPDocFooter,
+  .VPSkipLink,
+  .no-print {
+    display: none !important;
+  }
+  .VPContent,
+  .VPDoc,
+  .VPDoc .container,
+  .VPDoc .content,
+  .VPDoc .content-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  body {
+    background: #fff !important;
+    color: #0f172a !important;
+    font-size: 10pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .arch-diagram {
+    overflow: visible !important;
+    break-inside: avoid;
+    background: #fff !important;
+  }
+  .arch-diagram svg {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  table,
+  pre,
+  .custom-block,
+  .pb-meta,
+  .pb-brief {
+    break-inside: avoid;
+  }
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}

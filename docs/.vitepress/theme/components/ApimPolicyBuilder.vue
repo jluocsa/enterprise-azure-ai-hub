@@ -1,0 +1,259 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+
+const modelGeneration = ref<'gpt-5.6-ptu' | 'gpt-6-ptu'>('gpt-5.6-ptu')
+const enableSpillover = ref(true)
+const stripFinopsHeader = ref(true)
+const enableTokenLimit = ref(true)
+const tokenLimitTpm = ref(450000)
+const streamSafe = ref(true)
+const copied = ref(false)
+
+const policyXml = computed(() => {
+  const lines: string[] = [
+    `<policies>`,
+    `  <inbound>`,
+    `    <base />`,
+    `    <!-- 1. Passwordless Managed Identity Auth to Microsoft Foundry -->`,
+    `    <authentication-managed-identity resource="https://cognitiveservices.azure.com" output-token-variable-name="msi-access-token" ignore-error="false" />`,
+    `    <set-header name="Authorization" exists-action="override">`,
+    `      <value>@("Bearer " + (string)context.Variables["msi-access-token"])</value>`,
+    `    </set-header>`,
+  ]
+
+  if (stripFinopsHeader.value) {
+    lines.push(
+      `    <!-- 2. Out-of-Band FinOps Chargeback (Preserve Shared Prefix Cache Keys) -->`,
+      `    <set-variable name="costCenter" value="@(context.Request.Headers.GetValueOrDefault("x-cost-center", "unallocated"))" />`,
+      `    <set-header name="x-cost-center" exists-action="delete" />`
+    )
+  }
+
+  if (enableTokenLimit.value) {
+    lines.push(
+      `    <!-- 3. Tenant / Practice Token Quota & OTel Metric Emission -->`,
+      `    <azure-openai-emit-token-metric namespace="foundry-ai-gateway">`,
+      `      <dimension name="SubscriptionId" value="@(context.Subscription.Id)" />`,
+      ...(stripFinopsHeader.value ? [`      <dimension name="CostCenter" value="@((string)context.Variables["costCenter"])" />`] : []),
+      `    </azure-openai-emit-token-metric>`,
+      `    <azure-openai-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${tokenLimitTpm.value}" estimate-prompt-tokens="true" />`
+    )
+  }
+
+  lines.push(
+    `    <!-- 4. Route Primary Traffic to Backend Pool (PTU-M Priority 1 -> PAYG Priority 2) -->`,
+    `    <set-backend-service backend-id="${enableSpillover.value ? 'foundry-ptu-with-payg-spillover-pool' : 'foundry-ptu-primary'}" />`
+  )
+
+  if (modelGeneration.value === 'gpt-5.6-ptu') {
+    lines.push(
+      `    <!-- 5. SKU-Aware Guard: Strip Unsupported Breakpoints on GPT-5.6 PTU-M Primary Leg -->`,
+      `    <set-body>@{`,
+      `      var body = context.Request.Body.As<JObject>(preserveContent: true);`,
+      `      body.Remove("prompt_cache_options");`,
+      `      if (body["input"] is JArray items) {`,
+      `        foreach (var msg in items.OfType<JObject>()) {`,
+      `          if (msg["content"] is JArray parts) {`,
+      `            foreach (var part in parts.OfType<JObject>()) {`,
+      `              part.Remove("prompt_cache_breakpoint");`,
+      `            }`,
+      `          }`,
+      `        }`,
+      `      }`,
+      `      return body.ToString(Newtonsoft.Json.Formatting.None);`,
+      `    }</set-body>`
+    )
+  }
+
+  lines.push(`  </inbound>`, `  <backend>`)
+
+  if (enableSpillover.value) {
+    lines.push(
+      `    <!-- Retry 429 / 503 onto Priority-2 Standard PAYG Backend Without Breaking SSE Streams -->`,
+      `    <retry condition="@(context.Response.StatusCode == 429 || context.Response.StatusCode == 503)" count="1" interval="0" first-fast-retry="true">`,
+      `      <forward-request timeout="120" ${streamSafe.value ? 'buffer-request-body="true" buffer-response="false"' : ''} />`,
+      `    </retry>`
+    )
+  } else {
+    lines.push(
+      `    <forward-request timeout="120" ${streamSafe.value ? 'buffer-response="false"' : ''} />`
+    )
+  }
+
+  lines.push(
+    `  </backend>`,
+    `  <outbound>`,
+    `    <base />`,
+    `    <set-header name="x-gateway-routed-sku" exists-action="override">`,
+    `      <value>@(context.Response.Headers.GetValueOrDefault("x-ms-deployment-name", "foundry-pool"))</value>`,
+    `    </set-header>`,
+    `  </outbound>`,
+    `  <on-error>`,
+    `    <base />`,
+    `  </on-error>`,
+    `</policies>`
+  )
+
+  return lines.join('\n')
+})
+
+async function copyXml() {
+  try {
+    await navigator.clipboard.writeText(policyXml.value)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2200)
+  } catch {}
+}
+</script>
+
+<template>
+  <div class="apim-builder">
+    <div class="apim-head">
+      <div>
+        <span class="apim-kicker">INTERACTIVE GATEWAY GENERATOR &middot; PLAYBOOK 02</span>
+        <strong class="apim-title">SKU-Aware Azure API Management AI Gateway Policy Builder</strong>
+      </div>
+      <button type="button" class="apim-copy-btn no-print" @click="copyXml">
+        {{ copied ? '✓ Copied Policy XML' : 'Copy APIM XML' }}
+      </button>
+    </div>
+
+    <div class="apim-controls no-print">
+      <label class="apim-select">
+        <span>Target Primary PTU-M Regime</span>
+        <select v-model="modelGeneration">
+          <option value="gpt-5.6-ptu">GPT-5.6 PTU-M (Strip Unsupported Breakpoint Fields)</option>
+          <option value="gpt-6-ptu">GPT-6 / GPT-6.1 PTU-M (Pass Explicit Breakpoints Through)</option>
+        </select>
+      </label>
+
+      <label class="apim-select" v-if="enableTokenLimit">
+        <span>Per-Subscription TPM Quota</span>
+        <input v-model.number="tokenLimitTpm" type="number" min="10000" step="50000" />
+      </label>
+
+      <label class="apim-check">
+        <input v-model="enableSpillover" type="checkbox" />
+        <span>429 / 503 Spillover to Standard PAYG Pool</span>
+      </label>
+
+      <label class="apim-check">
+        <input v-model="stripFinopsHeader" type="checkbox" />
+        <span>Out-of-Band <code>x-cost-center</code> FinOps Extraction</span>
+      </label>
+
+      <label class="apim-check">
+        <input v-model="enableTokenLimit" type="checkbox" />
+        <span>Emit OTel Token Metrics &amp; Enforce TPM Cap</span>
+      </label>
+
+      <label class="apim-check">
+        <input v-model="streamSafe" type="checkbox" />
+        <span>SSE Unbuffered Streaming (<code>buffer-response="false"</code>)</span>
+      </label>
+    </div>
+
+    <pre class="apim-code"><code>{{ policyXml }}</code></pre>
+  </div>
+</template>
+
+<style scoped>
+.apim-builder {
+  margin: 20px 0;
+  padding: 20px 22px;
+  border: 1px solid var(--ms-border-subtle);
+  border-top: 3px solid #0284c7;
+  border-radius: 10px;
+  background: var(--vp-c-bg-soft);
+  box-shadow: var(--ms-shadow-sm);
+}
+.apim-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--ms-border-subtle);
+}
+.apim-kicker {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  color: var(--ms-accent-cyan);
+  margin-bottom: 2px;
+}
+.apim-title {
+  font-size: 0.98rem;
+  color: var(--vp-c-text-1);
+}
+.apim-copy-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--vp-c-brand-1);
+  background: var(--ms-surface-card);
+  color: var(--vp-c-brand-1);
+  font-size: 0.77rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.apim-copy-btn:hover {
+  background: var(--vp-c-brand-1);
+  color: #fff;
+}
+.apim-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 12px;
+  margin-bottom: 14px;
+}
+.apim-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+.apim-select select,
+.apim-select input {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--ms-border-subtle);
+  background: var(--ms-surface-card);
+  color: var(--vp-c-text-1);
+  font-size: 0.82rem;
+}
+.apim-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  border: 1px solid var(--ms-border-subtle);
+  background: var(--ms-surface-card);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+}
+.apim-check input {
+  accent-color: #0078d4;
+}
+.apim-code {
+  margin: 0 !important;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #0d1522 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #1f2f46;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.77rem;
+  line-height: 1.52;
+  overflow-x: auto;
+}
+</style>
