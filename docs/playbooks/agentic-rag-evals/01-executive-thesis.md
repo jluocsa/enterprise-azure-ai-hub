@@ -14,8 +14,10 @@ description: Architectural thesis for taking multi-step tool-using and RAG-groun
   status="Live v2.0"
   paperHref="/papers/enterprise-foundry-platform-blueprint"
   paperLabel="Full-Stack Blueprint →"
-  studioHref="/studio/#triage"
-  studioLabel="30-Min Intake Triage →"
+  studioHref="/studio/#agent-eval"
+  studioLabel="Sandbox & Eval Builder →"
+  kitHref="/papers/engineering-kits#agent-gate"
+  kitLabel="agent_release_gate.py →"
 />
 
 <PageBrief

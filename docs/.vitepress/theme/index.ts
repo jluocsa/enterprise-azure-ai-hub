@@ -1,5 +1,6 @@
 import DefaultTheme from 'vitepress/theme'
 import type { Theme } from 'vitepress'
+import AgentEvalBuilder from './components/AgentEvalBuilder.vue'
 import ApimPolicyBuilder from './components/ApimPolicyBuilder.vue'
 import BcpResidencyAdvisor from './components/BcpResidencyAdvisor.vue'
 import CatalogExplorer from './components/CatalogExplorer.vue'
@@ -14,6 +15,7 @@ import './custom.css'
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }) {
+    app.component('AgentEvalBuilder', AgentEvalBuilder)
     app.component('ApimPolicyBuilder', ApimPolicyBuilder)
     app.component('BcpResidencyAdvisor', BcpResidencyAdvisor)
     app.component('CatalogExplorer', CatalogExplorer)

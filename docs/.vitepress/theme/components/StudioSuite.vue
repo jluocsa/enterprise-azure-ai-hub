@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, withBase } from 'vitepress'
+import AgentEvalBuilder from './AgentEvalBuilder.vue'
 import ApimPolicyBuilder from './ApimPolicyBuilder.vue'
 import BcpResidencyAdvisor from './BcpResidencyAdvisor.vue'
 import IntakeScorecard from './IntakeScorecard.vue'
 import PtuCalculator from './PtuCalculator.vue'
 
-type TabId = 'ptu' | 'triage' | 'bcp' | 'apim'
+type TabId = 'ptu' | 'triage' | 'bcp' | 'apim' | 'agent-eval'
 
 const activeTab = ref<TabId>('ptu')
 const route = useRoute()
@@ -21,12 +22,12 @@ const tabs: { id: TabId; badge: string; title: string; subtitle: string; playboo
     playbookLabel: 'Read Playbook 01 Sizing Math →',
   },
   {
-    id: 'triage',
-    badge: 'TOOL 02 · OPERATING MODEL',
-    title: '30-Min Intake & Scope Builder',
-    subtitle: 'Score 8 architectural boundaries and generate a copy-ready 1-session ADS or 3-week engagement scope.',
-    playbookHref: '/operating-model/delivery-scoping',
-    playbookLabel: 'Read 3-Week Delivery Blueprint →',
+    id: 'apim',
+    badge: 'TOOL 02 · PLAYBOOK 02',
+    title: 'APIM AI Gateway Policy Builder',
+    subtitle: 'Generate SKU-aware Azure API Management XML policies with Managed Identity, spillover & FinOps OTel.',
+    playbookHref: '/playbooks/apim-gateway/03-circuit-breakers-sku-rewrites',
+    playbookLabel: 'Read Playbook 02 Gateway Design →',
   },
   {
     id: 'bcp',
@@ -37,12 +38,20 @@ const tabs: { id: TabId; badge: string; title: string; subtitle: string; playboo
     playbookLabel: 'Read Playbook 03 BCP Math →',
   },
   {
-    id: 'apim',
-    badge: 'TOOL 04 · PLAYBOOK 02',
-    title: 'APIM AI Gateway Policy Builder',
-    subtitle: 'Generate SKU-aware Azure API Management XML policies with Managed Identity, spillover & FinOps OTel.',
-    playbookHref: '/playbooks/apim-gateway/03-circuit-breakers-sku-rewrites',
-    playbookLabel: 'Read Playbook 02 Gateway Design →',
+    id: 'agent-eval',
+    badge: 'TOOL 04 · PLAYBOOK 04',
+    title: 'ACA Sandbox & Eval Contract Builder',
+    subtitle: 'Size microVM session pools and simulate deterministic ARG001–ARG007 acceptance contracts.',
+    playbookHref: '/playbooks/agentic-rag-evals/04-deterministic-eval-contracts',
+    playbookLabel: 'Read Playbook 04 Contract Design →',
+  },
+  {
+    id: 'triage',
+    badge: 'TOOL 05 · OPERATING MODEL',
+    title: '30-Min Intake & Scope Builder',
+    subtitle: 'Score 8 architectural boundaries and generate a copy-ready 1-session ADS or 3-week engagement scope.',
+    playbookHref: '/operating-model/delivery-scoping',
+    playbookLabel: 'Read 3-Week Delivery Blueprint →',
   },
 ]
 
@@ -56,7 +65,7 @@ function selectTab(id: TabId) {
 function syncFromHash() {
   if (typeof window === 'undefined') return
   const h = window.location.hash.replace('#', '') as TabId
-  if (['ptu', 'triage', 'bcp', 'apim'].includes(h)) {
+  if (['ptu', 'triage', 'bcp', 'apim', 'agent-eval'].includes(h)) {
     activeTab.value = h
   }
 }
@@ -140,6 +149,9 @@ watch(
         <div v-show="activeTab === 'apim'">
           <ApimPolicyBuilder />
         </div>
+        <div v-show="activeTab === 'agent-eval'">
+          <AgentEvalBuilder />
+        </div>
       </div>
     </section>
   </div>
@@ -188,10 +200,10 @@ watch(
 }
 .st-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 11px;
 }
-@media (max-width: 980px) {
+@media (max-width: 1120px) {
   .st-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

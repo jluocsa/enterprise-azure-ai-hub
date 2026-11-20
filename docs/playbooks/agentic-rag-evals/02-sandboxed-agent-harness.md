@@ -9,6 +9,8 @@ description: Reference design for isolating enterprise agent execution using a s
   track="04 · Sandboxed Agentic Harness, Foundry IQ RAG & 7-Layer Evals"
   verified="2026-11-19 PST"
   status="Live v2.0"
+  studioHref="/studio/#agent-eval"
+  studioLabel="Size ACA Session Pool →"
 />
 
 <PageBrief

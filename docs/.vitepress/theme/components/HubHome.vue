@@ -78,8 +78,8 @@ const stackLayers = [
     rule: 'Separate orchestrator from microVM session containers, retrieve via Foundry IQ MCP with security trimming, and gate PRs on deterministic contracts.',
     gate: 'A1–A12 Standard: 100% microVM session isolation · ≥95% citation precision · 0 critical contract regressions',
     playbookHref: '/playbooks/agentic-rag-evals/01-executive-thesis',
-    toolHref: '/studio/#triage',
-    toolLabel: 'Open 30-Min Intake Triage',
+    toolHref: '/studio/#agent-eval',
+    toolLabel: 'Open Sandbox & Eval Builder',
   },
 ]
 
@@ -177,12 +177,12 @@ const catalogItems: CatalogCard[] = [
   },
   {
     category: 'studio',
-    badge: 'DECISION STUDIO · 4 LIVE TOOLS',
+    badge: 'DECISION STUDIO · 5 LIVE TOOLS',
     tone: 'studio',
-    title: 'Interactive Architecture Decision Studio (PTU, Triage, BCP & APIM)',
+    title: 'Interactive Architecture Decision Studio (PTU, APIM, BCP, Sandbox & Triage)',
     summary:
-      'Browser-native engineering workbench combining the Two-Regime PTU/TCO Simulator, 30-Min Multi-Track Intake Scorecard, Multi-Region Cold-Cache Surge Advisor, and APIM XML Policy Builder.',
-    tags: ['Live Calculators', 'Zero Telemetry', '1-Click Markdown/XML'],
+      'Browser-native engineering workbench combining the Two-Regime PTU/TCO Simulator, APIM XML Policy Builder, Multi-Region Cold-Cache Surge Advisor, ACA Sandbox & Eval Contract Builder, and 30-Min Intake Triage.',
+    tags: ['5 Live Calculators', 'Zero Telemetry', '1-Click JSON/XML/MD'],
     href: '/studio/',
     cta: 'Launch Decision Studio',
   },

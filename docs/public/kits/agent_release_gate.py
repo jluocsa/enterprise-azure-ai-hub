@@ -6,13 +6,16 @@ Artifact: agent_release_gate.py (Playbook 04 · Deterministic CI Release Verifie
 Verifies offline agent execution evidence (JSONL turns) against deterministic
 production acceptance contracts:
   [ARG001] Schema integrity: required turn fields & terminal status=='ok'
-  [ARG002] Tool allowlist: zero invocations of unapproved or dangerous tools
+  [ARG002] Tool governance: zero forbidden tools + optional required grounding tools
   [ARG003] Citation grounding: 100% of inline [cite:ID] markers resolve to retrieved_doc_ids
   [ARG004] Two-pass prefix cache parity: pass>=2 turns with >=1,024 input tokens hit KV cache
   [ARG005] Latency SLO: p95 turn duration stays within configured budget
+  [ARG006] Foundry IQ ACL trimming (A5): non-empty RAG retrievals never report acl_trimmed=False
+  [ARG007] Metadata-only OTel privacy (A12): zero raw prompt/message content logged in telemetry
 
 Usage:
   python3 agent_release_gate.py ./artifacts/trace.jsonl
+  python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json
   python3 agent_release_gate.py --self-test
 """
 
@@ -45,8 +48,12 @@ def evaluate_trace(
     max_p95_ms: float = 15000.0,
     min_pass2_cached_tokens: int = 1024,
     forbidden_tools: set[str] | None = None,
+    required_tools: set[str] | None = None,
+    require_acl_trimming: bool = True,
+    forbid_raw_prompt_logging: bool = True,
 ) -> list[str]:
     deny = forbidden_tools if forbidden_tools is not None else DEFAULT_FORBIDDEN_TOOLS
+    req = required_tools or set()
     failures: list[str] = []
     latencies: list[float] = []
 
@@ -59,10 +66,13 @@ def evaluate_trace(
         if status != "ok":
             failures.append(f"[ARG001] {case_id}: terminal status is '{status}' (expected 'ok').")
 
-        tools_used = rec.get("tools_called") or []
+        tools_used = [str(t) for t in (rec.get("tools_called") or [])]
         for tool in tools_used:
             if tool in deny:
                 failures.append(f"[ARG002] {case_id}: invoked forbidden tool '{tool}'.")
+        for req_tool in sorted(req):
+            if req_tool not in tools_used:
+                failures.append(f"[ARG002] {case_id}: missing required tool invocation '{req_tool}'.")
 
         answer = str(rec.get("assistant_response", ""))
         retrieved = set(str(x) for x in (rec.get("retrieved_doc_ids") or []))
@@ -81,6 +91,18 @@ def evaluate_trace(
                 f"[ARG004] {case_id}: pass {pass_num} had {input_tok} input tokens but only {cached_tok} cached_tokens (<{min_pass2_cached_tokens})."
             )
 
+        if require_acl_trimming and retrieved and rec.get("acl_trimmed") is False:
+            failures.append(
+                f"[ARG006] {case_id}: retrieved {len(retrieved)} document(s) with acl_trimmed=False (violates Gate A5 security trimming)."
+            )
+
+        if forbid_raw_prompt_logging and (
+            rec.get("raw_prompt_logged") is True or rec.get("otel_capture_message_content") is True
+        ):
+            failures.append(
+                f"[ARG007] {case_id}: telemetry logged raw prompt/message content (violates Gate A12 metadata-only OTel)."
+            )
+
         if "duration_ms" in rec:
             latencies.append(float(rec["duration_ms"]))
 
@@ -91,6 +113,18 @@ def evaluate_trace(
     return failures
 
 
+def load_contract(contract_path: Path) -> dict[str, Any]:
+    raw = json.loads(contract_path.read_text(encoding="utf-8"))
+    return {
+        "max_p95_ms": float(raw.get("max_p95_ms", 15000.0)),
+        "min_pass2_cached_tokens": int(raw.get("min_pass2_cached_tokens", 1024)),
+        "forbidden_tools": set(raw.get("forbidden_tools", list(DEFAULT_FORBIDDEN_TOOLS))),
+        "required_tools": set(raw.get("required_tools", [])),
+        "require_acl_trimming": bool(raw.get("require_acl_trimming", True)),
+        "forbid_raw_prompt_logging": bool(raw.get("forbid_raw_prompt_logging", True)),
+    }
+
+
 def run_self_test() -> int:
     valid_records = [
         {
@@ -99,6 +133,8 @@ def run_self_test() -> int:
             "status": "ok",
             "tools_called": ["knowledge_base_retrieve"],
             "retrieved_doc_ids": ["policy-sec-04", "rubric-v2"],
+            "acl_trimmed": True,
+            "raw_prompt_logged": False,
             "assistant_response": "Control verified per [cite:policy-sec-04] and [cite:rubric-v2].",
             "input_tokens": 4200,
             "cached_tokens": 0,
@@ -110,13 +146,17 @@ def run_self_test() -> int:
             "status": "ok",
             "tools_called": ["knowledge_base_retrieve"],
             "retrieved_doc_ids": ["policy-sec-04"],
+            "acl_trimmed": True,
+            "raw_prompt_logged": False,
             "assistant_response": "Confirmed repeatable grounding [cite:policy-sec-04].",
             "input_tokens": 4200,
             "cached_tokens": 3584,
             "duration_ms": 1280,
         },
     ]
-    assert evaluate_trace(valid_records) == [], "Expected clean golden trace to pass."
+    assert evaluate_trace(valid_records, required_tools={"knowledge_base_retrieve"}) == [], (
+        "Expected clean golden trace to pass."
+    )
 
     broken_records = [
         {
@@ -125,6 +165,8 @@ def run_self_test() -> int:
             "status": "ok",
             "tools_called": ["raw_shell_root"],
             "retrieved_doc_ids": ["doc-a"],
+            "acl_trimmed": False,
+            "raw_prompt_logged": True,
             "assistant_response": "Hallucinated source [cite:doc-missing].",
             "input_tokens": 3000,
             "cached_tokens": 0,
@@ -132,14 +174,35 @@ def run_self_test() -> int:
         }
     ]
     errs = evaluate_trace(broken_records, max_p95_ms=10000)
-    assert len(errs) == 4, f"Expected 4 deterministic contract violations, got {errs}"
-    print("✅ agent_release_gate.py self-test PASSED (ARG001–ARG005 verified).")
+    assert len(errs) == 6, f"Expected 6 deterministic contract violations, got {errs}"
+
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as tmp:
+        json.dump(
+            {
+                "max_p95_ms": 12000,
+                "min_pass2_cached_tokens": 1024,
+                "required_tools": ["knowledge_base_retrieve"],
+                "forbidden_tools": ["raw_shell_root"],
+                "require_acl_trimming": True,
+                "forbid_raw_prompt_logging": True,
+            },
+            tmp,
+        )
+        tmp_path = Path(tmp.name)
+    try:
+        cfg = load_contract(tmp_path)
+        assert evaluate_trace(valid_records, **cfg) == []
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    print("✅ agent_release_gate.py self-test PASSED (ARG001–ARG007 + JSON contract verified).")
     return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Deterministic CI release gate for enterprise AI agents.")
     parser.add_argument("trace_path", nargs="?", help="Path to JSONL trace evidence file.")
+    parser.add_argument("--contract", help="Optional path to JSON acceptance contract file.")
     parser.add_argument("--max-p95-ms", type=float, default=15000.0, help="Maximum allowed p95 duration in ms.")
     parser.add_argument("--min-cached-tokens", type=int, default=1024, help="Minimum cached tokens on pass>=2.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON output.")
@@ -158,11 +221,19 @@ def main() -> int:
         return 2
 
     records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-    failures = evaluate_trace(
-        records,
-        max_p95_ms=args.max_p95_ms,
-        min_pass2_cached_tokens=args.min_cached_tokens,
-    )
+    if args.contract:
+        contract_file = Path(args.contract)
+        if not contract_file.is_file():
+            print(f"Error: contract file not found: {contract_file}", file=sys.stderr)
+            return 2
+        kwargs = load_contract(contract_file)
+    else:
+        kwargs = {
+            "max_p95_ms": args.max_p95_ms,
+            "min_pass2_cached_tokens": args.min_cached_tokens,
+        }
+
+    failures = evaluate_trace(records, **kwargs)
 
     if args.json:
         print(json.dumps({"passed": len(failures) == 0, "record_count": len(records), "failures": failures}, indent=2))

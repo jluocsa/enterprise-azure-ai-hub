@@ -61,11 +61,11 @@ Raw download: <a :href="withBase('/kits/bcp-failover-readiness-gate.kql')" downl
 
 ## 5. Deterministic Agent Release Contract CLI (`agent_release_gate.py`) {#agent-gate}
 
-Zero-dependency Python 3 CLI (`ARG001–ARG005`) verifying offline `trace.jsonl` evaluation runs for schema integrity, forbidden tool blocking, `100%` resolved `[cite:ID]` grounding, Pass-2 `cached_tokens >= 1,024` parity, and p95 latency budgets.
+Zero-dependency Python 3 CLI (`ARG001–ARG007`) verifying offline `trace.jsonl` evaluation runs against CLI flags or a JSON acceptance contract exported from the [Interactive Sandbox & Eval Contract Builder](/studio/#agent-eval)—checking schema integrity (`ARG001`), required/forbidden tool governance (`ARG002`), `100%` resolved `[cite:ID]` grounding (`ARG003`), Pass-2 `cached_tokens >= 1,024` parity (`ARG004`), p95 latency budgets (`ARG005`), Foundry IQ ACL security trimming (`ARG006`), and metadata-only OTel privacy (`ARG007`).
 
 ```bash
 python3 agent_release_gate.py --self-test
-python3 agent_release_gate.py ./artifacts/trace.jsonl --max-p95-ms 15000
+python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json
 ```
 
 Raw download: <a :href="withBase('/kits/agent_release_gate.py')" download target="_blank" rel="noopener"><strong><code>Download agent_release_gate.py</code></strong></a>
