@@ -25,6 +25,7 @@ import argparse
 import json
 import math
 import re
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -42,8 +43,57 @@ def percentile(values: list[float], pct: float) -> float:
     return ordered[idx]
 
 
+def validate_record(
+    rec: Any, row: int, *, require_acl_trimming: bool, forbid_raw_prompt_logging: bool
+) -> list[str]:
+    prefix = f"[ARG001] row-{row}:"
+    if not isinstance(rec, dict):
+        return [f"{prefix} execution record must be a JSON object."]
+
+    failures: list[str] = []
+    for field in ("case_id", "status", "assistant_response"):
+        value = rec.get(field)
+        if not isinstance(value, str) or (field != "assistant_response" and not value.strip()):
+            failures.append(f"{prefix} {field} must be a string (non-empty for identifiers/status).")
+
+    for field in ("tools_called", "retrieved_doc_ids"):
+        value = rec.get(field)
+        if not isinstance(value, list) or any(not isinstance(x, str) or not x.strip() for x in value):
+            failures.append(f"{prefix} {field} must be an array of non-empty strings.")
+
+    for field in ("pass_number", "input_tokens", "cached_tokens"):
+        value = rec.get(field)
+        minimum = 1 if field == "pass_number" else 0
+        if type(value) is not int or value < minimum:
+            failures.append(f"{prefix} {field} must be an integer >= {minimum}.")
+    if (
+        type(rec.get("input_tokens")) is int
+        and type(rec.get("cached_tokens")) is int
+        and rec["cached_tokens"] > rec["input_tokens"]
+    ):
+        failures.append(f"{prefix} cached_tokens must not exceed input_tokens.")
+
+    duration = rec.get("duration_ms")
+    if (
+        type(duration) not in (int, float)
+        or duration < 0
+        or (isinstance(duration, float) and not math.isfinite(duration))
+    ):
+        failures.append(f"{prefix} duration_ms must be a finite number >= 0.")
+
+    for field, required in (
+        ("acl_trimmed", require_acl_trimming and bool(rec.get("retrieved_doc_ids"))),
+        ("raw_prompt_logged", forbid_raw_prompt_logging),
+        ("otel_capture_message_content", False),
+    ):
+        if (required or field in rec) and type(rec.get(field)) is not bool:
+            failures.append(f"{prefix} {field} must be an explicit boolean.")
+
+    return failures
+
+
 def evaluate_trace(
-    records: list[dict[str, Any]],
+    records: list[Any],
     *,
     max_p95_ms: float = 15000.0,
     min_pass2_cached_tokens: int = 1024,
@@ -61,12 +111,20 @@ def evaluate_trace(
         return ["[ARG001] Trace file contains zero execution records."]
 
     for i, rec in enumerate(records, start=1):
-        case_id = str(rec.get("case_id", f"row-{i}"))
-        status = rec.get("status")
+        schema_failures = validate_record(
+            rec, i, require_acl_trimming=require_acl_trimming,
+            forbid_raw_prompt_logging=forbid_raw_prompt_logging,
+        )
+        if schema_failures:
+            failures.extend(schema_failures)
+            continue
+
+        case_id = rec["case_id"]
+        status = rec["status"]
         if status != "ok":
             failures.append(f"[ARG001] {case_id}: terminal status is '{status}' (expected 'ok').")
 
-        tools_used = [str(t) for t in (rec.get("tools_called") or [])]
+        tools_used = rec["tools_called"]
         for tool in tools_used:
             if tool in deny:
                 failures.append(f"[ARG002] {case_id}: invoked forbidden tool '{tool}'.")
@@ -74,8 +132,8 @@ def evaluate_trace(
             if req_tool not in tools_used:
                 failures.append(f"[ARG002] {case_id}: missing required tool invocation '{req_tool}'.")
 
-        answer = str(rec.get("assistant_response", ""))
-        retrieved = set(str(x) for x in (rec.get("retrieved_doc_ids") or []))
+        answer = rec["assistant_response"]
+        retrieved = set(rec["retrieved_doc_ids"])
         cited = CITATION_RE.findall(answer)
         for cid in cited:
             if cid not in retrieved:
@@ -83,9 +141,9 @@ def evaluate_trace(
                     f"[ARG003] {case_id}: unresolved inline citation '[cite:{cid}]' not in retrieved_doc_ids."
                 )
 
-        pass_num = int(rec.get("pass_number", 1))
-        input_tok = int(rec.get("input_tokens", 0))
-        cached_tok = int(rec.get("cached_tokens", 0))
+        pass_num = rec["pass_number"]
+        input_tok = rec["input_tokens"]
+        cached_tok = rec["cached_tokens"]
         if pass_num >= 2 and input_tok >= min_pass2_cached_tokens and cached_tok < min_pass2_cached_tokens:
             failures.append(
                 f"[ARG004] {case_id}: pass {pass_num} had {input_tok} input tokens but only {cached_tok} cached_tokens (<{min_pass2_cached_tokens})."
@@ -103,8 +161,7 @@ def evaluate_trace(
                 f"[ARG007] {case_id}: telemetry logged raw prompt/message content (violates Gate A12 metadata-only OTel)."
             )
 
-        if "duration_ms" in rec:
-            latencies.append(float(rec["duration_ms"]))
+        latencies.append(rec["duration_ms"])
 
     p95 = percentile(latencies, 95.0)
     if latencies and p95 > max_p95_ms:
@@ -158,6 +215,43 @@ def run_self_test() -> int:
         "Expected clean golden trace to pass."
     )
 
+    for malformed in (None, [], "not-an-object", 7, {"status": "ok"}):
+        errs = evaluate_trace([malformed])
+        assert errs and all(e.startswith("[ARG001]") for e in errs), errs
+
+    for field in valid_records[0]:
+        incomplete = {k: v for k, v in valid_records[0].items() if k != field}
+        errs = evaluate_trace([incomplete])
+        assert any(e.startswith("[ARG001]") and field in e for e in errs), (field, errs)
+
+    for field, values in (
+        ("case_id", ["", None, 1]),
+        ("status", [None, True]),
+        ("assistant_response", [None, {}]),
+        ("tools_called", ["knowledge_base_retrieve", [None], [7]]),
+        ("retrieved_doc_ids", ["policy-sec-04", [""]]),
+        ("pass_number", [0, -1, True, "2", 1.5]),
+        ("input_tokens", [-1, True, "4200", 4200.5]),
+        ("cached_tokens", [-1, False, "0", 0.5, 4201]),
+        ("duration_ms", [None, -1, True, "2100", math.nan, math.inf, -math.inf]),
+        ("acl_trimmed", [None, "true", 1]),
+        ("raw_prompt_logged", [None, "false", 0]),
+        ("otel_capture_message_content", [None, "false", 0]),
+    ):
+        for value in values:
+            errs = evaluate_trace([{**valid_records[0], field: value}])
+            assert any(e.startswith("[ARG001]") and field in e for e in errs), (field, value, errs)
+
+    no_retrieval = {**valid_records[0], "retrieved_doc_ids": [], "assistant_response": ""}
+    del no_retrieval["acl_trimmed"]
+    assert evaluate_trace([no_retrieval]) == []
+    del no_retrieval["raw_prompt_logged"]
+    assert evaluate_trace([no_retrieval], forbid_raw_prompt_logging=False) == []
+    no_acl = {k: v for k, v in valid_records[0].items() if k != "acl_trimmed"}
+    assert evaluate_trace([no_acl], require_acl_trimming=False) == []
+    assert evaluate_trace([{**valid_records[0], "duration_ms": 0.5}]) == []
+    assert evaluate_trace([])[0].startswith("[ARG001]")
+
     broken_records = [
         {
             "case_id": "bad-001",
@@ -195,7 +289,33 @@ def run_self_test() -> int:
     finally:
         tmp_path.unlink(missing_ok=True)
 
-    print("✅ agent_release_gate.py self-test PASSED (ARG001–ARG007 + JSON contract verified).")
+    with tempfile.TemporaryDirectory() as directory:
+        trace = Path(directory) / "trace.jsonl"
+        for evidence, expected_code in (
+            (valid_records, 0),
+            ([{"status": "ok"}], 1),
+            ([None], 1),
+            ([valid_records[0], {**valid_records[1], "duration_ms": math.nan}], 1),
+        ):
+            trace.write_text("\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace), "--json"],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == expected_code, result.stderr
+            output = json.loads(result.stdout)
+            assert output["passed"] is (expected_code == 0), output
+            if expected_code:
+                assert any(e.startswith("[ARG001]") for e in output["failures"]), output
+
+        trace.write_text(json.dumps(valid_records[0]) + "\n{broken\n", encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve()), str(trace), "--json"],
+            capture_output=True, text=True, check=False,
+        )
+        assert result.returncode == 2 and "[ARG001] line-2" in result.stderr, result
+
+    print("✅ agent_release_gate.py self-test PASSED (ARG001 fail-closed schema + ARG002–ARG007 + JSON contract/CLI verified).")
     return 0
 
 
@@ -220,7 +340,15 @@ def main() -> int:
         print(f"Error: file not found: {path}", file=sys.stderr)
         return 2
 
-    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    records: list[Any] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError:
+            print(f"Error: [ARG001] line-{line_number}: invalid JSON execution record.", file=sys.stderr)
+            return 2
     if args.contract:
         contract_file = Path(args.contract)
         if not contract_file.is_file():
