@@ -25,6 +25,8 @@ Zero-dependency Python 3 AST + regex scanner checking Python, TypeScript, JavaSc
 
 Scan-integrity failures (`PCR000`) return exit code `1` rather than a false-green result: missing/inaccessible targets, unsupported explicit file types, empty/excluded-only directories, unreadable/non-UTF-8 sources, and Python parse errors. Run `python pcr_lint.py --self-test` to exercise these failure paths and the six readiness rules; `--json` preserves structured findings for CI <span class="ev-badge ev-arch">[Arch]</span>.
 
+`PCR001` also rejects blank (empty or whitespace-only) and non-string **Python AST constants**, such as `None`, booleans, numbers, and bytes, on both `responses.create` and `chat.completions.create`. This is a local deterministic-routing readiness policy applied to matching calls regardless of model, not an Azure API requirement. The scanner inspects constant nodes without evaluating source expressions: names, calls, containers, arithmetic, concatenation, and f-strings are not resolved or certified by this check; the existing high-cardinality name heuristic still applies. Retain runtime assertions for computed keys. The self-test covers accepted strings, rejected constants, unevaluated expressions, and text/JSON CLI failures <span class="ev-badge ev-arch">[Arch]</span>.
+
 Raw download: <a :href="withBase('/kits/pcr_lint.py')" download target="_blank" rel="noopener"><strong><code>Download pcr_lint.py</code></strong></a>
 
 <<< @/public/kits/pcr_lint.py{python}
