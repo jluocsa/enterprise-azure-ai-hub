@@ -65,3 +65,21 @@ description: Structuring non-flaky CI/CD evaluation pipelines for tool-using and
 | **3. Offline Trace Contract Verification** | [`agent_release_gate.py`](/papers/engineering-kits#agent-gate) (`ARG001–ARG007`) + [`AgentEvalBuilder`](/studio/#agent-eval) | **Hard PR / Release Blocker** verifying JSON schema compliance (`ARG001`), required/forbidden tool governance (`ARG002`), `100%` resolved citation IDs (`ARG003`), Pass-2 `cached_tokens ≥ 1,024` (`ARG004`), p95 turn latency ceiling (`ARG005`), Foundry IQ ACL security trimming `acl_trimmed != false` (`ARG006`), and metadata-only OTel privacy `raw_prompt_logged == false` (`ARG007`). |
 | **4. Semantic Quality & Groundedness** | Azure AI Foundry Evaluation SDK (`GroundednessEvaluator`, `RelevanceEvaluator`, `TaskAdherenceEvaluator`) <span class="ev-badge ev-m">[M]</span> | **Release Cutover Gate** on nightly / pre-prod golden suite (`≤2%` score regression across model snapshot upgrades) <span class="ev-badge ev-agree">[Agree]</span>. |
 | **5. Multi-Turn Adversarial & Safety Red-Teaming** | Azure AI Content Safety + PyRIT / multi-turn safety baselines (`Indirect Prompt Injection`, `Cross-Tenant Probe`) <span class="ev-badge ev-m">[M]</span> | **Mandatory Pre-Cutover Sign-Off** (`0` critical jailbreaks or unauthorized tool invocations). |
+
+### Fail-Closed Trace Evidence (`ARG001`)
+
+<span class="ev-badge ev-arch">[Arch]</span> Every non-blank JSONL line must be a complete turn object. Missing evidence must block release rather than silently defaulting token counts to zero or omitting a turn from the latency sample.
+
+| Required field | Trace contract |
+| :--- | :--- |
+| `case_id`, `status` | Non-empty strings; terminal `status` must be `"ok"`. |
+| `assistant_response` | String; an empty answer is structurally valid, not proof of semantic quality. |
+| `tools_called`, `retrieved_doc_ids` | Arrays of non-empty strings; use `[]` when no tools/documents were involved. |
+| `pass_number` | Integer `>=1`; booleans, numeric strings, and fractional values are rejected. |
+| `input_tokens`, `cached_tokens` | Integers `>=0`, with `cached_tokens <= input_tokens`. |
+| `duration_ms` | Finite number `>=0` for every turn; missing values, `NaN`, and infinities are rejected. |
+| `acl_trimmed` | Explicit boolean required on non-empty retrievals when ACL enforcement is enabled; `false` triggers `ARG006`. |
+| `raw_prompt_logged` | Explicit boolean required when metadata-only telemetry enforcement is enabled; `true` triggers `ARG007`. |
+| `otel_capture_message_content` | Optional; must be a boolean when present and triggers `ARG007` when `true` under metadata-only enforcement. |
+
+All supplied ACL/privacy flags must be booleans even when their enforcement is disabled. Structurally invalid turns produce `ARG001` failures and exit `1` (including under `--json`); malformed JSON produces a line-numbered `ARG001` error on stderr and exit `2`. Diagnostics for malformed evidence identify the row/field without echoing raw turn content. The zero-dependency `python3 docs/public/kits/agent_release_gate.py --self-test` regression suite is included in `npm run verify`.
