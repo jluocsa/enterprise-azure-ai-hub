@@ -61,22 +61,24 @@ npm run docs:dev          # Launch local VitePress dev server with hot reload
 npm run deploy:pages      # Run full verification and publish static site to origin/gh-pages
 ```
 
-## Continuous Dual-Agent Improvement & Auto-Review Loop
+## Continuous Online GitHub Actions Dual-Agent Loop
 
-This repository includes a continuous, self-governing **Dual-Agent Industrialization Loop** (`scripts/auto-improve-daemon.mjs` + `.github/agents/`) managed by a macOS `LaunchAgent` (`com.jluocsa.enterprise-azure-ai-hub.auto-improve`):
+All autonomous improvement, PR review/auto-approval, squash-merging, and `gh-pages` publishing run **100% online in GitHub Actions (`ubuntu-latest`)** via `.github/workflows/autonomous-improvement-loop.yml`—nothing runs in the background on a local developer machine:
 
-1. **Author Agent (`hub-improver`):** Works in an isolated Git worktree on `improve/auto-YYYYMMDD-HHMM` (with hard `--deny-tool` blocks on `git push`, `gh`, and protected governance scripts), implements one surgical improvement, verifies `npm run verify`, and opens a Draft PR.
-2. **Independent ARB Reviewer Agent (`hub-arb-reviewer`):** Runs in strict read-only mode (`view`, `grep`, `glob` only) after outer deterministic gates pass (`check:sanitized` + `check:kits` + `docs:build` + protected-path verification). Emits a structured `<arb_verdict>` JSON scorecard; when approved, posts the review on the PR, marks it ready, squash-merges to `main`, and publishes the updated static site to `gh-pages`.
+1. **Author Agent (`hub-improver`):** Runs on GitHub-hosted `ubuntu-latest` VMs on a continuous 30-minute schedule + self-chaining dispatch, creates an isolated `improve/auto-YYYYMMDD-HHMMSS` branch, verifies `npm run verify`, and opens a Draft PR.
+2. **Built-In GitHub Actions ARB Auto-Approver (`hub-arb-reviewer` + `github-actions[bot]`):** Evaluates deterministic gates (`check:sanitized`, `check:kits`, `docs:build`, `check:links`) plus read-only `<arb_verdict>` review, posts an official `APPROVED` review as `github-actions[bot]`, marks the PR ready, squash-merges to `main`, and deploys `gh-pages`.
 
 ```bash
-npm run agent:install     # Install & start background macOS LaunchAgent (KeepAlive=true at login)
-npm run agent:status      # Inspect live PID, cycle count, merged PRs, and next scheduled run
-npm run agent:logs        # View recent daemon & ARB review logs
-npm run agent:review      # Run Phase A only (review, approve, merge & publish open auto PRs)
-npm run agent:once        # Run one complete review + improve + review/publish cycle manually
-npm run agent:pause       # Pause continuous loop safely between cycles
-npm run agent:resume      # Resume continuous loop
-npm run agent:uninstall   # Stop and remove the macOS LaunchAgent
+# Inspect online GitHub Actions runs & auto-merged PRs
+gh run list -R jluocsa/enterprise-azure-ai-hub --limit 10
+gh pr list -R jluocsa/enterprise-azure-ai-hub --state all --limit 10
+
+# Trigger an online cycle immediately on GitHub
+gh workflow run autonomous-improvement-loop.yml -R jluocsa/enterprise-azure-ai-hub -f mode=full-cycle
+
+# Pause or resume online continuous execution in 1 command
+gh variable set PAUSE_AUTO_IMPROVE --body true  -R jluocsa/enterprise-azure-ai-hub
+gh variable set PAUSE_AUTO_IMPROVE --body false -R jluocsa/enterprise-azure-ai-hub
 ```
 
 
