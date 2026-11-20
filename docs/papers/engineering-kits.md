@@ -76,12 +76,12 @@ Create `expected-stamps.json` from the approved deployment inventory, **not** fr
 ]
 ```
 
-Export the KQL results as a JSON **array of row objects** to `bcp-evidence.json` (not CSV or the Azure Monitor REST `tables` envelope). Each row must include `reqModel`, `stampRegion`, positive integer `TotalCalls`, and `SnapshotsObserved` as a JSON array, not a stringified array. Additional KQL columns are permitted:
+Export the KQL results as a JSON **array of row objects** to `bcp-evidence.json` (not CSV or the Azure Monitor REST `tables` envelope). Each row must include `reqModel`, `stampRegion`, positive integer `TotalCalls`, timezone-aware ISO 8601 `LastSeen`, and `SnapshotsObserved` as a JSON array, not a stringified array. Additional KQL columns are permitted:
 
 ```json
 [
-  {"reqModel": "model-a", "stampRegion": "eastus", "TotalCalls": 10, "SnapshotsObserved": ["snapshot-a"]},
-  {"reqModel": "model-a", "stampRegion": "westus", "TotalCalls": 10, "SnapshotsObserved": ["snapshot-a"]}
+  {"reqModel": "model-a", "stampRegion": "eastus", "TotalCalls": 10, "LastSeen": "2026-11-20T11:59:00Z", "SnapshotsObserved": ["snapshot-a"]},
+  {"reqModel": "model-a", "stampRegion": "westus", "TotalCalls": 10, "LastSeen": "2026-11-20T11:59:00Z", "SnapshotsObserved": ["snapshot-a"]}
 ]
 ```
 
@@ -90,9 +90,11 @@ python bcp_snapshot_gate.py bcp-evidence.json --expected expected-stamps.json
 python bcp_snapshot_gate.py --self-test
 ```
 
-The companion exits `1` for missing/duplicate/unexpected stamps, empty or malformed evidence rows, zero calls, unreported snapshots, within-stamp drift, or any mismatch with the pinned snapshot (including two regions drifting together). Invalid manifests, unreadable files, invalid UTF-8, and malformed JSON exit `2`; only complete pinned parity exits `0`. Scope the query/export to the declared models and drill window. The existing query groups by **model/region**, not deployment, so multiple same-region backends are not independently certified <span class="ev-badge ev-arch">[Arch]</span>.
+The query exports `LastSeen = max(TimeGenerated)` per model/region; [`TimeGenerated`](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/appdependencies#columns) is when the dependency call was recorded, and KQL [`max()`](https://learn.microsoft.com/en-us/kusto/query/max-aggregation-function?view=azure-monitor) returns the group's maximum <span class="ev-badge ev-m">[M]</span>. The companion compares each stamp's timestamp against one UTC clock reading at invocation, rejecting missing, invalid, timezone-less, future, or stale timestamps. The default **15-minute maximum age** is a local sign-off recommendation, **not an Azure service limit**; use `--max-age-minutes 30` (positive integer) only when the approved drill/probe cadence requires it <span class="ev-badge ev-agree">[Agree]</span>. The boundary is inclusive and explicit timezone offsets are normalized. The timestamps above illustrate the format only: export fresh telemetry before running the gate.
 
-This verifies the snapshot portion of `B2` and model/region evidence coverage for `B11`, **not** content-filter parity, telemetry authenticity/freshness, RTO, capacity, or all `B1–B12` controls. Continue the [Game-Day probes](/playbooks/multi-region-bcp/05-gameday-failover-drills) and review KQL error/cache metrics separately <span class="ev-badge ev-val">[Validate]</span>. `npm run verify` executes the companion's offline regression suite; it does not execute KQL against Azure.
+The companion exits `1` for missing/duplicate/unexpected stamps, empty or malformed evidence rows, zero calls, invalid/stale/future `LastSeen`, unreported snapshots, within-stamp drift, or any mismatch with the pinned snapshot (including two regions drifting together). Invalid manifests, freshness configuration, unreadable files, invalid UTF-8, and malformed JSON exit `2`; only complete fresh pinned parity exits `0`. Older exports without `LastSeen` must be regenerated with the updated query. Scope the query/export to the declared models and drill window. The existing query groups by **model/region**, not deployment, so multiple same-region backends are not independently certified <span class="ev-badge ev-arch">[Arch]</span>.
+
+This verifies the snapshot portion of `B2` and recent model/region evidence coverage for `B11`, **not** content-filter parity, telemetry authenticity, continuous availability, RTO, capacity, or all `B1–B12` controls. A recent timestamp does not authenticate an export or prove every call is recent; retain trusted telemetry provenance and clock synchronization. Continue the [Game-Day probes](/playbooks/multi-region-bcp/05-gameday-failover-drills) and review KQL error/cache metrics separately <span class="ev-badge ev-val">[Validate]</span>. `npm run verify` executes the companion's offline regression suite; it does not execute KQL against Azure.
 
 Companion download: <a :href="withBase('/kits/bcp_snapshot_gate.py')" download target="_blank" rel="noopener"><strong><code>Download bcp_snapshot_gate.py</code></strong></a>
 

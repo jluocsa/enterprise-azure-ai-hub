@@ -38,6 +38,8 @@ A per-region healthy KQL row cannot prove cross-region parity: two regions can e
 
 Send synthetic probes to the standby during the selected lookback window; absence of secondary evidence must block sign-off, not count as a healthy standby. Snapshot success does not validate content-filter parity or replace the live failover and stateful-continuity checks above <span class="ev-badge ev-val">[Validate]</span>.
 
+Freshness must be checked **per stamp**: an active primary must not hide an old secondary observation or a replayed export. The companion requires the updated query's `LastSeen` timestamp and rejects missing, timezone-less, future, or stale values <span class="ev-badge ev-arch">[Arch]</span>. Its default maximum age is **15 minutes**, configurable with a positive integer `--max-age-minutes` to match the approved probe cadence; this is a local readiness threshold, not an Azure guarantee <span class="ev-badge ev-agree">[Agree]</span>.
+
 ---
 
 ## 2. The 12-Point Multi-Region BCP Readiness Standard (`B1–B12`) `[Agree]`
