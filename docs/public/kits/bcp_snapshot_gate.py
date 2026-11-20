@@ -3,7 +3,8 @@
 
 Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
-Exit codes: 0 = snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
+Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
+LastSeen must be timezone-aware and no older than --max-age-minutes (default: 15).
 This checks B2 snapshot parity and B11 coverage, not the entire BCP readiness standard.
 """
 
@@ -11,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import subprocess
@@ -57,7 +59,13 @@ def validate_expected(raw: Any) -> dict[tuple[str, str], str]:
     return expected
 
 
-def evaluate_evidence(raw: Any, expected: dict[tuple[str, str], str]) -> list[str]:
+def evaluate_evidence(
+    raw: Any, expected: dict[tuple[str, str], str], *,
+    max_age_minutes: int = 15, now: datetime | None = None,
+) -> list[str]:
+    if type(max_age_minutes) is not int or max_age_minutes <= 0:
+        raise ValueError("max-age-minutes must be a positive integer")
+    now = now if now is not None else datetime.now(timezone.utc)
     if not isinstance(raw, list):
         return ["evidence must be a JSON array of KQL result objects"]
     failures: list[str] = []
@@ -79,6 +87,18 @@ def evaluate_evidence(raw: Any, expected: dict[tuple[str, str], str]) -> list[st
             failures.append(f"{prefix} unexpected model/region")
         if type(row.get("TotalCalls")) is not int or row["TotalCalls"] <= 0:
             failures.append(f"{prefix} TotalCalls must be a positive integer")
+        try:
+            last_seen = datetime.fromisoformat(identifier(row, "LastSeen").replace("Z", "+00:00"))
+            if last_seen.utcoffset() is None:
+                raise ValueError("timezone required")
+            age_seconds = (now - last_seen).total_seconds()
+        except (ValueError, OverflowError):
+            failures.append(f"{prefix} LastSeen must be an ISO 8601 timestamp with an explicit timezone")
+        else:
+            if age_seconds < 0:
+                failures.append(f"{prefix} LastSeen must not be in the future")
+            elif age_seconds > max_age_minutes * 60:
+                failures.append(f"{prefix} LastSeen exceeds the {max_age_minutes}-minute freshness limit")
         snapshots = row.get("SnapshotsObserved")
         if (
             not isinstance(snapshots, list)
@@ -95,6 +115,7 @@ def evaluate_evidence(raw: Any, expected: dict[tuple[str, str], str]) -> list[st
 
 class SnapshotGateTests(unittest.TestCase):
     def setUp(self):
+        self.now = datetime(2026, 11, 20, 12, 0, tzinfo=timezone.utc)
         self.manifest = [
             {"reqModel": "model-a", "stampRegion": region, "expectedSnapshot": "snapshot-a"}
             for region in ("eastus", "westus")
@@ -102,32 +123,33 @@ class SnapshotGateTests(unittest.TestCase):
         self.expected = validate_expected(self.manifest)
         self.rows = [
             {"reqModel": row["reqModel"], "stampRegion": row["stampRegion"],
-             "TotalCalls": 10, "SnapshotsObserved": ["snapshot-a"]}
+             "TotalCalls": 10, "SnapshotsObserved": ["snapshot-a"],
+             "LastSeen": (self.now - timedelta(minutes=1)).isoformat()}
             for row in self.manifest
         ]
 
     def test_pinned_parity_and_independent_models(self):
-        self.assertEqual(evaluate_evidence(self.rows, self.expected), [])
+        self.assertEqual(evaluate_evidence(self.rows, self.expected, now=self.now), [])
         other = [dict(row, reqModel="model-b", expectedSnapshot="snapshot-b")
                  for row in self.manifest]
         rows = self.rows + [dict(row, reqModel="model-b", SnapshotsObserved=["snapshot-b"])
                             for row in self.rows]
-        self.assertEqual(evaluate_evidence(rows, validate_expected(self.manifest + other)), [])
+        self.assertEqual(evaluate_evidence(rows, validate_expected(self.manifest + other), now=self.now), [])
 
     def test_cross_region_and_within_stamp_drift(self):
         for snapshots in (["snapshot-b"], ["snapshot-a", "snapshot-b"]):
             rows = deepcopy(self.rows)
             rows[1]["SnapshotsObserved"] = snapshots
             with self.subTest(snapshots=snapshots):
-                self.assertTrue(evaluate_evidence(rows, self.expected))
+                self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
         # Matching each other is insufficient when both stamps drift from the pin.
         rows = [dict(row, SnapshotsObserved=["snapshot-b"]) for row in self.rows]
-        self.assertEqual(len(evaluate_evidence(rows, self.expected)), 2)
+        self.assertEqual(len(evaluate_evidence(rows, self.expected, now=self.now)), 2)
 
     def test_missing_secondary_and_empty_evidence(self):
         for rows in (self.rows[:1], [], None, {}, [None]):
             with self.subTest(rows=rows):
-                self.assertTrue(evaluate_evidence(rows, self.expected))
+                self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
 
     def test_missing_or_malformed_telemetry(self):
         for field, values in {
@@ -135,21 +157,53 @@ class SnapshotGateTests(unittest.TestCase):
             "TotalCalls": [None, 0, -1, True, 1.5, "10"],
             "stampRegion": [None, "", "unknown-region", " westus"],
             "reqModel": [None, "", 42],
+            "LastSeen": [None, "", 42, True, [], {}, "not-a-time",
+                         "2026-11-20", "2026-11-20T11:59:00",
+                         "2026-11-20T11:59:00Z ", "2026-13-20T11:59:00Z"],
         }.items():
             for value in values:
                 rows = deepcopy(self.rows)
                 rows[1][field] = value
                 with self.subTest(field=field, value=value):
-                    self.assertTrue(evaluate_evidence(rows, self.expected))
+                    self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
             rows = deepcopy(self.rows)
             del rows[1][field]
-            self.assertTrue(evaluate_evidence(rows, self.expected))
+            self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
+
+    def test_freshness_boundaries_and_timezones(self):
+        for timestamp in ("2026-11-20T11:45:00Z", "2026-11-20T12:00:00+00:00",
+                          "2026-11-20T13:45:00+02:00", "2026-11-20T06:45:00-05:00"):
+            rows = [dict(row, LastSeen=timestamp) for row in self.rows]
+            with self.subTest(timestamp=timestamp):
+                self.assertEqual(evaluate_evidence(rows, self.expected, now=self.now), [])
+        for timestamp, message in (
+            ("2026-11-20T11:44:59.999999Z", "freshness limit"),
+            ("2026-11-20T12:00:00.000001Z", "future"),
+            ("2026-11-19T11:59:00Z", "freshness limit"),
+        ):
+            rows = deepcopy(self.rows)
+            rows[1]["LastSeen"] = timestamp
+            with self.subTest(timestamp=timestamp):
+                failures = evaluate_evidence(rows, self.expected, now=self.now)
+                self.assertEqual(len(failures), 1)
+                self.assertIn("evidence row-2: LastSeen", failures[0])
+                self.assertIn(message, failures[0])
+
+    def test_configurable_freshness_limit(self):
+        rows = [dict(row, LastSeen="2026-11-20T11:30:00Z") for row in self.rows]
+        self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
+        self.assertEqual(
+            evaluate_evidence(rows, self.expected, now=self.now, max_age_minutes=30), [],
+        )
+        for limit in (0, -1, True, 1.5, "15", None):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                evaluate_evidence(rows, self.expected, now=self.now, max_age_minutes=limit)
 
     def test_duplicate_and_unexpected_stamps(self):
         for extra in (self.rows[0], dict(self.rows[0], stampRegion="northeurope"),
                       dict(self.rows[0], reqModel="model-b")):
             with self.subTest(extra=extra):
-                self.assertTrue(evaluate_evidence(self.rows + [extra], self.expected))
+                self.assertTrue(evaluate_evidence(self.rows + [extra], self.expected, now=self.now))
 
     def test_invalid_manifests(self):
         for manifest in (
@@ -171,12 +225,45 @@ class SnapshotGateTests(unittest.TestCase):
             manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
             command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
                        "--expected", str(manifest)]
-            for content, code in ((json.dumps(self.rows), 0), ("[]", 1), ("{}", 1),
+            fresh_rows = [dict(row, LastSeen=(datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat())
+                          for row in self.rows]
+            for content, code in ((json.dumps(fresh_rows), 0), ("[]", 1), ("{}", 1),
                                   ("{", 2), ("\ufffd", 2)):
                 evidence.write_text(content, encoding="utf-8")
                 result = subprocess.run(command, capture_output=True, text=True, check=False)
                 self.assertEqual(result.returncode, code, result.stderr)
                 self.assertEqual("PASSED" in result.stdout, code == 0)
+            stale_rows = [dict(row, LastSeen=(datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat())
+                          for row in self.rows]
+            evidence.write_text(json.dumps(stale_rows), encoding="utf-8")
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("freshness limit", result.stderr)
+            self.assertNotIn("PASSED", result.stdout)
+            result = subprocess.run(command + ["--max-age-minutes", "60"],
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for timestamp, diagnostic in (
+                (None, "explicit timezone"),
+                ("not-a-time", "explicit timezone"),
+                ("2026-11-20T11:59:00", "explicit timezone"),
+                ((datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat(), "future"),
+            ):
+                rows = deepcopy(fresh_rows)
+                rows[1]["LastSeen"] = timestamp
+                evidence.write_text(json.dumps(rows), encoding="utf-8")
+                result = subprocess.run(command, capture_output=True, text=True, check=False)
+                with self.subTest(timestamp=timestamp):
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn("evidence row-2: LastSeen", result.stderr)
+                    self.assertIn(diagnostic, result.stderr)
+                    self.assertNotIn("Traceback", result.stderr)
+                    self.assertNotIn("PASSED", result.stdout)
+            for value in ("0", "-1", "1.5", "NaN"):
+                result = subprocess.run(command + ["--max-age-minutes", value],
+                                        capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 2)
+                self.assertNotIn("PASSED", result.stdout)
             evidence.write_bytes(b"\xff")
             self.assertEqual(subprocess.run(command, capture_output=True).returncode, 2)
             evidence.unlink()
@@ -191,6 +278,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("evidence", nargs="?", type=Path)
     parser.add_argument("--expected", type=Path)
+    parser.add_argument("--max-age-minutes", type=int, default=15,
+                        help="maximum age of each stamp's LastSeen timestamp (default: 15)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -201,14 +290,15 @@ def main() -> int:
     try:
         expected = validate_expected(json.loads(args.expected.read_text(encoding="utf-8")))
         raw = json.loads(args.evidence.read_text(encoding="utf-8"))
+        failures = evaluate_evidence(raw, expected, max_age_minutes=args.max_age_minutes)
     except (OSError, UnicodeError, ValueError) as error:
         print(f"BCP snapshot gate input error: {error}", file=sys.stderr)
         return 2
-    failures = evaluate_evidence(raw, expected)
     if failures:
         print("BCP snapshot gate FAILED:\n" + "\n".join(failures), file=sys.stderr)
         return 1
-    print(f"BCP snapshot gate PASSED ({len(expected)} expected model/region stamps; snapshot parity only).")
+    print(f"BCP snapshot gate PASSED ({len(expected)} expected model/region stamps; "
+          f"snapshot parity with evidence age <= {args.max_age_minutes} minutes only).")
     return 0
 
 

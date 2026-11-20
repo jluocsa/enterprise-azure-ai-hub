@@ -43,6 +43,7 @@ let RegionalPeak =
 Spans
 | summarize
     TotalCalls        = count(),
+    LastSeen          = max(TimeGenerated),
     DistinctSnapshots = dcount(resSnapshot),
     SnapshotsObserved = make_set(resSnapshot, 5),
     CachedSharePct    = round(100.0 * sum(cachedTok) / max_of(sum(inputTok), 1), 1),
@@ -61,6 +62,7 @@ Spans
     reqModel,
     stampRegion,
     TotalCalls,
+    LastSeen,
     SnapshotsObserved,
     CachedSharePct,
     PeakMinuteNormTPM,
