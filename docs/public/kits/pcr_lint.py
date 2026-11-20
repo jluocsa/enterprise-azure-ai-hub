@@ -22,6 +22,7 @@ from pathlib import Path
 
 SKIP_DIRS = {".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build"}
 TARGET_EXTS = {".py", ".ts", ".js", ".cs"}
+SELF_PATH = Path(__file__).resolve()
 
 VOLATILE_TOKENS_RE = re.compile(
     r"\b(datetime\.now|datetime\.utcnow|DateTime\.UtcNow|Date\.now|time\.time|uuid4|request_timestamp|req_ctx|request_ctx)\b"
@@ -172,9 +173,18 @@ def scan_text_patterns(path: Path, source: str) -> list[Finding]:
 
 
 def scan_path(target: Path) -> list[Finding]:
-    files = [target] if target.is_file() else [
-        p for p in target.rglob("*") if p.is_file() and p.suffix.lower() in TARGET_EXTS and not (set(p.parts) & SKIP_DIRS)
-    ]
+    files = (
+        [target]
+        if target.is_file()
+        else [
+            p
+            for p in target.rglob("*")
+            if p.is_file()
+            and p.resolve() != SELF_PATH
+            and p.suffix.lower() in TARGET_EXTS
+            and not (set(p.parts) & SKIP_DIRS)
+        ]
+    )
     all_findings: list[Finding] = []
     for f in sorted(files):
         text = f.read_text(encoding="utf-8", errors="ignore")
@@ -192,11 +202,49 @@ def scan_path(target: Path) -> list[Finding]:
     return unique
 
 
+def run_self_test() -> int:
+    clean_sample = (
+        'import json\n'
+        'def call_agent(client, tool_schemas):\n'
+        '    ordered = json.dumps(tool_schemas, sort_keys=True)\n'
+        '    res = client.responses.create(model="gpt-6-sol", prompt_cache_key="tax:scorer:v4:s0", input=ordered)\n'
+        '    return res.usage.input_tokens, res.usage.input_tokens_details.cached_tokens\n'
+    )
+    assert scan_python_ast(Path("clean.py"), clean_sample) == [], "Expected 0 AST findings on clean sample"
+    assert scan_text_patterns(Path("clean.py"), clean_sample) == [], "Expected 0 text findings on clean sample"
+
+    bad_sample = (
+        'import datetime, json\n'
+        'MODEL = "gpt-5.6-ptu"\n'
+        'sys_prompt = f"Now: {datetime.datetime.now()}"\n'
+        'frag = f"{rag_chunks} then {system_prompt}"\n'
+        'bp = {"prompt_cache_breakpoint": {"mode": "explicit"}}\n'
+        'raw_tools = json.dumps(tool_schema)\n'
+        'res = client.responses.create(model="gpt-5.6", input=raw_tools)\n'
+        'tok = res.usage.input_tokens\n'
+    )
+    rules = {
+        f.rule
+        for f in (scan_python_ast(Path("bad.py"), bad_sample) + scan_text_patterns(Path("bad.py"), bad_sample))
+    }
+    expected = {"PCR001", "PCR002", "PCR003", "PCR004", "PCR005", "PCR006"}
+    assert expected.issubset(rules), f"Expected all {expected}, got {rules}"
+    print("✅ pcr_lint.py self-test PASSED (PCR001–PCR006 verified).")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="PCR001-PCR006 static prompt-caching readiness linter.")
-    parser.add_argument("paths", nargs="+", help="Files or directories to scan")
+    parser.add_argument("paths", nargs="*", help="Files or directories to scan")
     parser.add_argument("--json", action="store_true", help="Emit findings as JSON")
+    parser.add_argument("--self-test", action="store_true", help="Run built-in PCR001-PCR006 self-tests")
     args = parser.parse_args()
+
+    if args.self_test:
+        return run_self_test()
+
+    if not args.paths:
+        parser.error("Provide one or more paths to scan, or pass --self-test.")
 
     findings: list[Finding] = []
     for raw in args.paths:

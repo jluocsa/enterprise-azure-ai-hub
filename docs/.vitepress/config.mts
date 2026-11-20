@@ -446,6 +446,10 @@ export default defineConfig({
           text: 'Connected Series & Tools',
           items: [
             {
+              text: 'Interactive Sandbox & Eval Builder',
+              link: '/studio/#agent-eval',
+            },
+            {
               text: 'Interactive 30-Min Multi-Track Triage',
               link: '/studio/#triage',
             },

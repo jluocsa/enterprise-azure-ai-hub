@@ -9,7 +9,10 @@ description: Structuring non-flaky CI/CD evaluation pipelines for tool-using and
   track="04 · Sandboxed Agentic Harness, Foundry IQ RAG & 7-Layer Evals"
   verified="2026-11-19 PST"
   status="Live v2.0"
+  studioHref="/studio/#agent-eval"
+  studioLabel="Eval Contract Builder →"
   kitHref="/papers/engineering-kits#agent-gate"
+  kitLabel="agent_release_gate.py →"
 />
 
 <PageBrief
@@ -59,6 +62,6 @@ description: Structuring non-flaky CI/CD evaluation pipelines for tool-using and
 | :--- | :--- | :--- |
 | **1. Static Prompt & Prefix Lint** | [`pcr_lint.py`](/papers/engineering-kits#pcr-linter) (`PCR001–PCR006`) | **Hard PR Blocker** (`0` violations). |
 | **2. Skill Routing & Trajectory Evals** | [`microsoft/waza`](https://github.com/microsoft/waza) skill evaluation tasks | **Hard PR Blocker** on expected skill invocation & required tool sequence. |
-| **3. Offline Trace Contract Verification** | [`agent_release_gate.py`](/papers/engineering-kits#agent-gate) over `trace.jsonl` | **Hard PR / Release Blocker** verifying JSON schema compliance, `100%` resolved citation IDs, `0` disallowed tool calls, p95 turn latency ceiling, and Pass-2 `cached_tokens ≥ 1,024`. |
+| **3. Offline Trace Contract Verification** | [`agent_release_gate.py`](/papers/engineering-kits#agent-gate) (`ARG001–ARG007`) + [`AgentEvalBuilder`](/studio/#agent-eval) | **Hard PR / Release Blocker** verifying JSON schema compliance (`ARG001`), required/forbidden tool governance (`ARG002`), `100%` resolved citation IDs (`ARG003`), Pass-2 `cached_tokens ≥ 1,024` (`ARG004`), p95 turn latency ceiling (`ARG005`), Foundry IQ ACL security trimming `acl_trimmed != false` (`ARG006`), and metadata-only OTel privacy `raw_prompt_logged == false` (`ARG007`). |
 | **4. Semantic Quality & Groundedness** | Azure AI Foundry Evaluation SDK (`GroundednessEvaluator`, `RelevanceEvaluator`, `TaskAdherenceEvaluator`) <span class="ev-badge ev-m">[M]</span> | **Release Cutover Gate** on nightly / pre-prod golden suite (`≤2%` score regression across model snapshot upgrades) <span class="ev-badge ev-agree">[Agree]</span>. |
 | **5. Multi-Turn Adversarial & Safety Red-Teaming** | Azure AI Content Safety + PyRIT / multi-turn safety baselines (`Indirect Prompt Injection`, `Cross-Tenant Probe`) <span class="ev-badge ev-m">[M]</span> | **Mandatory Pre-Cutover Sign-Off** (`0` critical jailbreaks or unauthorized tool invocations). |

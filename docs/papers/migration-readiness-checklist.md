@@ -96,7 +96,7 @@ description: Copy-ready Pull Request and Azure DevOps release sign-off templates
 - [ ] A6: Retrieved RAG chunks and dynamic turn metadata appended strictly at Pos 6
 - [ ] A7: Unbuffered AG-UI SSE event pipeline enforces explicit per-turn timeout & terminal states
 - [ ] A8: Modular skills pass automated trigger & trajectory evals (microsoft/waza or pytest)
-- [ ] A9: Deterministic contract gate (agent_release_gate.py ARG001–005) blocks PRs on violations
+- [ ] A9: Deterministic contract gate (agent_release_gate.py ARG001–007) blocks PRs on citation, ACL, OTel privacy, or cache-parity violations
 - [ ] A10: Calibrated Foundry Evals (Groundedness, Relevance, TaskAdherence) within <=2% baseline delta
 - [ ] A11: Indirect prompt-injection & cross-tenant red-team suite passes with 0 critical findings
 - [ ] A12: End-to-end W3C traceparent gen_ai.* spans active with CAPTURE_MESSAGE_CONTENT=false

@@ -9,7 +9,7 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "check:sanitized": "node scripts/check-sanitized.mjs",
-    "check:kits": "python3 docs/public/kits/pcr_lint.py --help >/dev/null && python3 docs/public/kits/agent_release_gate.py --self-test",
+    "check:kits": "python3 docs/public/kits/pcr_lint.py --self-test && python3 docs/public/kits/pcr_lint.py docs/public/kits && python3 docs/public/kits/agent_release_gate.py --self-test",
     "deploy:pages": "node scripts/deploy-gh-pages.mjs",
     "verify": "npm run check:sanitized && npm run check:kits && npm run docs:build",
     "check:daemon": "node scripts/auto-improve-daemon.mjs --self-test",

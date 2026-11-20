@@ -12,6 +12,8 @@ defineProps<{
   paperLabel?: string
   studioHref?: string
   studioLabel?: string
+  kitHref?: string
+  kitLabel?: string
   printable?: boolean
 }>()
 
@@ -50,6 +52,10 @@ function printPage() {
       <div v-if="studioHref" class="pb-pdf no-print">
         <span class="pb-label">Interactive Tool</span>
         <a :href="withBase(studioHref)">{{ studioLabel || 'Open Decision Studio →' }}</a>
+      </div>
+      <div v-if="kitHref" class="pb-pdf no-print">
+        <span class="pb-label">MIT Engineering Kit</span>
+        <a :href="withBase(kitHref)">{{ kitLabel || 'Open Executable Kit →' }}</a>
       </div>
       <div v-if="printable" class="pb-pdf no-print">
         <span class="pb-label">Offline / ARB Copy</span>
