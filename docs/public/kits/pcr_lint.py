@@ -2,6 +2,7 @@
 """PCR001-PCR006 Static Prompt-Caching Readiness Linter (Python AST + Regex).
 
 Zero-dependency CLI scanner for GPT-5.6, GPT-6, and GPT-6.1 migrations.
+PCR000 reports incomplete or invalid scans; all findings exit nonzero.
 Last verified: 2026-11-18 21:21 PST
 Usage:
     python pcr_lint.py ./src
@@ -15,10 +16,14 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 SKIP_DIRS = {".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build"}
 TARGET_EXTS = {".py", ".ts", ".js", ".cs"}
@@ -47,8 +52,8 @@ def scan_python_ast(path: Path, source: str) -> list[Finding]:
     findings: list[Finding] = []
     try:
         tree = ast.parse(source, filename=str(path))
-    except SyntaxError:
-        return findings
+    except SyntaxError as exc:
+        return [Finding("PCR000", path.as_posix(), exc.lineno or 1, f"Python syntax could not be parsed: {exc.msg}")]
 
     rel = path.as_posix()
     for node in ast.walk(tree):
@@ -173,21 +178,40 @@ def scan_text_patterns(path: Path, source: str) -> list[Finding]:
 
 
 def scan_path(target: Path) -> list[Finding]:
-    files = (
-        [target]
-        if target.is_file()
-        else [
-            p
-            for p in target.rglob("*")
-            if p.is_file()
-            and p.resolve() != SELF_PATH
-            and p.suffix.lower() in TARGET_EXTS
-            and not (set(p.parts) & SKIP_DIRS)
-        ]
-    )
     all_findings: list[Finding] = []
+    files: list[Path] = []
+
+    def traversal_error(exc: OSError) -> None:
+        all_findings.append(
+            Finding("PCR000", Path(exc.filename or target).as_posix(), 1, f"Cannot enumerate scan directory: {exc}")
+        )
+
+    if target.is_file():
+        if target.suffix.lower() not in TARGET_EXTS:
+            return [Finding("PCR000", target.as_posix(), 1, "Unsupported scan file; expected .py, .ts, .js, or .cs.")]
+        files = [target]
+    elif target.is_dir():
+        if target.name in SKIP_DIRS:
+            return [Finding("PCR000", target.as_posix(), 1, "Scan target is an excluded directory.")]
+        for root, dirs, names in os.walk(target, onerror=traversal_error):
+            dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+            files.extend(
+                p for name in names
+                if (p := Path(root) / name).suffix.lower() in TARGET_EXTS
+                and p.resolve() != SELF_PATH
+            )
+    else:
+        return [Finding("PCR000", target.as_posix(), 1, "Scan target does not exist or is not an accessible file/directory.")]
+
+    if not files and not all_findings:
+        return [Finding("PCR000", target.as_posix(), 1, "No supported source files found after scan exclusions.")]
+
     for f in sorted(files):
-        text = f.read_text(encoding="utf-8", errors="ignore")
+        try:
+            text = f.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            all_findings.append(Finding("PCR000", f.as_posix(), 1, f"Cannot read source as UTF-8: {exc}"))
+            continue
         if f.suffix.lower() == ".py":
             all_findings.extend(scan_python_ast(f, text))
         all_findings.extend(scan_text_patterns(f, text))
@@ -229,15 +253,73 @@ def run_self_test() -> int:
     }
     expected = {"PCR001", "PCR002", "PCR003", "PCR004", "PCR005", "PCR006"}
     assert expected.issubset(rules), f"Expected all {expected}, got {rules}"
-    print("✅ pcr_lint.py self-test PASSED (PCR001–PCR006 verified).")
+
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        clean = root / "clean.py"
+        clean.write_text(clean_sample, encoding="utf-8")
+        broken = root / "broken.py"
+        broken.write_text("def broken(:\n", encoding="utf-8")
+        invalid_utf8 = root / "invalid.py"
+        invalid_utf8.write_bytes(b"\xff")
+        unsupported = root / "notes.txt"
+        unsupported.write_text("Not source code.", encoding="utf-8")
+        empty = root / "empty"
+        empty.mkdir()
+        excluded = root / "excluded"
+        (excluded / "node_modules").mkdir(parents=True)
+        (excluded / "node_modules" / "broken.py").write_text("def broken(:\n", encoding="utf-8")
+        mixed = root / "mixed"
+        mixed.mkdir()
+        (mixed / "clean.py").write_text(clean_sample, encoding="utf-8")
+        (mixed / "broken.py").write_text("def broken(:\n", encoding="utf-8")
+        multi = root / "multi"
+        multi.mkdir()
+        for suffix in (".py", ".ts", ".js", ".cs"):
+            (multi / f"clean{suffix}").write_text("", encoding="utf-8")
+        (multi / "node_modules").mkdir()
+        (multi / "node_modules" / "broken.py").write_text("def broken(:\n", encoding="utf-8")
+
+        for target in (
+            root / "missing", empty, excluded, excluded / "node_modules",
+            unsupported, broken, invalid_utf8, mixed, clean, multi,
+        ):
+            should_pass = target in (clean, multi)
+            result = subprocess.run(
+                [sys.executable, str(SELF_PATH), str(target), "--json"],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            assert result.returncode == (0 if should_pass else 1), (target.name, result.stderr)
+            findings = json.loads(result.stdout)
+            if should_pass:
+                assert findings == [], findings
+            else:
+                assert any(f["rule"] == "PCR000" for f in findings), findings
+
+        result = subprocess.run(
+            [sys.executable, str(SELF_PATH), str(clean), str(root / "missing")],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+        assert result.returncode == 1 and "[PCR000]" in result.stdout, result
+        assert "PASSED" not in result.stdout, result.stdout
+        with patch.object(Path, "read_text", side_effect=PermissionError("read denied")):
+            assert scan_path(clean)[0].rule == "PCR000"
+        with patch.object(os, "walk") as walk:
+            def denied_walk(target, onerror):
+                onerror(PermissionError(13, "enumeration denied", str(target)))
+                return iter(())
+            walk.side_effect = denied_walk
+            assert scan_path(empty)[0].rule == "PCR000"
+
+    print("✅ pcr_lint.py self-test PASSED (PCR000 fail-closed scans + PCR001–PCR006 verified).")
     return 0
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="PCR001-PCR006 static prompt-caching readiness linter.")
+    parser = argparse.ArgumentParser(description="PCR001-PCR006 static prompt-caching readiness linter; PCR000 scan failures.")
     parser.add_argument("paths", nargs="*", help="Files or directories to scan")
     parser.add_argument("--json", action="store_true", help="Emit findings as JSON")
-    parser.add_argument("--self-test", action="store_true", help="Run built-in PCR001-PCR006 self-tests")
+    parser.add_argument("--self-test", action="store_true", help="Run built-in scan integrity and PCR001-PCR006 self-tests")
     args = parser.parse_args()
 
     if args.self_test:
@@ -255,7 +337,7 @@ def main() -> int:
     elif findings:
         for f in findings:
             print(f"{f.file}:{f.line}: [{f.rule}] {f.message}")
-        print(f"\nFAILED: {len(findings)} prompt-caching readiness issue(s) detected.")
+        print(f"\nFAILED: {len(findings)} scan integrity or prompt-caching readiness issue(s) detected.")
     else:
         print("PASSED: 0 PCR001-PCR006 violations detected.")
 

@@ -66,6 +66,8 @@ Prevent un-cached code from promoting by enforcing two automated checks in pull-
 
 Preview and copy the full zero-dependency CLI scanner on the [Copy-Ready Engineering Kits](/papers/engineering-kits#pcr-linter) page (or download <a :href="withBase('/kits/pcr_lint.py')" download target="_blank" rel="noopener"><code>pcr_lint.py</code></a> directly: `python3 pcr_lint.py ./src`).
 
+The scanner fails closed with `PCR000` and exit code `1` for missing/inaccessible targets, unsupported explicit files, directories with no eligible sources, unreadable/non-UTF-8 files, or invalid Python syntax. Directory scans exclude generated/dependency folders such as `node_modules` and `.venv`, and the linter itself; a clean file does not mask another target's failure. `--json` includes these diagnostics in the same finding array as readiness defects <span class="ev-badge ev-arch">[Arch]</span>. This validates scan integrity, not TypeScript/JavaScript/C# syntax or runtime cache behavior; retain native build checks and Layer 2 probes.
+
 | Rule ID | Defect Flagged | AST / Regex Detection Specification (Python, C#, TypeScript) | Readiness Item |
 | :--- | :--- | :--- | :--- |
 | `PCR001` | Missing or high-cardinality `prompt_cache_key` | Calls to `responses.create` / `chat.completions.create` on `gpt-5.6*` or `gpt-6*` missing `prompt_cache_key`, or interpolating `user_id`, `request_id`, `uuid4()`, `engagement_id`, `matter_id`, `client_id`, or `cost_center` into the key. | `C6`, `C7` |
