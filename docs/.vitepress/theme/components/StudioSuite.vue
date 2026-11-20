@@ -111,6 +111,7 @@ watch(
           <button
             v-for="t in tabs"
             :key="t.id"
+            :id="t.id"
             type="button"
             role="tab"
             :aria-selected="activeTab === t.id"
