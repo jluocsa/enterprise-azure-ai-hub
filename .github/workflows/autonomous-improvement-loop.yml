@@ -1,0 +1,120 @@
+name: Autonomous Improvement & Auto-Approve Agent
+
+# Continuous, non-stop governed improvement & auto-approval pipeline on GitHub Actions:
+#   1. Schedule Watchdog: Fires automatically every 30 minutes (24/7).
+#   2. PR Auto-Reviewer: Fires whenever an `improve/auto-*` PR opens/updates;
+#      uses `secrets.GITHUB_TOKEN` (`github-actions[bot]`) to post an official
+#      `APPROVED` PR review, mark Ready, squash-merge, and publish `gh-pages`.
+#   3. Continuous Self-Chain: At the end of each cycle (unless `vars.PAUSE_AUTO_IMPROVE == 'true'`),
+#      schedules the next GitHub Actions cycle after a polite cooldown so the loop runs continuously.
+#
+# Quick Pause / Resume:
+#   gh variable set PAUSE_AUTO_IMPROVE --body true  -R jluocsa/enterprise-azure-ai-hub
+#   gh variable set PAUSE_AUTO_IMPROVE --body false -R jluocsa/enterprise-azure-ai-hub
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Execution mode (full-cycle | review-only | improve-only)'
+        required: false
+        default: 'full-cycle'
+        type: choice
+        options:
+          - full-cycle
+          - review-only
+          - improve-only
+      auto_chain:
+        description: 'Automatically trigger the next GitHub Actions cycle on completion'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: autonomous-hub-loop
+  cancel-in-progress: false
+
+jobs:
+  continuous-agent-cycle:
+    name: Dual-Agent Improve, ARB Auto-Approve & Merge
+    if: >-
+      vars.PAUSE_AUTO_IMPROVE != 'true' &&
+      (github.event_name != 'pull_request' || startsWith(github.head_ref, 'improve/auto-'))
+    runs-on: ${{ fromJSON(vars.HUB_RUNNERS || '["self-hosted", "hub-agent"]') }}
+    timeout-minutes: 25
+    env:
+      PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+      HUB_GITHUB_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout Repository (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.HUB_AUTOMATION_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Install Dependencies
+        run: npm ci --registry https://registry.npmjs.org
+
+      - name: Copy Local Sanitization Denylist (if present on host)
+        run: |
+          if [ -f "/Users/Apple/GitHub/jluocsa/enterprise-azure-ai-hub/.sanitize-local.txt" ]; then
+            cp "/Users/Apple/GitHub/jluocsa/enterprise-azure-ai-hub/.sanitize-local.txt" .sanitize-local.txt
+          fi
+
+      - name: Run Dual-Agent Cycle (Author + github-actions[bot] Auto-Approver)
+        env:
+          # Author & Copilot CLI token (@jluocsa)
+          GH_TOKEN: ${{ secrets.HUB_AUTOMATION_PAT || secrets.GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.HUB_AUTOMATION_PAT }}
+          # Distinct Reviewer Identity (`github-actions[bot]`) for official `--approve` PR review!
+          AUTO_REVIEWER_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "jluocsa"
+          git config user.email "103165870+jluocsa@users.noreply.github.com"
+
+          if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ inputs.mode }}" = "review-only" ]; then
+            node scripts/auto-improve-daemon.mjs --review-only
+          elif [ "${{ inputs.mode }}" = "improve-only" ]; then
+            node scripts/auto-improve-daemon.mjs --improve-only
+          else
+            node scripts/auto-improve-daemon.mjs --once
+          fi
+
+      - name: Clean Ephemeral Denylist
+        if: always()
+        run: rm -f .sanitize-local.txt
+
+      - name: Self-Chain Next Continuous GitHub Actions Cycle
+        if: >-
+          success() &&
+          github.event_name != 'pull_request' &&
+          vars.PAUSE_AUTO_IMPROVE != 'true' &&
+          inputs.mode != 'review-only' &&
+          inputs.mode != 'improve-only' &&
+          (github.event_name == 'schedule' || inputs.auto_chain != false)
+        env:
+          GH_TOKEN: ${{ secrets.HUB_AUTOMATION_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          COOLDOWN="${{ vars.AUTO_CHAIN_COOLDOWN_SEC || '90' }}"
+          echo "Cooling down ${COOLDOWN}s before dispatching next continuous GitHub Actions cycle..."
+          sleep "$COOLDOWN"
+          if [ "$(gh variable get PAUSE_AUTO_IMPROVE -R "${{ github.repository }}" 2>/dev/null || echo false)" = "true" ]; then
+            echo "PAUSE_AUTO_IMPROVE=true detected during cooldown; halting chain cleanly."
+            exit 0
+          fi
+          gh workflow run autonomous-improvement-loop.yml \
+            -R "${{ github.repository }}" \
+            -f mode=full-cycle \
+            -f auto_chain=true
+          echo "✅ Next continuous GitHub Actions cycle dispatched."
