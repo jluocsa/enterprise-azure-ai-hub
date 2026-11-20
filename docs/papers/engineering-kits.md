@@ -55,9 +55,42 @@ Raw download: <a :href="withBase('/kits/apim-foundry-spillover-policy.xml')" dow
 
 Audits multi-region stamp traffic distribution, model snapshot drift (`DistinctSnapshots`), `ColdCacheSurgeRatio` during regional cutovers, and zero escaped `429`/`5xx` errors during Game-Day drills.
 
+The query evaluates **observed stamps only**: a healthy row does not establish cross-region parity or prove that a silent secondary exists. Use the zero-dependency Python companion below to verify exported result objects against a separately maintained expected-stamp manifest <span class="ev-badge ev-arch">[Arch]</span>.
+
 Raw download: <a :href="withBase('/kits/bcp-failover-readiness-gate.kql')" download target="_blank" rel="noopener"><strong><code>Download bcp-failover-readiness-gate.kql</code></strong></a>
 
 <<< @/public/kits/bcp-failover-readiness-gate.kql{kusto}
+
+### Fail-Closed Cross-Region Snapshot Evidence
+
+Create `expected-stamps.json` from the approved deployment inventory, **not** from observed traffic. Declare every expected model/region pair, with at least two distinct regions per model and one identical pinned snapshot across its regions. `reqModel` must match the request-model value emitted by your instrumentation; the sample names below are placeholders <span class="ev-badge ev-arch">[Arch]</span>.
+
+```json
+[
+  {"reqModel": "model-a", "stampRegion": "eastus", "expectedSnapshot": "snapshot-a"},
+  {"reqModel": "model-a", "stampRegion": "westus", "expectedSnapshot": "snapshot-a"}
+]
+```
+
+Export the KQL results as a JSON **array of row objects** to `bcp-evidence.json` (not CSV or the Azure Monitor REST `tables` envelope). Each row must include `reqModel`, `stampRegion`, positive integer `TotalCalls`, and `SnapshotsObserved` as a JSON array, not a stringified array. Additional KQL columns are permitted:
+
+```json
+[
+  {"reqModel": "model-a", "stampRegion": "eastus", "TotalCalls": 10, "SnapshotsObserved": ["snapshot-a"]},
+  {"reqModel": "model-a", "stampRegion": "westus", "TotalCalls": 10, "SnapshotsObserved": ["snapshot-a"]}
+]
+```
+
+```bash
+python bcp_snapshot_gate.py bcp-evidence.json --expected expected-stamps.json
+python bcp_snapshot_gate.py --self-test
+```
+
+The companion exits `1` for missing/duplicate/unexpected stamps, empty or malformed evidence rows, zero calls, unreported snapshots, within-stamp drift, or any mismatch with the pinned snapshot (including two regions drifting together). Invalid manifests, unreadable files, invalid UTF-8, and malformed JSON exit `2`; only complete pinned parity exits `0`. Scope the query/export to the declared models and drill window. The existing query groups by **model/region**, not deployment, so multiple same-region backends are not independently certified <span class="ev-badge ev-arch">[Arch]</span>.
+
+This verifies the snapshot portion of `B2` and model/region evidence coverage for `B11`, **not** content-filter parity, telemetry authenticity/freshness, RTO, capacity, or all `B1–B12` controls. Continue the [Game-Day probes](/playbooks/multi-region-bcp/05-gameday-failover-drills) and review KQL error/cache metrics separately <span class="ev-badge ev-val">[Validate]</span>. `npm run verify` executes the companion's offline regression suite; it does not execute KQL against Azure.
+
+Companion download: <a :href="withBase('/kits/bcp_snapshot_gate.py')" download target="_blank" rel="noopener"><strong><code>Download bcp_snapshot_gate.py</code></strong></a>
 
 ---
 

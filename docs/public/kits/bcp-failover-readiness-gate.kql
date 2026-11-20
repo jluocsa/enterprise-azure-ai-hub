@@ -4,6 +4,8 @@
 // Purpose:  Audits multi-region Microsoft Foundry stamp health, snapshot drift,
 //           cold-cache failover surge TPM, and HTTP 429 escape rate during
 //           Game-Day drills or live regional cutovers.
+// Export result objects to bcp_snapshot_gate.py with an expected-stamp manifest
+// to verify cross-region pinned snapshot parity and detect missing secondaries.
 // ============================================================================
 
 let lookback = 2h;
@@ -53,7 +55,7 @@ Spans
         Escaped429Count > 0 or Escaped5xxCount > 0, "FAIL: Client-Visible 429/5xx During Cutover",
         DistinctSnapshots > 1, "WARN: Model Snapshot Drift Detected Within Stamp",
         CachedSharePct < steadyCachedHitTargetPct and TotalCalls > 50, "INFO: Secondary KV Cache Still Warming (<60%)",
-        "PASS: Multi-Region Stamp Healthy & Parity Verified"
+        "PASS: Observed Stamp Healthy; Cross-Region Parity Requires Snapshot Gate"
     )
 | project
     reqModel,
