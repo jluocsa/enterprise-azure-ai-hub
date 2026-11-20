@@ -15,13 +15,13 @@
     </set-header>
 
     <!-- 2. Extract FinOps Chargeback Header Out-of-Band & Strip Before Upstream Forwarding -->
-    <set-variable name="costCenter" value="@(context.Request.Headers.GetValueOrDefault("x-cost-center", "unallocated"))" />
+    <set-variable name="costCenter" value="@(context.Request.Headers.GetValueOrDefault(&quot;x-cost-center&quot;, &quot;unallocated&quot;))" />
     <set-header name="x-cost-center" exists-action="delete" />
 
     <!-- 3. Emit Multi-Dimension Token Metrics & Enforce Per-Subscription TPM Cap -->
     <azure-openai-emit-token-metric namespace="foundry-ai-gateway">
       <dimension name="SubscriptionId" value="@(context.Subscription.Id)" />
-      <dimension name="CostCenter" value="@((string)context.Variables["costCenter"])" />
+      <dimension name="CostCenter" value="@((string)context.Variables[&quot;costCenter&quot;])" />
     </azure-openai-emit-token-metric>
     <azure-openai-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="450000" estimate-prompt-tokens="true" />
 
@@ -30,14 +30,14 @@
 
     <!-- 5. SKU-Aware Guard: Strip Unsupported Breakpoint Fields When Targeting GPT-5.6 PTU-M -->
     <choose>
-      <when condition="@(context.Request.Headers.GetValueOrDefault("x-target-regime", "gpt-5.6-ptu") == "gpt-5.6-ptu")">
+      <when condition="@(context.Request.Headers.GetValueOrDefault(&quot;x-target-regime&quot;, &quot;gpt-5.6-ptu&quot;) == &quot;gpt-5.6-ptu&quot;)">
         <set-body>@{
-          var body = context.Request.Body.As<JObject>(preserveContent: true);
+          var body = context.Request.Body.As&lt;JObject&gt;(preserveContent: true);
           body.Remove("prompt_cache_options");
           if (body["input"] is JArray items) {
-            foreach (var msg in items.OfType<JObject>()) {
+            foreach (var msg in items.OfType&lt;JObject&gt;()) {
               if (msg["content"] is JArray parts) {
-                foreach (var part in parts.OfType<JObject>()) {
+                foreach (var part in parts.OfType&lt;JObject&gt;()) {
                   part.Remove("prompt_cache_breakpoint");
                 }
               }

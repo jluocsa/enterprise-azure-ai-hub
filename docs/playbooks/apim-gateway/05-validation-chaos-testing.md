@@ -20,6 +20,12 @@ description: Pre-production verification protocol for testing APIM Retry-After c
   csaUse="Run Steps 1–4 during Week 2/3 staging sign-off and paste G1–G12 into the gateway infrastructure pull request."
 />
 
+## 0. Offline Policy XML Preflight
+
+APIM policy expressions use C# inside XML attributes or element text ([Microsoft Learn policy expression syntax](https://learn.microsoft.com/en-us/azure/api-management/api-management-policy-expressions)) <span class="ev-badge ev-m">[M]</span>. Encode embedded attribute quotes as `&quot;` and C# generic brackets as `&lt;` / `&gt;`; XML parsing restores the original expression.
+
+Run `npm run verify` before staging: its `check:apim` gate parses both the downloadable policy and the built Studio's default copyable XML, rejecting malformed expressions, missing artifacts, and missing rendered policy output <span class="ev-badge ev-arch">[Arch]</span>. This checks XML well-formedness only, not APIM policy schema, C# compilation, alternate Studio settings, or live backend behavior; the staging probes below remain required <span class="ev-badge ev-val">[Validate]</span>.
+
 ## 1. Four-Step Staging Fault-Injection Protocol `[Validate]`
 
 1. **Step 1 — Synthetic `429 Retry-After` Trip Test:** Temporarily route Priority-1 to a mock APIM endpoint (or minimal 15-PTU canary deployment under synthetic burst) returning `HTTP 429` with `Retry-After: 25`. Verify:

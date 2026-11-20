@@ -24,7 +24,7 @@ const policyXml = computed(() => {
   if (stripFinopsHeader.value) {
     lines.push(
       `    <!-- 2. Out-of-Band FinOps Chargeback (Preserve Shared Prefix Cache Keys) -->`,
-      `    <set-variable name="costCenter" value="@(context.Request.Headers.GetValueOrDefault("x-cost-center", "unallocated"))" />`,
+      `    <set-variable name="costCenter" value="@(context.Request.Headers.GetValueOrDefault(&quot;x-cost-center&quot;, &quot;unallocated&quot;))" />`,
       `    <set-header name="x-cost-center" exists-action="delete" />`
     )
   }
@@ -34,7 +34,7 @@ const policyXml = computed(() => {
       `    <!-- 3. Tenant / Practice Token Quota & OTel Metric Emission -->`,
       `    <azure-openai-emit-token-metric namespace="foundry-ai-gateway">`,
       `      <dimension name="SubscriptionId" value="@(context.Subscription.Id)" />`,
-      ...(stripFinopsHeader.value ? [`      <dimension name="CostCenter" value="@((string)context.Variables["costCenter"])" />`] : []),
+      ...(stripFinopsHeader.value ? [`      <dimension name="CostCenter" value="@((string)context.Variables[&quot;costCenter&quot;])" />`] : []),
       `    </azure-openai-emit-token-metric>`,
       `    <azure-openai-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${tokenLimitTpm.value}" estimate-prompt-tokens="true" />`
     )
@@ -49,12 +49,12 @@ const policyXml = computed(() => {
     lines.push(
       `    <!-- 5. SKU-Aware Guard: Strip Unsupported Breakpoints on GPT-5.6 PTU-M Primary Leg -->`,
       `    <set-body>@{`,
-      `      var body = context.Request.Body.As<JObject>(preserveContent: true);`,
+      `      var body = context.Request.Body.As&lt;JObject&gt;(preserveContent: true);`,
       `      body.Remove("prompt_cache_options");`,
       `      if (body["input"] is JArray items) {`,
-      `        foreach (var msg in items.OfType<JObject>()) {`,
+      `        foreach (var msg in items.OfType&lt;JObject&gt;()) {`,
       `          if (msg["content"] is JArray parts) {`,
-      `            foreach (var part in parts.OfType<JObject>()) {`,
+      `            foreach (var part in parts.OfType&lt;JObject&gt;()) {`,
       `              part.Remove("prompt_cache_breakpoint");`,
       `            }`,
       `          }`,
