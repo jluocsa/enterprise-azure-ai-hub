@@ -46,14 +46,13 @@ concurrency:
 
 jobs:
   continuous-agent-cycle:
-    name: Dual-Agent Improve, ARB Auto-Approve & Merge
+    name: Dual-Agent Improve, ARB Auto-Approve & Merge (GitHub Cloud)
     if: >-
       vars.PAUSE_AUTO_IMPROVE != 'true' &&
       (github.event_name != 'pull_request' || startsWith(github.head_ref, 'improve/auto-'))
-    runs-on: ${{ fromJSON(vars.HUB_RUNNERS || '["self-hosted", "hub-agent"]') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
       HUB_GITHUB_REPO: ${{ github.repository }}
     steps:
       - name: Checkout Repository (main)
@@ -63,13 +62,26 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.HUB_AUTOMATION_PAT || secrets.GITHUB_TOKEN }}
 
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Install Dependencies
         run: npm ci --registry https://registry.npmjs.org
 
-      - name: Copy Local Sanitization Denylist (if present on host)
+      - name: Load Sanitization Denylist Secret (if configured)
+        env:
+          SANITIZE_LOCAL_DENYLIST: ${{ secrets.SANITIZE_LOCAL_DENYLIST }}
         run: |
-          if [ -f "/Users/Apple/GitHub/jluocsa/enterprise-azure-ai-hub/.sanitize-local.txt" ]; then
-            cp "/Users/Apple/GitHub/jluocsa/enterprise-azure-ai-hub/.sanitize-local.txt" .sanitize-local.txt
+          if [ -n "$SANITIZE_LOCAL_DENYLIST" ]; then
+            printf '%s\n' "$SANITIZE_LOCAL_DENYLIST" > .sanitize-local.txt
           fi
 
       - name: Run Dual-Agent Cycle (Author + github-actions[bot] Auto-Approver)
