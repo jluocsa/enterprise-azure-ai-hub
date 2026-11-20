@@ -32,6 +32,12 @@ description: Repeatable quarterly Game-Day failover protocol, model snapshot par
 4. **Stateful Turn Continuity Test (`T + 15 min`):** Start a multi-turn agent thread in Stamp A, force mid-conversation failover to Stamp B, upload/query a grounded document, and verify zero Cosmos DB checkpoint loss and valid AI Search citations.
 5. **Failback & Evidence Sign-Off (`T + 30 min`):** Restore Priority-1 routing to Stamp A, verify automatic circuit-breaker healing, and export the KQL drill record for Risk/Audit retention.
 
+### Snapshot Evidence Must Include the Expected Secondary
+
+A per-region healthy KQL row cannot prove cross-region parity: two regions can each report one **different** snapshot, and a silent secondary emits no row at all. Before `B2`/`B11` sign-off, run the [offline snapshot companion gate](/papers/engineering-kits#fail-closed-cross-region-snapshot-evidence) on the drill's exported KQL result objects against an independently approved model/region manifest. It requires positive call evidence from every expected region and an exact match to the pinned snapshot, rejecting unknown snapshots, duplicates, and unexpected stamps <span class="ev-badge ev-arch">[Arch]</span>.
+
+Send synthetic probes to the standby during the selected lookback window; absence of secondary evidence must block sign-off, not count as a healthy standby. Snapshot success does not validate content-filter parity or replace the live failover and stateful-continuity checks above <span class="ev-badge ev-val">[Validate]</span>.
+
 ---
 
 ## 2. The 12-Point Multi-Region BCP Readiness Standard (`B1–B12`) `[Agree]`
