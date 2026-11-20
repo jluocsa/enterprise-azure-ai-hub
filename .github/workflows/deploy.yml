@@ -1,0 +1,47 @@
+name: Verify & Publish Industrialization Hub
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      VITEPRESS_BASE: ${{ endsWith(github.repository, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: Gate 1 — Automated Sanitization & Confidentiality Check
+        run: npm run check:sanitized
+      - name: Gate 2 — Engineering Kit CLI Smoke Verification
+        run: npm run check:kits
+      - name: Gate 3 — Production VitePress Build & Link Verification
+        run: npm run docs:build
+      - name: Touch .nojekyll
+        run: touch docs/.vitepress/dist/.nojekyll
+      - name: Publish Static Build to gh-pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/.vitepress/dist
+          force_orphan: true
