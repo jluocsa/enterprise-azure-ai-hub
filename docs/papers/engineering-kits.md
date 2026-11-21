@@ -114,6 +114,8 @@ Trace and contract JSON also reject duplicate member names within any object, in
 
 Trace file read failures (missing files, directories, permission/I/O errors, or invalid UTF-8) exit `2` with a sanitized `ARG001` stderr diagnostic, no stdout, and no traceback. No partial evidence is evaluated after a read failure; paths and operating-system error details are not echoed. These offline failure paths are covered by the existing self-test in `npm run verify` <span class="ev-badge ev-arch">[Arch]</span>.
 
+Unknown top-level acceptance-contract fields also exit `2` before reading evidence, preventing misspelled tool or latency controls from silently using defaults. The six enforcement fields plus `contract_version`, `track`, and `metadata` are accepted; place custom annotations inside `metadata`. Diagnostics never echo unknown names or values. See the [acceptance-configuration contract](/playbooks/agentic-rag-evals/04-deterministic-eval-contracts#fail-closed-acceptance-configuration) for compatibility and enforcement boundaries; deterministic regressions cover text/JSON failures, validation precedence, and preserved metadata/defaults <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 agent_release_gate.py --self-test
 python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json

@@ -190,6 +190,17 @@ def validate_contract(raw: Any) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise ValueError("contract must be a JSON object.")
 
+    allowed_fields = {
+        "max_p95_ms", "min_pass2_cached_tokens", "required_tools", "forbidden_tools",
+        "require_acl_trimming", "forbid_raw_prompt_logging",
+        "contract_version", "track", "metadata",
+    }
+    if any(field not in allowed_fields for field in raw):
+        raise ValueError(
+            "contract contains unsupported top-level fields; allowed fields: "
+            + ", ".join(sorted(allowed_fields)) + "."
+        )
+
     max_p95_ms = raw.get("max_p95_ms", 15000.0)
     if (
         type(max_p95_ms) not in (int, float)
@@ -365,6 +376,10 @@ def run_self_test() -> int:
     assert defaults["forbidden_tools"] == DEFAULT_FORBIDDEN_TOOLS
     assert validate_contract({
         "contract_version": "2.0", "track": "Playbook 04",
+        "metadata": {"first": {"label": "a"}, "second": {"label": "b"}},
+    }) == defaults
+    assert validate_contract({
+        "contract_version": "2.0", "track": "Playbook 04",
         "max_p95_ms": 0.5, "min_pass2_cached_tokens": 1,
         "required_tools": [], "forbidden_tools": [],
         "require_acl_trimming": False, "forbid_raw_prompt_logging": False,
@@ -375,6 +390,11 @@ def run_self_test() -> int:
     }
 
     invalid_contracts = [(value, "JSON object") for value in (None, [], "contract", 1, True)]
+    for field in (
+        "max_p95_mss", "min_pass2_cache_tokens", "required_tool", "forbidden_tool",
+        "require_acl_trimmming", "forbid_raw_prompt_loging", "private-field",
+    ):
+        invalid_contracts.append(({field: "private-value"}, "unsupported top-level fields"))
     for field, values in (
         ("max_p95_ms", [None, True, "15000", 0, -1, math.nan, math.inf, -math.inf]),
         ("min_pass2_cached_tokens", [None, True, "1024", 0, -1, 1.5, 1024.0, math.nan, math.inf]),
@@ -389,6 +409,8 @@ def run_self_test() -> int:
             validate_contract(contract)
         except ValueError as exc:
             assert expected_message in str(exc), (contract, exc)
+            if expected_message == "unsupported top-level fields":
+                assert "private-field" not in str(exc) and "private-value" not in str(exc), exc
         else:
             raise AssertionError(f"Expected invalid contract to be rejected: {contract!r}")
 
@@ -435,6 +457,25 @@ def run_self_test() -> int:
 
         trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         contract_file = Path(directory) / "contract.json"
+        for contract in (
+            {"required_tool": ["missing-tool"]},
+            {"max_p95_mss": 1},
+            {"private-field": "private-value"},
+        ):
+            contract_file.write_text(json.dumps(contract), encoding="utf-8")
+            for trace_path in (trace, Path(directory) / "missing.jsonl"):
+                for output_flags in ([], ["--json"]):
+                    result = subprocess.run(
+                        [sys.executable, str(Path(__file__).resolve()), str(trace_path),
+                         "--contract", str(contract_file), *output_flags],
+                        capture_output=True, text=True, check=False,
+                    )
+                    assert result.returncode == 2 and not result.stdout, result
+                    assert "invalid acceptance contract" in result.stderr, result
+                    assert "unsupported top-level fields" in result.stderr, result
+                    assert "private-field" not in result.stderr and "private-value" not in result.stderr, result
+                    assert "Traceback" not in result.stderr and "[ARG001]" not in result.stderr, result
+
         duplicate_traces = [
             "{" + json.dumps(field) + ":" + json.dumps(value) + "," + json.dumps(valid_records[1])[1:]
             for field, value in (
@@ -562,7 +603,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (trace I/O + unique JSON members + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (trace I/O + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
