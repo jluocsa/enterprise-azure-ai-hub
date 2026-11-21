@@ -242,6 +242,8 @@ def load_contract(contract_path: Path) -> dict[str, Any]:
         )
     except json.JSONDecodeError:
         raise ValueError("contract must contain valid JSON.") from None
+    except RecursionError:
+        raise ValueError("contract JSON exceeds the parser nesting limit.") from None
     return validate_contract(raw)
 
 
@@ -457,6 +459,46 @@ def run_self_test() -> int:
 
         trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         contract_file = Path(directory) / "contract.json"
+        for opening, closing in (("[", "]"), ('{"private-field":', "}")):
+            for depth, expected_code in ((16, 0), (sys.getrecursionlimit() * 2, 2)):
+                nested = opening * depth + '"private-value"' + closing * depth
+                for target in ("trace", "contract"):
+                    trace_record = '{"metadata":' + nested + "," + json.dumps(valid_records[1])[1:]
+                    trace.write_text(
+                        json.dumps(valid_records[0]) + "\n\n"
+                        + (trace_record if target == "trace" else json.dumps(valid_records[1]))
+                        + "\n" + json.dumps(valid_records[0]),
+                        encoding="utf-8",
+                    )
+                    contract_file.write_text(
+                        '{"metadata":' + nested + "}" if target == "contract" else "{}",
+                        encoding="utf-8",
+                    )
+                    trace_paths = [trace]
+                    if target == "contract" and expected_code:
+                        trace_paths.append(Path(directory) / "missing.jsonl")
+                    for trace_path in trace_paths:
+                        for output_flags in ([], ["--json"]):
+                            result = subprocess.run(
+                                [sys.executable, str(Path(__file__).resolve()), str(trace_path),
+                                 "--contract", str(contract_file), *output_flags],
+                                capture_output=True, text=True, check=False,
+                            )
+                            assert result.returncode == expected_code, result
+                            if expected_code:
+                                diagnostic = "[ARG001] line-3" if target == "trace" else "invalid acceptance contract"
+                                assert diagnostic in result.stderr and "nesting limit" in result.stderr, result
+                                assert not result.stdout and "Traceback" not in result.stderr, result
+                                assert "private-field" not in result.stderr and "private-value" not in result.stderr, result
+                            else:
+                                assert not result.stderr, result
+                                if output_flags:
+                                    output = json.loads(result.stdout)
+                                    assert output["passed"] is True and output["record_count"] == 3, output
+                                else:
+                                    assert "PASSED" in result.stdout, result
+
+        trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         for contract in (
             {"required_tool": ["missing-tool"]},
             {"max_p95_mss": 1},
@@ -603,7 +645,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (trace I/O + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
@@ -651,6 +693,12 @@ def main() -> int:
             continue
         try:
             records.append(json.loads(line, object_pairs_hook=unique_json_object))
+        except RecursionError:
+            print(
+                f"Error: [ARG001] line-{line_number}: execution record JSON exceeds the parser nesting limit.",
+                file=sys.stderr,
+            )
+            return 2
         except ValueError:
             print(
                 f"Error: [ARG001] line-{line_number}: invalid JSON execution record (malformed JSON or duplicate object members).",
