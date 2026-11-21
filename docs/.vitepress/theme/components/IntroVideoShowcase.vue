@@ -55,12 +55,12 @@ defineExpose({ playFromStart })
           <div>
             <span class="ivs-kicker">
               <span class="ivs-rec-dot" aria-hidden="true"></span>
-              <span>STUDIO BRIEFING &middot; COMPLETE 45-SUBPAGE EDITION (8:01 &middot; 1080p HD &middot; STUDIO VOICEOVER + SCORE)</span>
+              <span>STUDIO BRIEFING &middot; FULL-STACK EDITION (5:00 &middot; 1080p HD &middot; STUDIO VOICEOVER + SCORE)</span>
             </span>
-            <h2 class="ivs-title">Complete 45-Subpage Architecture Walkthrough Film</h2>
+            <h2 class="ivs-title">Executive &amp; CSA Forum Full-Stack Walkthrough Film</h2>
             <p class="ivs-sub">
-              Chapter-by-chapter deep dive covering every subpage across the Operating Model (3), Playbook 01 (15 + Regulated Profile),
-              Playbook 02 (6), Playbook 03 (6), Playbook 04 (6), Decision Studio (5 tools), White Papers &amp; MIT Kits (5), and the 24/7 loop.
+              5-minute 10-chapter architectural briefing covering all 45 verified subpages: 4 Customer-Zero playbooks (33 chapters),
+              Regulated Ethical-Wall Profile, 5-tool Decision Studio, 2 printable white papers, 5 MIT kits, 52 PR checklists, and the 24/7 loop.
             </p>
           </div>
 
@@ -116,7 +116,7 @@ defineExpose({ playFromStart })
             v-if="!isPlaying && !hasStarted"
             type="button"
             class="ivs-play-overlay"
-            aria-label="Play 8:01 Complete 45-Subpage Studio Walkthrough Film with sound"
+            aria-label="Play 5:00 Full-Stack Studio Walkthrough Film with sound"
             @click="playWithSound"
           >
             <span class="ivs-play-pill">
@@ -126,7 +126,7 @@ defineExpose({ playFromStart })
                 </svg>
               </span>
               <span class="ivs-play-copy">
-                <strong>Play Complete 45-Subpage Film (8:01)</strong>
+                <strong>Play Full-Stack Studio Film (5:00)</strong>
                 <span>1080p HD &middot; Baritone Voiceover + Score &middot; Sound On</span>
               </span>
             </span>

@@ -3,14 +3,22 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=1920, height=1080, initial-scale=1" />
-<title>Enterprise Azure AI Hub v2.0 — Complete 45-Subpage Studio Stage</title>
+<title>Enterprise Azure AI Hub v2.0 — Comprehensive 10-Chapter Studio Stage</title>
 <style>
   :root {
     --font-sans: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, sans-serif;
     --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
+    --az-blue: #0078d4;
+    --az-sky: #38bdf8;
+    --az-cyan: #00b7c3;
+    --az-teal: #14b8a6;
+    --az-emerald: #10b981;
+    --az-violet: #8b5cf6;
+    --az-amber: #f59e0b;
+    --az-red: #ef4444;
     --bg-deep: #050b14;
-    --bg-card: rgba(13, 25, 43, 0.86);
-    --border-subtle: rgba(148, 163, 184, 0.20);
+    --bg-card: rgba(13, 25, 43, 0.85);
+    --border-subtle: rgba(148, 163, 184, 0.19);
     --txt-primary: #f8fafc;
     --txt-secondary: #cbd5e1;
     --txt-muted: #94a3b8;
@@ -75,10 +83,10 @@
 
   .top-bar {
     position: absolute;
-    top: 22px;
+    top: 24px;
     left: 72px;
     right: 72px;
-    height: 46px;
+    height: 48px;
     z-index: 25;
     display: flex;
     align-items: center;
@@ -104,7 +112,7 @@
   .brand-text {
     font-size: 14px;
     font-weight: 700;
-    letter-spacing: 0.10em;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
     color: #e2e8f0;
   }
@@ -122,9 +130,9 @@
   .chapter-pill {
     padding: 7px 16px;
     border-radius: 999px;
-    background: rgba(15, 29, 50, 0.88);
-    border: 1px solid rgba(56, 189, 248, 0.34);
-    font-size: 12.5px;
+    background: rgba(15, 29, 50, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -141,7 +149,7 @@
     border: 1px solid rgba(20, 184, 166, 0.38);
     font-size: 12.5px;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     color: #5eead4;
   }
 
@@ -157,7 +165,7 @@
     position: absolute;
     left: 72px;
     right: 72px;
-    bottom: 20px;
+    bottom: 22px;
     z-index: 25;
   }
 
@@ -165,7 +173,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 9px;
+    margin-bottom: 10px;
     font-size: 13px;
     color: #94a3b8;
     letter-spacing: 0.02em;
@@ -185,8 +193,8 @@
 
   .seg-bar {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 7px;
     height: 5px;
   }
 
@@ -205,10 +213,10 @@
 
   .scene {
     position: absolute;
-    top: 86px;
+    top: 90px;
     left: 72px;
     right: 72px;
-    bottom: 66px;
+    bottom: 70px;
     z-index: 10;
     opacity: 0;
     pointer-events: none;
@@ -222,20 +230,20 @@
     align-items: center;
     gap: 10px;
     align-self: flex-start;
-    padding: 5px 15px;
+    padding: 6px 16px;
     border-radius: 999px;
     background: rgba(0, 120, 212, 0.16);
     border: 1px solid rgba(56, 189, 248, 0.34);
     color: #7dd3fc;
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.085em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .h-hero {
-    font-size: 52px;
+    font-size: 58px;
     font-weight: 750;
     line-height: 1.09;
     letter-spacing: -0.03em;
@@ -243,7 +251,7 @@
   }
 
   .h-section {
-    font-size: 40px;
+    font-size: 43px;
     font-weight: 720;
     line-height: 1.13;
     letter-spacing: -0.025em;
@@ -257,335 +265,646 @@
     color: transparent;
   }
 
+  .sub-lead {
+    font-size: 20px;
+    line-height: 1.46;
+    color: var(--txt-secondary);
+    max-width: 1380px;
+    margin-top: 10px;
+  }
+
   .glass-card {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
-    border-radius: 15px;
+    border-radius: 16px;
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
     backdrop-filter: blur(16px);
   }
 
-  .route-pill {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 6px;
-    background: rgba(0, 120, 212, 0.22);
-    border: 1px solid rgba(56, 189, 248, 0.36);
-    color: #7dd3fc;
-  }
-
-  .route-pill.teal {
-    background: rgba(20, 184, 166, 0.18);
-    border-color: rgba(45, 212, 191, 0.38);
-    color: #5eead4;
-  }
-
-  .route-pill.amber {
-    background: rgba(245, 158, 11, 0.18);
-    border-color: rgba(245, 158, 11, 0.40);
-    color: #fde68a;
-  }
-
-  .route-pill.violet {
-    background: rgba(139, 92, 246, 0.18);
-    border-color: rgba(167, 139, 250, 0.40);
-    color: #ddd6fe;
-  }
-
-  .metric-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
+  .pill-tag {
     font-size: 11.5px;
     font-weight: 800;
-    padding: 3px 9px;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
     border-radius: 999px;
     background: rgba(16, 185, 129, 0.18);
-    border: 1px solid rgba(16, 185, 129, 0.36);
     color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.35);
     white-space: nowrap;
   }
 
-  /* ==================== SCENE 01 (POSTER) ==================== */
-  #scene-0 {
-    justify-content: flex-start;
-    padding-top: 96px;
+  .pill-tag.blue {
+    background: rgba(56, 189, 248, 0.16);
+    color: #7dd3fc;
+    border-color: rgba(56, 189, 248, 0.35);
   }
 
-  .s1-browser {
+  .pill-tag.amber {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fde68a;
+    border-color: rgba(245, 158, 11, 0.38);
+  }
+
+  .pill-tag.violet {
+    background: rgba(139, 92, 246, 0.18);
+    color: #ddd6fe;
+    border-color: rgba(167, 139, 250, 0.38);
+  }
+
+  /* ==================== SCENE 01 ==================== */
+  .s1-wave-banner {
+    margin-top: 22px;
+    padding: 15px 24px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(15, 32, 58, 0.92), rgba(30, 41, 59, 0.84));
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-left: 5px solid #38bdf8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16.5px;
+    color: #e2e8f0;
+  }
+
+  .s1-wave-banner code {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: #7dd3fc;
+  }
+
+  .s1-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 22px;
+  }
+
+  .s1-card {
+    padding: 22px 22px 20px;
+    border-top: 4px solid #ef4444;
+  }
+
+  .s1-card.amber {
+    border-top-color: #f59e0b;
+  }
+
+  .s1-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+    margin-bottom: 12px;
+  }
+
+  .s1-card.amber .s1-tag {
+    background: rgba(245, 158, 11, 0.16);
+    color: #fcd34d;
+  }
+
+  .s1-metric {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #f87171;
+    margin-bottom: 8px;
+  }
+
+  .s1-card.amber .s1-metric {
+    color: #fbbf24;
+  }
+
+  .s1-title {
+    font-size: 18.5px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 7px;
+  }
+
+  .s1-desc {
+    font-size: 14.5px;
+    line-height: 1.45;
+    color: #94a3b8;
+  }
+
+  .s1-desc code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #cbd5e1;
+  }
+
+  /* ==================== SCENE 02 (POSTER) ==================== */
+  #scene-1 {
+    justify-content: flex-start;
+    padding-top: 104px;
+  }
+
+  .s2-browser {
     border-radius: 18px;
-    background: linear-gradient(180deg, rgba(15, 29, 52, 0.96) 0%, rgba(9, 19, 35, 0.96) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.38);
+    background: linear-gradient(180deg, rgba(15, 29, 52, 0.95) 0%, rgba(9, 19, 35, 0.95) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.36);
     box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55), 0 0 50px rgba(0, 120, 212, 0.22);
     overflow: hidden;
   }
 
-  .s1-chrome {
-    height: 44px;
+  .s2-chrome {
+    height: 46px;
     padding: 0 22px;
-    background: rgba(6, 13, 25, 0.92);
+    background: rgba(6, 13, 25, 0.9);
     border-bottom: 1px solid rgba(148, 163, 184, 0.16);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
-  .s1-dots {
+  .s2-dots {
     display: flex;
     gap: 8px;
   }
 
-  .s1-dots i {
+  .s2-dots i {
     width: 11px;
     height: 11px;
     border-radius: 50%;
     display: block;
   }
 
-  .s1-addr {
-    padding: 4px 18px;
-    border-radius: 7px;
-    background: rgba(30, 41, 59, 0.75);
-    border: 1px solid rgba(56, 189, 248, 0.28);
+  .s2-addr {
+    padding: 5px 22px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.72);
+    border: 1px solid rgba(56, 189, 248, 0.25);
     font-family: var(--font-mono);
-    font-size: 13.5px;
+    font-size: 14px;
     color: #7dd3fc;
   }
 
-  .s1-body {
-    padding: 28px 40px 30px;
-    display: grid;
-    grid-template-columns: 1.18fr 0.82fr;
-    gap: 28px;
-    align-items: center;
+  .s2-body {
+    padding: 32px 44px 34px;
   }
 
-  .s1-subpages {
+  .s2-trust-row {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
   }
 
-  .s1-sp-box {
-    padding: 14px 16px;
-    border-radius: 11px;
-    background: rgba(15, 31, 56, 0.92);
-    border: 1px solid rgba(56, 189, 248, 0.28);
-  }
-
-  .s1-sp-box h4 {
-    font-size: 16px;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 6px 0 4px;
-  }
-
-  .s1-sp-box p {
+  .s2-chip {
+    padding: 7px 14px;
+    border-radius: 999px;
     font-size: 13.5px;
-    line-height: 1.4;
-    color: #cbd5e1;
+    font-weight: 600;
+    background: rgba(20, 184, 166, 0.14);
+    border: 1px solid rgba(45, 212, 191, 0.34);
+    color: #5eead4;
   }
 
-  .s1-kpis {
+  .s2-chip.blue {
+    background: rgba(0, 120, 212, 0.18);
+    border-color: rgba(56, 189, 248, 0.36);
+    color: #bae6fd;
+  }
+
+  .s2-chip.violet {
+    background: rgba(139, 92, 246, 0.18);
+    border-color: rgba(167, 139, 250, 0.38);
+    color: #ddd6fe;
+  }
+
+  .s2-kpis {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-    margin-top: 22px;
+    gap: 20px;
+    margin-top: 24px;
   }
 
-  .s1-kpi {
-    padding: 18px 20px;
+  .s2-kpi {
+    padding: 20px 22px;
     border-radius: 14px;
-    background: rgba(15, 28, 49, 0.92);
+    background: rgba(15, 28, 49, 0.9);
     border: 1px solid rgba(148, 163, 184, 0.2);
     border-top: 4px solid #38bdf8;
   }
 
-  .s1-kpi:nth-child(2) { border-top-color: #10b981; }
-  .s1-kpi:nth-child(3) { border-top-color: #f59e0b; }
-  .s1-kpi:nth-child(4) { border-top-color: #a78bfa; }
+  .s2-kpi:nth-child(2) { border-top-color: #10b981; }
+  .s2-kpi:nth-child(3) { border-top-color: #f59e0b; }
+  .s2-kpi:nth-child(4) { border-top-color: #a78bfa; }
 
-  .s1-kpi-val {
-    font-size: 38px;
+  .s2-kpi-val {
+    font-size: 40px;
     font-weight: 800;
     letter-spacing: -0.03em;
     color: #38bdf8;
-    line-height: 1.08;
-    margin-bottom: 4px;
+    line-height: 1.1;
+    margin-bottom: 5px;
   }
 
-  .s1-kpi:nth-child(2) .s1-kpi-val { color: #34d399; }
-  .s1-kpi:nth-child(3) .s1-kpi-val { color: #fbbf24; }
-  .s1-kpi:nth-child(4) .s1-kpi-val { color: #c4b5fd; }
+  .s2-kpi:nth-child(2) .s2-kpi-val { color: #34d399; }
+  .s2-kpi:nth-child(3) .s2-kpi-val { color: #fbbf24; }
+  .s2-kpi:nth-child(4) .s2-kpi-val { color: #c4b5fd; }
 
-  .s1-kpi-lbl {
-    font-size: 16.5px;
+  .s2-kpi-lbl {
+    font-size: 17.5px;
     font-weight: 700;
     color: #f8fafc;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
   }
 
-  .s1-kpi-txt {
-    font-size: 13.5px;
-    line-height: 1.4;
+  .s2-kpi-txt {
+    font-size: 14px;
+    line-height: 1.42;
     color: #94a3b8;
   }
 
-  /* ==================== SUBPAGE CARD GRIDS ==================== */
-  .grid-3col {
+  /* ==================== SHARED PANELS ==================== */
+  .two-cols {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-top: 18px;
+    grid-template-columns: 1.02fr 0.98fr;
+    gap: 26px;
+    margin-top: 20px;
+    align-items: stretch;
   }
 
-  .grid-3x2 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 18px;
-    margin-top: 18px;
-  }
-
-  .grid-2x2 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 18px;
-    margin-top: 18px;
-  }
-
-  .sp-card {
-    padding: 20px 22px;
-    border-top: 4px solid #38bdf8;
+  .panel-box {
+    padding: 22px 26px;
+    border-top: 4px solid #0078d4;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   }
 
-  .sp-card.teal { border-top-color: #14b8a6; }
-  .sp-card.green { border-top-color: #10b981; }
-  .sp-card.amber { border-top-color: #f59e0b; }
-  .sp-card.violet { border-top-color: #8b5cf6; }
+  .panel-box.green { border-top-color: #10b981; }
+  .panel-box.amber { border-top-color: #f59e0b; }
+  .panel-box.violet { border-top-color: #8b5cf6; }
 
-  .sp-top {
+  .panel-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
-  .sp-title {
-    font-size: 19px;
-    font-weight: 730;
-    line-height: 1.24;
+  .panel-title {
+    font-size: 19.5px;
+    font-weight: 700;
     color: #ffffff;
-    margin-bottom: 8px;
   }
 
-  .sp-desc {
+  .s3-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .s3-layer {
+    display: grid;
+    grid-template-columns: 76px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9.5px 14px;
+    border-radius: 9px;
+    background: rgba(15, 32, 58, 0.88);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+  }
+
+  .s3-layer.volatile {
+    background: rgba(69, 39, 16, 0.55);
+    border-color: rgba(245, 158, 11, 0.42);
+  }
+
+  .s3-pos {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #38bdf8;
+    padding: 4px 7px;
+    border-radius: 6px;
+    background: rgba(0, 120, 212, 0.22);
+    text-align: center;
+  }
+
+  .s3-layer.volatile .s3-pos {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, 0.22);
+  }
+
+  .s3-lname {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+
+  .s3-lname code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #7dd3fc;
+  }
+
+  .regime-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .regime-card {
+    padding: 13px 15px;
+    border-radius: 10px;
+    background: rgba(15, 29, 50, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.26);
+  }
+
+  .regime-card b {
+    display: block;
     font-size: 14px;
-    line-height: 1.46;
-    color: #cbd5e1;
-    margin-bottom: 10px;
+    color: #7dd3fc;
+    margin-bottom: 4px;
   }
 
-  .sp-desc code, .sp-bullets code {
+  .regime-card p {
+    font-size: 13px;
+    line-height: 1.42;
+    color: #cbd5e1;
+  }
+
+  .regime-card code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #6ee7b7;
+  }
+
+  .ptu-bars {
+    padding: 14px 18px;
+    border-radius: 11px;
+    background: rgba(7, 15, 28, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    margin-bottom: 14px;
+  }
+
+  .bar-row {
+    margin-bottom: 11px;
+  }
+
+  .bar-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .bar-lbl {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .bar-track {
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(30, 41, 59, 0.85);
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+  }
+
+  .callout-strip {
+    padding: 14px 16px;
+    border-radius: 11px;
+    background: linear-gradient(90deg, rgba(15, 118, 110, 0.24), rgba(15, 29, 50, 0.88));
+    border: 1px solid rgba(45, 212, 191, 0.36);
+    border-left: 4px solid #14b8a6;
+  }
+
+  .callout-strip strong {
+    display: block;
+    font-size: 14.5px;
+    color: #5eead4;
+    margin-bottom: 3px;
+  }
+
+  .callout-strip p {
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: #e2e8f0;
+  }
+
+  .callout-strip code {
     font-family: var(--font-mono);
     font-size: 12.5px;
     color: #7dd3fc;
   }
 
-  .sp-bullets {
-    list-style: none;
+  /* ==================== SCENE 04: PLAYBOOK 02 APIM ==================== */
+  .flow-banner {
+    margin-top: 20px;
+    padding: 20px 24px;
+    border-top: 4px solid #00b7c3;
+  }
+
+  .four-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-top: 20px;
+  }
+
+  .mech-card {
+    padding: 20px 20px;
+    border-top: 4px solid #38bdf8;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-
-  .sp-bullets li {
-    font-size: 13.5px;
-    line-height: 1.4;
-    color: #cbd5e1;
-    padding-left: 15px;
-    position: relative;
-  }
-
-  .sp-bullets li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    color: #38bdf8;
-    font-weight: 800;
-  }
-
-  .sp-foot {
-    padding-top: 9px;
-    border-top: 1px solid rgba(148, 163, 184, 0.16);
-    display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    font-weight: 700;
-    color: #94a3b8;
   }
 
-  .sp-foot b {
-    color: #5eead4;
+  .mech-card:nth-child(2) { border-top-color: #10b981; }
+  .mech-card:nth-child(3) { border-top-color: #f59e0b; }
+  .mech-card:nth-child(4) { border-top-color: #a78bfa; }
+
+  .mech-kicker {
     font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 800;
+    color: #38bdf8;
+    margin-bottom: 8px;
   }
 
-  /* ==================== SCENE 05 & 11: 5-CARD LAYOUT ==================== */
-  .grid-5 {
+  .mech-card:nth-child(2) .mech-kicker { color: #34d399; }
+  .mech-card:nth-child(3) .mech-kicker { color: #fbbf24; }
+  .mech-card:nth-child(4) .mech-kicker { color: #c4b5fd; }
+
+  .mech-title {
+    font-size: 18.5px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .mech-title code {
+    font-family: var(--font-mono);
+    font-size: 16.5px;
+    color: #7dd3fc;
+  }
+
+  .mech-body {
+    font-size: 14px;
+    line-height: 1.45;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+  }
+
+  .mech-body code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: #7dd3fc;
+  }
+
+  /* ==================== SCENE 05: PLAYBOOK 03 BCP ==================== */
+  .stamp-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 18px;
-    margin-top: 18px;
+    grid-template-columns: 1fr 180px 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-top: 20px;
+    padding: 20px 24px;
+    border-top: 4px solid #f59e0b;
   }
 
-  .grid-5 > .sp-card:nth-child(1),
-  .grid-5 > .sp-card:nth-child(2),
-  .grid-5 > .sp-card:nth-child(3) {
-    grid-column: span 2;
+  .stamp-box {
+    padding: 18px 20px;
+    border-radius: 12px;
+    background: rgba(12, 28, 48, 0.92);
+    border: 1.5px solid rgba(20, 184, 166, 0.45);
   }
 
-  .grid-5 > .sp-card:nth-child(4),
-  .grid-5 > .sp-card:nth-child(5) {
-    grid-column: span 3;
+  .stamp-box.dr {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(38, 25, 14, 0.65);
   }
 
-  /* ==================== SCENE 10: DECISION STUDIO ==================== */
-  .s10-layout {
+  .stamp-box h4 {
+    font-size: 17px;
+    font-weight: 750;
+    color: #5eead4;
+    margin-bottom: 8px;
+  }
+
+  .stamp-box.dr h4 {
+    color: #fcd34d;
+  }
+
+  .stamp-box p {
+    font-size: 14px;
+    line-height: 1.46;
+    color: #e2e8f0;
+  }
+
+  .stamp-mid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .stamp-mid-pill {
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 800;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    color: #fde68a;
+    width: 100%;
+  }
+
+  .three-cards {
     display: grid;
-    grid-template-columns: 1.08fr 0.92fr;
-    gap: 24px;
-    margin-top: 18px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 20px;
   }
 
+  /* ==================== SCENE 06: PLAYBOOK 04 AGENTIC RAG ==================== */
+  .s6-pipe {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .s6-node {
+    padding: 18px 16px;
+    border-top: 4px solid #a78bfa;
+  }
+
+  .s6-node:nth-child(3) { border-top-color: #14b8a6; }
+  .s6-node:nth-child(4) { border-top-color: #38bdf8; }
+  .s6-node:nth-child(5) { border-top-color: #10b981; }
+
+  .s6-step {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 800;
+    color: #c4b5fd;
+    margin-bottom: 6px;
+  }
+
+  .s6-node h4 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+  }
+
+  .s6-node p {
+    font-size: 13.5px;
+    line-height: 1.42;
+    color: #cbd5e1;
+  }
+
+  .s6-node code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #7dd3fc;
+  }
+
+  .s6-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  /* ==================== SCENE 07: DECISION STUDIO ==================== */
   .studio-list {
     display: flex;
     flex-direction: column;
     gap: 9px;
   }
 
-  .studio-item {
+  .studio-row {
     display: grid;
-    grid-template-columns: 112px 1fr auto;
+    grid-template-columns: 88px 1fr auto;
     align-items: center;
     gap: 14px;
-    padding: 12px 16px;
+    padding: 11px 15px;
     border-radius: 10px;
     background: rgba(15, 32, 58, 0.88);
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    border: 1px solid rgba(56, 189, 248, 0.24);
   }
 
-  .studio-hash {
+  .studio-code {
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
     color: #38bdf8;
     padding: 5px 8px;
@@ -594,16 +913,16 @@
     text-align: center;
   }
 
-  .studio-copy strong {
+  .studio-main strong {
     display: block;
     font-size: 15.5px;
     color: #f8fafc;
     margin-bottom: 2px;
   }
 
-  .studio-copy span {
+  .studio-main span {
     font-size: 13px;
-    color: #cbd5e1;
+    color: #94a3b8;
   }
 
   .code-win {
@@ -612,130 +931,236 @@
     background: #040912;
     border: 1px solid rgba(148, 163, 184, 0.2);
     font-family: var(--font-mono);
-    font-size: 12.5px;
-    line-height: 1.54;
+    font-size: 13px;
+    line-height: 1.52;
     color: #e2e8f0;
   }
 
   .c-kw { color: #38bdf8; }
   .c-fn { color: #c4b5fd; }
   .c-ok { color: #34d399; font-weight: 700; }
+  .c-warn { color: #fbbf24; }
   .c-dim { color: #64748b; }
 
-  /* ==================== SCENE 12: 24/7 LOOP + CTA ==================== */
-  .s12-center {
-    text-align: center;
-    align-items: center;
+  /* ==================== SCENE 08: PAPERS, KITS & REPOS ==================== */
+  .s8-bento {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 18px;
+    margin-top: 20px;
+    height: 590px;
   }
 
-  .s12-loop-strip {
-    width: 100%;
+  .s8-tile {
+    padding: 20px 24px;
+    border-top: 4px solid #38bdf8;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .s8-tile:nth-child(2) { border-top-color: #10b981; }
+  .s8-tile:nth-child(3) { border-top-color: #a78bfa; }
+  .s8-tile:nth-child(4) { border-top-color: #f59e0b; }
+
+  /* ==================== SCENE 09: FACTORY, 3-WK & AUTO-LOOP ==================== */
+  .s9-top {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 20px;
     margin-top: 18px;
-    padding: 18px 24px;
-    border-top: 4px solid #8b5cf6;
-    text-align: left;
   }
 
-  .s12-loop-grid {
+  .s9-stages {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .s9-st {
+    padding: 12px 12px;
+    border-radius: 10px;
+    background: rgba(15, 31, 56, 0.9);
+    border: 1px solid rgba(56, 189, 248, 0.26);
+  }
+
+  .s9-st b {
+    display: block;
+    font-size: 12px;
+    color: #5eead4;
+    margin-bottom: 4px;
+  }
+
+  .s9-st span {
+    font-size: 13px;
+    line-height: 1.35;
+    color: #e2e8f0;
+    display: block;
+  }
+
+  .s9-wks {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .s9-wk {
+    padding: 11px 13px;
+    border-radius: 9px;
+    background: rgba(15, 31, 56, 0.88);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+  }
+
+  .s9-wk b {
+    display: block;
+    font-size: 12px;
+    color: #34d399;
+    margin-bottom: 2px;
+  }
+
+  .s9-wk span {
+    font-size: 13px;
+    color: #e2e8f0;
+  }
+
+  .s9-loop {
+    margin-top: 18px;
+    padding: 20px 26px;
+    border-top: 4px solid #8b5cf6;
+  }
+
+  .s9-loop-flow {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 14px;
-    margin-top: 10px;
+    margin-top: 14px;
   }
 
-  .s12-lbox {
-    padding: 12px 14px;
-    border-radius: 9px;
+  .s9-lcard {
+    padding: 14px 16px;
+    border-radius: 10px;
     background: rgba(11, 20, 38, 0.92);
     border: 1px solid rgba(167, 139, 250, 0.32);
   }
 
-  .s12-lbox b {
+  .s9-lcard b {
     display: block;
-    font-size: 13px;
+    font-size: 13.5px;
     color: #c4b5fd;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
   }
 
-  .s12-lbox span {
-    font-size: 12.5px;
-    line-height: 1.38;
+  .s9-lcard p {
+    font-size: 13px;
+    line-height: 1.4;
     color: #cbd5e1;
-    display: block;
   }
 
-  .s12-actions {
+  .s9-lcard code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #7dd3fc;
+  }
+
+  /* ==================== SCENE 10: CALL TO ACTION ==================== */
+  .s10-center {
+    text-align: center;
+    align-items: center;
+  }
+
+  .s10-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 24px;
     width: 100%;
-    margin-top: 18px;
+    margin-top: 26px;
     text-align: left;
   }
 
-  .s12-act {
-    padding: 18px 22px;
+  .s10-card {
+    padding: 26px 28px;
     border-top: 4px solid #0078d4;
   }
 
-  .s12-act:nth-child(2) { border-top-color: #00b7c3; }
-  .s12-act:nth-child(3) { border-top-color: #10b981; }
+  .s10-card:nth-child(2) { border-top-color: #00b7c3; }
+  .s10-card:nth-child(3) { border-top-color: #10b981; }
 
-  .s12-act h4 {
-    font-size: 18.5px;
-    font-weight: 750;
-    color: #ffffff;
-    margin: 6px 0 5px;
+  .s10-num {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 800;
+    color: #38bdf8;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 120, 212, 0.2);
+    margin-bottom: 12px;
   }
 
-  .s12-act p {
-    font-size: 14px;
-    line-height: 1.44;
+  .s10-card h3 {
+    font-size: 22px;
+    font-weight: 750;
+    color: #ffffff;
+    margin-bottom: 9px;
+  }
+
+  .s10-card p {
+    font-size: 15.5px;
+    line-height: 1.48;
     color: #cbd5e1;
   }
 
-  .s12-mantra {
+  .s10-card code {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    color: #7dd3fc;
+  }
+
+  .s10-mantra {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 28px;
-    margin-top: 22px;
+    gap: 32px;
+    margin-top: 32px;
   }
 
-  .s12-pillar {
-    font-size: 32px;
+  .s10-pillar {
+    font-size: 36px;
     font-weight: 800;
     letter-spacing: -0.02em;
-    padding: 9px 22px;
+    padding: 10px 24px;
     border-radius: 12px;
-    background: rgba(15, 29, 52, 0.88);
-    border: 1px solid rgba(56, 189, 248, 0.38);
+    background: rgba(15, 29, 52, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.35);
     color: #ffffff;
   }
 
-  .s12-url-box {
-    margin-top: 18px;
+  .s10-url-box {
+    margin-top: 26px;
     display: inline-flex;
     align-items: center;
     gap: 16px;
-    padding: 13px 32px;
+    padding: 15px 34px;
     border-radius: 999px;
     background: linear-gradient(90deg, rgba(0, 120, 212, 0.32), rgba(0, 183, 195, 0.28));
     border: 1.5px solid rgba(56, 189, 248, 0.65);
     box-shadow: 0 0 42px rgba(0, 183, 195, 0.32);
   }
 
-  .s12-url-box span {
-    font-size: 13.5px;
+  .s10-url-box span {
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #bae6fd;
   }
 
-  .s12-url-box code {
+  .s10-url-box code {
     font-family: var(--font-mono);
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: #ffffff;
   }
@@ -755,742 +1180,635 @@
           <circle cx="12" cy="12" r="3.5" fill="#fff" />
         </svg>
       </div>
-      <div class="brand-text">MICROSOFT FOUNDRY &amp; AZURE AI &middot; <span>COMPLETE 45-SUBPAGE WALKTHROUGH</span></div>
+      <div class="brand-text">MICROSOFT FOUNDRY &amp; AZURE AI &middot; <span>SOLUTION INDUSTRIALIZATION HUB</span></div>
     </div>
     <div class="top-right-pills">
-      <div id="chapter-indicator" class="chapter-pill">01 / 12 &middot; HOME &amp; CATALOG (PAGES 1–2 OF 45)</div>
+      <div id="chapter-indicator" class="chapter-pill">01 / 10 &middot; THE PRODUCTION CLIFF</div>
       <div class="forum-badge">
         <span class="live-dot"></span>
-        <span>100% SITE COVERAGE &middot; v2.0</span>
+        <span>FULL-STACK STUDIO BRIEFING</span>
       </div>
     </div>
   </header>
 
-  <!-- ==================== SCENE 01: HOME & ARCHITECTURE CATALOG (PAGES 1-2 OF 45, POSTER) ==================== -->
+  <!-- ==================== SCENE 01: PRODUCTION CLIFF ==================== -->
   <section id="scene-0" class="scene">
-    <div id="s1-browser" class="s1-browser">
-      <div class="s1-chrome">
-        <div class="s1-dots">
+    <div id="s1-eyebrow" class="eyebrow">01 &middot; THE FULL-STACK PRODUCTION BOTTLENECK</div>
+    <h1 class="h-hero">
+      <span id="s1-h1a" style="display:block;">Prototypes Are Easy.</span>
+      <span id="s1-h1b" class="grad-text" style="display:block;">Production Cutover Is Where Enterprise AI Stalls.</span>
+    </h1>
+
+    <div id="s1-wave" class="s1-wave-banner">
+      <div><strong>Model Retirement &amp; Scale Wave:</strong> Stateless agents migrating from <code>GPT-4.x</code> &amp; <code>o3-mini</code> onto <code>GPT-5.6</code>, <code>GPT-6</code> &amp; <code>GPT-6.1</code></div>
+      <span class="pill-tag amber">4 COUPLED CUTOVER RISKS</span>
+    </div>
+
+    <div class="s1-grid">
+      <div id="s1-c0" class="glass-card s1-card">
+        <span class="s1-tag">01 &middot; Prefix Cache Miss</span>
+        <div class="s1-metric">2.56&times; Spike</div>
+        <div class="s1-title">PTU Capacity Explosion</div>
+        <p class="s1-desc">Pos-1 timestamps or unsorted <code>tools[]</code> zero out KV reuse, jumping demand from 170 to 435 PTUs.</p>
+      </div>
+      <div id="s1-c1" class="glass-card s1-card">
+        <span class="s1-tag">02 &middot; Direct SDK Calls</span>
+        <div class="s1-metric">HTTP 429</div>
+        <div class="s1-title">Gateway &amp; SSE Stalls</div>
+        <p class="s1-desc">Unsharded keys &amp; missing circuit breakers trigger 429 storms, buffered SSE stalls &amp; 5.6 400 errors.</p>
+      </div>
+      <div id="s1-c2" class="glass-card s1-card amber">
+        <span class="s1-tag">03 &middot; Regional Cutover</span>
+        <div class="s1-metric">Cold Surge</div>
+        <div class="s1-title">2.56&times; Failover Burst</div>
+        <p class="s1-desc">Cold DR stamps hit 0% cache hits for 15 minutes while Data Zone, Cosmos &amp; AI Search lag behind.</p>
+      </div>
+      <div id="s1-c3" class="glass-card s1-card">
+        <span class="s1-tag">04 &middot; Agent Runtime</span>
+        <div class="s1-metric">Blast Radius</div>
+        <div class="s1-title">Shared Tools &amp; Flaky CI</div>
+        <p class="s1-desc">In-process tool execution risks cross-tenant bleed while statistical LLM-only CI gates flake.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 02: HUB v2.0 OVERVIEW (POSTER) ==================== -->
+  <section id="scene-1" class="scene">
+    <div id="s2-browser" class="s2-browser">
+      <div class="s2-chrome">
+        <div class="s2-dots">
           <i style="background:#ef4444"></i>
           <i style="background:#f59e0b"></i>
           <i style="background:#10b981"></i>
         </div>
-        <div class="s1-addr">https://jluocsa.github.io/enterprise-azure-ai-hub/</div>
-        <div style="font-size:12.5px;font-weight:700;color:#5eead4;letter-spacing:0.06em;">PAGES 01&ndash;02 OF 45 &middot; MIT &amp; CC BY 4.0</div>
+        <div class="s2-addr">https://jluocsa.github.io/enterprise-azure-ai-hub/</div>
+        <div style="font-size:12.5px;font-weight:700;color:#5eead4;letter-spacing:0.06em;">ACTIVE v2.0 &middot; MIT &amp; CC BY 4.0</div>
       </div>
-      <div class="s1-body">
-        <div>
-          <div class="eyebrow" style="margin-bottom:10px;">COMPLETE 45-SUBPAGE ARCHITECTURE TOUR &middot; GPT-5.6, GPT-6 &amp; GPT-6.1</div>
-          <h1 class="h-hero" style="font-size:48px;">
-            Enterprise Azure AI <span class="grad-text">Solution Industrialization Hub</span>
-          </h1>
-          <p style="font-size:17.5px;line-height:1.46;color:#cbd5e1;margin-top:10px;">
-            Every subpage, formula, policy, and CLI across our governed <strong>Customer-Zero</strong> factory—preventing capacity spikes, HTTP 429 storms, regional cold-cache surges, and agent blast-radius failures.
-          </p>
-        </div>
-        <div id="s1-sps" class="s1-subpages">
-          <div class="s1-sp-box">
-            <span class="route-pill">PAGE 01 &middot; / (index.md)</span>
-            <h4>Home Blueprint &amp; 4-Layer Reference Stack</h4>
-            <p>Interactive layer drawer, unified 4-playbook request topology SVG &amp; instant keyword filter.</p>
-          </div>
-          <div class="s1-sp-box">
-            <span class="route-pill teal">PAGE 02 &middot; /playbooks/ (index.md)</span>
-            <h4>Unified 4-Playbook Architecture Catalog</h4>
-            <p>Cross-track explorer &amp; <code>Ctrl+K</code> local search connecting all 33 chapters, profiles &amp; kits.</p>
-          </div>
+      <div class="s2-body">
+        <div class="eyebrow" style="margin-bottom:12px;">02 &middot; GOVERNED MULTI-AUTHOR ARCHITECTURE WORKBENCH</div>
+        <h1 class="h-hero" style="font-size:52px;">
+          Enterprise Azure AI <span class="grad-text">Solution Industrialization Hub</span>
+        </h1>
+        <p class="sub-lead" style="max-width:1440px;margin-top:10px;font-size:20px;">
+          Converts proven <strong>Customer-Zero</strong> Microsoft Foundry engagements into <strong>4 full-stack playbooks (33 chapters), a Regulated Compliance Profile, a 5-tool Decision Studio, 2 printable white papers, 5 MIT kits, and 52 release gates</strong>.
+        </p>
+        <div id="s2-chips" class="s2-trust-row">
+          <span class="s2-chip">&#10003; 100% Automated Sanitization</span>
+          <span class="s2-chip blue">[M] [Arch] [Agree] [Validate] Tagged</span>
+          <span class="s2-chip blue">Regulated Ethical-Wall Profile</span>
+          <span class="s2-chip violet">24/7 Dual-Agent Self-Improvement</span>
         </div>
       </div>
     </div>
 
-    <div class="s1-kpis">
-      <div id="s1-k0" class="s1-kpi">
-        <div class="s1-kpi-val">45 Pages</div>
-        <div class="s1-kpi-lbl">100% Sanitized &amp; Verified</div>
-        <p class="s1-kpi-txt">1,424 internal hyperlinks &amp; source tags verified on every build.</p>
+    <div class="s2-kpis">
+      <div id="s2-k0" class="s2-kpi">
+        <div class="s2-kpi-val">4 Tracks</div>
+        <div class="s2-kpi-lbl">33 Deep-Dive Chapters</div>
+        <p class="s2-kpi-txt">Caching &amp; PTU, APIM AI Gateway, Multi-Region BCP &amp; Sandboxed Agentic RAG.</p>
       </div>
-      <div id="s1-k1" class="s1-kpi">
-        <div class="s1-kpi-val">2.56&times;</div>
-        <div class="s1-kpi-lbl">PTU Capacity Spike Saved</div>
-        <p class="s1-kpi-txt">170 PTUs at 80% prefix reuse vs. 435 PTUs un-tuned on GPT-5.6+.</p>
+      <div id="s2-k1" class="s2-kpi">
+        <div class="s2-kpi-val">5 Tools</div>
+        <div class="s2-kpi-lbl">Live Decision Studio</div>
+        <p class="s2-kpi-txt">Client-side PTU/TCO, APIM XML, BCP Surge, MicroVM &amp; 30-Min Triage builders.</p>
       </div>
-      <div id="s1-k2" class="s1-kpi">
-        <div class="s1-kpi-val">71% TCO</div>
-        <div class="s1-kpi-lbl">Seasonal Cliff Cost Saved</div>
-        <p class="s1-kpi-txt">Steady PTU-M baseline + APIM Retry-After spillover + &lt;15s DR RTO.</p>
+      <div id="s2-k2" class="s2-kpi">
+        <div class="s2-kpi-val">5 MIT Kits</div>
+        <div class="s2-kpi-lbl">+ 2 Printable White Papers</div>
+        <p class="s2-kpi-txt">Zero-dep Python AST &amp; contract CLIs, APIM XML, 2 KQL workbooks &amp; PDF papers.</p>
       </div>
-      <div id="s1-k3" class="s1-kpi">
-        <div class="s1-kpi-val">52 Gates</div>
-        <div class="s1-kpi-lbl">5 Tools + 5 MIT Code Kits</div>
-        <p class="s1-kpi-txt">Client-side Decision Studio, printable PDFs &amp; fail-closed CI/KQL CLIs.</p>
+      <div id="s2-k3" class="s2-kpi">
+        <div class="s2-kpi-val" id="s2-v3">52 Gates</div>
+        <div class="s2-kpi-lbl">Cutover &amp; PR Checklists</div>
+        <p class="s2-kpi-txt">2.56&times; PTU spike prevented &middot; 71% seasonal TCO saved &middot; &lt;15s failover RTO.</p>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SCENE 02: OPERATING MODEL (PAGES 3-5 OF 45) ==================== -->
-  <section id="scene-1" class="scene">
-    <div class="eyebrow">PAGES 03&ndash;05 OF 45 &middot; /operating-model/* (ALL 3 SUBPAGES)</div>
-    <h2 class="h-section">Industrialization Operating Model &mdash; <span class="grad-text">Factory, Evidence &amp; 3-Week Scope</span></h2>
-
-    <div class="grid-3col">
-      <div id="s2-c0" class="glass-card sp-card teal">
-        <div>
-          <div class="sp-top">
-            <span class="route-pill teal">/operating-model/industrialization-pipeline</span>
-            <span class="metric-badge">PAGE 03</span>
-          </div>
-          <div class="sp-title">01 &middot; Five-Stage Industrialization Pipeline</div>
-          <ul class="sp-bullets">
-            <li><strong>Stage 1 Customer-Zero:</strong> Exercised in live production telemetry first</li>
-            <li><strong>Stage 2 Sanitization:</strong> <code>check-sanitized.mjs</code> strips IDs, emails &amp; GUIDs</li>
-            <li><strong>Stage 3 Peer ARB:</strong> Separates published specs from design patterns</li>
-            <li><strong>Stage 4 Tri-Path:</strong> <code>4A</code> Patent Hold &bull; <code>4B</code> PG/Learn PR &bull; <code>4C</code> Playbook</li>
-            <li><strong>Stage 5 1:N Reuse:</strong> 5 Strategic Value Pillars across specialist teams</li>
-          </ul>
-        </div>
-        <div class="sp-foot"><span>1:1 Win &rarr; 1:N Standard</span><b>Prior-Art Safe</b></div>
-      </div>
-
-      <div id="s2-c1" class="glass-card sp-card">
-        <div>
-          <div class="sp-top">
-            <span class="route-pill">/operating-model/governance-and-quality</span>
-            <span class="metric-badge">PAGE 04</span>
-          </div>
-          <div class="sp-title">02 &middot; Governance, Evidence &amp; Adoption Signals</div>
-          <ul class="sp-bullets">
-            <li><code>[M]</code> <strong>Learn Verified:</strong> Cited Microsoft Learn / OpenAI spec + date</li>
-            <li><code>[Arch]</code> <strong>Reference Pattern:</strong> Documented trade-offs &amp; boundaries</li>
-            <li><code>[Agree]</code> <strong>Gate SLO:</strong> Transparent release target (e.g., &ge;80% hit)</li>
-            <li><code>[Validate]</code> <strong>Empirical Probe:</strong> Subscription-level 2-pass / quota test</li>
-            <li><strong>3 PR Gates + CODEOWNERS:</strong> Visible co-author bylines &amp; outcome KPIs</li>
-          </ul>
-        </div>
-        <div class="sp-foot"><span>Zero Opinion Blur</span><b>3-Gate PR Template</b></div>
-      </div>
-
-      <div id="s2-c2" class="glass-card sp-card green">
-        <div>
-          <div class="sp-top">
-            <span class="route-pill teal">/operating-model/delivery-scoping</span>
-            <span class="metric-badge">PAGE 05</span>
-          </div>
-          <div class="sp-title">03 &middot; Repeatable 3-Week Engagement Scope</div>
-          <ul class="sp-bullets">
-            <li><strong>6-Dimension Intake (30 Min):</strong> Model wave, lifespan, SKU, &gt;15 RPM &amp; walls</li>
-            <li><strong>Week 1 Baseline Audit:</strong> Rank nodes by <code>RPM&times;Tok</code> + run <code>pcr_lint.py</code></li>
-            <li><strong>Week 2 Refactor:</strong> <code>Pos 1&ndash;6</code> middleware, sharding &amp; APIM staging</li>
-            <li><strong>Week 3 Sign-Off:</strong> 2-pass evals, load test, KQL gate &amp; PTU model</li>
-            <li><strong>4 Workstreams:</strong> Arch/Sizing, App/Eval, Gateway/OTel &amp; FinOps</li>
-          </ul>
-        </div>
-        <div class="sp-foot"><span>Live &lt;IntakeScorecard /&gt;</span><b>Signed Exit Artifacts</b></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== SCENE 03: PLAYBOOK 01 START & QUALIFY (PAGES 6-11 OF 45) ==================== -->
+  <!-- ==================== SCENE 03: PLAYBOOK 01 + REGULATED PROFILE ==================== -->
   <section id="scene-2" class="scene">
-    <div class="eyebrow">PAGES 06&ndash;11 OF 45 &middot; PLAYBOOK 01 START &amp; QUALIFY (CHAPTERS 01&ndash;06)</div>
-    <h2 class="h-section">Playbook 01 (Part 1) &mdash; <span class="grad-text">Hydration Tax, KV Mechanics &amp; PTU Math</span></h2>
+    <div class="eyebrow">03 &middot; PLAYBOOK 01 (15 CHAPTERS &middot; C1&ndash;C15) + REGULATED PROFILE (C-WP1&ndash;C-WP4)</div>
+    <h2 class="h-section">Prompt Caching, Prefix Taxonomy &amp; <span class="grad-text">Two-Regime PTU Economics</span></h2>
 
-    <div class="grid-3x2">
-      <div id="s3-c0" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">start/01-executive-thesis</span><span class="metric-badge">CH 01</span></div>
-          <div class="sp-title">Executive Thesis &amp; Core Q&amp;A</div>
-          <p class="sp-desc">Answers why <code>GPT-4.x</code> / <code>o3-mini</code> &rarr; <code>GPT-5.6 / 6 / 6.1</code> cutovers trigger a <code>2.56&times;</code> PTU jump (<code>170 &rarr; 435 PTUs</code>) and frames migration readiness as a standing CI discipline.</p>
+    <div class="two-cols">
+      <div id="s3-left" class="glass-card panel-box">
+        <div class="panel-head">
+          <div class="panel-title">Scope &times; Volatility Pos 1&ndash;6 Stack + Sharding</div>
+          <span class="pill-tag">N = &lceil;RPM &divide; 12&rceil; (&gt;15 RPM)</span>
         </div>
-        <div class="sp-foot"><span>Page 06 / 45</span><b>2.56&times; Spike Thesis</b></div>
+        <div class="s3-stack">
+          <div id="s3-l0" class="s3-layer">
+            <span class="s3-pos">POS 01</span>
+            <div class="s3-lname"><code>response_format</code> + T0 Core System &amp; Skill Rules</div>
+            <span class="pill-tag">BYTE-IDENTICAL</span>
+          </div>
+          <div id="s3-l1" class="s3-layer">
+            <span class="s3-pos">POS 02</span>
+            <div class="s3-lname">Canonically Sorted <code>tools[]</code> Schemas (<code>sort_keys</code>)</div>
+            <span class="pill-tag blue">BREAKPOINT #1</span>
+          </div>
+          <div id="s3-l2" class="s3-layer">
+            <span class="s3-pos">POS 03</span>
+            <div class="s3-lname">Static Practice Methodology &amp; Rubric (&ge;1,024 tok)</div>
+            <span class="pill-tag">ZERO CLIENT DATA</span>
+          </div>
+          <div id="s3-l3" class="s3-layer">
+            <span class="s3-pos">POS 04</span>
+            <div class="s3-lname"><code>L2</code> Scoped Engagement / Matter Context Card</div>
+            <span class="pill-tag blue">OPT. BP #2</span>
+          </div>
+          <div id="s3-l4" class="s3-layer">
+            <span class="s3-pos">POS 05</span>
+            <div class="s3-lname"><code>L1</code> User Role + Append-Only Conversation Turns</div>
+            <span class="pill-tag">APPEND-ONLY</span>
+          </div>
+          <div id="s3-l5" class="s3-layer volatile">
+            <span class="s3-pos">POS 06</span>
+            <div class="s3-lname">Live RAG Chunks, MCP Outputs, IDs &amp; Timestamps</div>
+            <span class="pill-tag amber">VOLATILE TAIL</span>
+          </div>
+        </div>
       </div>
 
-      <div id="s3-c1" class="glass-card sp-card teal">
+      <div id="s3-right" class="glass-card panel-box green">
         <div>
-          <div class="sp-top"><span class="route-pill teal">start/02-stateless-agents</span><span class="metric-badge">CH 02</span></div>
-          <div class="sp-title">Stateless Agents &amp; Hydration Tax</div>
-          <p class="sp-desc">Contrasts <code>Model 1</code> stateful local CLIs against <code>Model 2</code> stateless cloud containers re-sending <code>4,000&ndash;12,000</code> system &amp; tool tokens <code>3&ndash;8&times;</code> per user turn.</p>
-        </div>
-        <div class="sp-foot"><span>Page 07 / 45</span><b>Cross-Turn KV Memory</b></div>
-      </div>
+          <div class="panel-head">
+            <div class="panel-title">Two-Regime PTU Math &amp; Regulated Ethical Walls</div>
+            <span class="pill-tag blue">[M] LEARN VERIFIED</span>
+          </div>
 
-      <div id="s3-c2" class="glass-card sp-card violet">
-        <div>
-          <div class="sp-top"><span class="route-pill violet">start/03-kv-mechanics</span><span class="metric-badge">CH 03</span></div>
-          <div class="sp-title">KV Mechanics &amp; GPT-5.6+ Delta</div>
-          <p class="sp-desc">Exact byte match on first <code>1,024</code> wire tokens (<code>128-tok</code> steps starting at <code>response_format</code>), <code>reasoning.context=all_turns</code> on 5.6/6, and <code>12h/24h</code> write billing.</p>
-        </div>
-        <div class="sp-foot"><span>Page 08 / 45</span><b>[M] Generation Matrix</b></div>
-      </div>
+          <div id="s3-regimes" class="regime-grid">
+            <div class="regime-card">
+              <b>Regime 1 &middot; GPT-5.6 (terra / sol / luna)</b>
+              <p>Cached read = <code>0.0x</code> PTU draw (100% deducted) &bull; Output = <code>6.0x</code> &bull; Strip breakpoints on PTU-M.</p>
+            </div>
+            <div class="regime-card">
+              <b>Regime 2 &middot; GPT-6 &amp; GPT-6.1</b>
+              <p>Cached read = <code>0.10x</code> (<code>0.05x</code> 6.1) &bull; Write = <code>1.25x</code> &bull; Out = <code>5.0x</code> &bull; Keep R/W <code>&ge;10:1</code>.</p>
+            </div>
+          </div>
 
-      <div id="s3-c3" class="glass-card sp-card green">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">qualify/04-ptu-sizing-math</span><span class="metric-badge">CH 04</span></div>
-          <div class="sp-title">SKU Boundary &amp; Two-Regime PTU</div>
-          <p class="sp-desc"><code>GPT-5.6</code>: <code>0.0x</code> cached PTU draw, <code>6.0x</code> out, no PTU breakpoints. <code>GPT-6/6.1</code>: PTU breakpoints supported; <code>0.10x/0.05x</code> read, <code>1.25x</code> write, <code>5.0x</code> out.</p>
+          <div id="s3-bars" class="ptu-bars">
+            <div class="bar-row">
+              <div class="bar-lbl">
+                <span style="color:#fca5a5;">Un-Tuned Migration (0% Cache Hit)</span>
+                <span style="font-family:var(--font-mono);color:#f87171;font-weight:800;">435 PTUs (2.56&times; Spike)</span>
+              </div>
+              <div class="bar-track"><div id="s3-b1" class="bar-fill" style="width:100%;background:linear-gradient(90deg,#dc2626,#f97316);"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-lbl">
+                <span style="color:#6ee7b7;">Playbook 01 + Seasonal PAYG Spillover</span>
+                <span style="font-family:var(--font-mono);color:#34d399;font-weight:800;">170 PTUs &middot; 71% Filing-Cliff TCO Saved</span>
+              </div>
+              <div class="bar-track"><div id="s3-b2" class="bar-fill" style="width:39%;background:linear-gradient(90deg,#0078d4,#10b981);"></div></div>
+            </div>
+          </div>
         </div>
-        <div class="sp-foot"><span>Page 09 / 45</span><b>Embedded &lt;PtuCalculator /&gt;</b></div>
-      </div>
 
-      <div id="s3-c4" class="glass-card sp-card amber">
-        <div>
-          <div class="sp-top"><span class="route-pill amber">qualify/05-node-archetypes</span><span class="metric-badge">CH 05</span></div>
-          <div class="sp-title">Enterprise Agent Node Archetypes</div>
-          <p class="sp-desc">Ranks <code>6&ndash;12</code> workflow nodes by <code>Peak RPM &times; Prefix Tokens</code>: refactor top 3 high-volume nodes first (<code>75&ndash;85%</code> of spend) and disable writes <code>&lt;1,024</code> tok.</p>
+        <div id="s3-wall" class="callout-strip">
+          <strong>Regulated Multi-Engagement Profile (Assurance, Tax, Legal &amp; Financial)</strong>
+          <p>Posture A caches T0 methodology only (0 client KV) &bull; 110-PTU base + 4&times; surge spillover &bull; <code>C-WP1&ndash;C-WP4</code> workpaper SHA lineage.</p>
         </div>
-        <div class="sp-foot"><span>Page 10 / 45</span><b>75&ndash;85% Spend Focus</b></div>
-      </div>
-
-      <div id="s3-c5" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">qualify/06-breakeven-economics</span><span class="metric-badge">CH 06</span></div>
-          <div class="sp-title">Cache Write/Read Break-Even Math</div>
-          <p class="sp-desc">Proves <code>1.25&times;</code> write fees break even on a single <code>1:1</code> read (<code>32.5&ndash;35%</code> saved); hitting the <code>10:1</code> target gate cuts effective prefix cost by <code>80&ndash;84%</code>.</p>
-        </div>
-        <div class="sp-foot"><span>Page 11 / 45</span><b>80&ndash;84% Prefix Savings</b></div>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SCENE 04: PLAYBOOK 01 DESIGN (PAGES 12-15 OF 45) ==================== -->
+  <!-- ==================== SCENE 04: PLAYBOOK 02 APIM AI GATEWAY ==================== -->
   <section id="scene-3" class="scene">
-    <div class="eyebrow">PAGES 12&ndash;15 OF 45 &middot; PLAYBOOK 01 DESIGN ARCHITECTURE (CHAPTERS 07&ndash;10)</div>
-    <h2 class="h-section">Playbook 01 (Part 2) &mdash; <span class="grad-text">Pos 1&ndash;6 Taxonomy, Anti-Patterns &amp; Wire Controls</span></h2>
+    <div class="eyebrow">04 &middot; PLAYBOOK 02 (6 CHAPTERS &middot; G1&ndash;G12) &middot; ENTERPRISE AI GATEWAY</div>
+    <h2 class="h-section">Multi-Backend Microsoft Foundry <span class="grad-text">APIM AI Gateway &amp; FinOps</span></h2>
 
-    <div class="grid-2x2">
-      <div id="s4-c0" class="glass-card sp-card">
+    <div id="s4-flow" class="glass-card flow-banner">
+      <svg viewBox="0 0 1680 185" width="100%" height="185">
+        <defs>
+          <marker id="arr-g" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#2dd4bf" />
+          </marker>
+        </defs>
+        <rect x="10" y="24" width="300" height="136" rx="12" fill="rgba(15,32,58,0.9)" stroke="#38bdf8" stroke-width="2" />
+        <text x="28" y="58" font-size="17" font-weight="800" fill="#7dd3fc">1. AGENT &amp; APP CALLERS</text>
+        <text x="28" y="88" font-size="15" fill="#e2e8f0">&bull; /v1/responses &amp; /chat/completions</text>
+        <text x="28" y="114" font-size="15" fill="#e2e8f0">&bull; Entra ID JWT over Private Link</text>
+        <text x="28" y="140" font-size="14" font-weight="700" fill="#5eead4">Header: x-cost-center + cache_key</text>
+
+        <path d="M310 92 H370" stroke="#2dd4bf" stroke-width="3" marker-end="url(#arr-g)" />
+
+        <rect x="378" y="14" width="470" height="156" rx="12" fill="rgba(13,46,56,0.85)" stroke="#14b8a6" stroke-width="2.4" />
+        <text x="400" y="48" font-size="18" font-weight="800" fill="#5eead4">2. AZURE APIM INBOUND &amp; ROUTING POLICY</text>
+        <text x="400" y="78" font-size="15" fill="#e2e8f0">&bull; Managed Identity RBAC &amp; azure-openai-token-limit</text>
+        <text x="400" y="104" font-size="15" fill="#e2e8f0">&bull; Snapshot raw body &rarr; strip 5.6 PTU breakpoints</text>
+        <text x="400" y="130" font-size="15" fill="#e2e8f0">&bull; Strip x-cost-center &rarr; emit FinOps OTel dimension</text>
+        <text x="400" y="154" font-size="14" font-weight="700" fill="#7dd3fc">&bull; buffer-response="false" unbuffered SSE streaming</text>
+
+        <path d="M848 60 H922" stroke="#2dd4bf" stroke-width="3" marker-end="url(#arr-g)" />
+        <path d="M848 128 H922" stroke="#f59e0b" stroke-width="2.6" stroke-dasharray="7 4" marker-end="url(#arr-g)" />
+
+        <rect x="930" y="14" width="380" height="72" rx="10" fill="rgba(13,60,54,0.8)" stroke="#10b981" stroke-width="2" />
+        <text x="950" y="44" font-size="16.5" font-weight="800" fill="#6ee7b7">PRIORITY 1 &middot; FOUNDRY PTU-M</text>
+        <text x="950" y="69" font-size="14.5" fill="#e2e8f0">Steady baseline (&le;70% p95) &middot; Lowest TTFT</text>
+
+        <rect x="930" y="98" width="380" height="72" rx="10" fill="rgba(88,44,12,0.65)" stroke="#f59e0b" stroke-width="2" />
+        <text x="950" y="128" font-size="16.5" font-weight="800" fill="#fcd34d">PRIORITY 2 &middot; STANDARD PAYG</text>
+        <text x="950" y="153" font-size="14.5" fill="#fde68a">429/503 Retry-After &middot; Restores full JSON body</text>
+
+        <path d="M1310 92 H1368" stroke="#2dd4bf" stroke-width="3" marker-end="url(#arr-g)" />
+
+        <rect x="1376" y="24" width="292" height="136" rx="12" fill="rgba(15,32,58,0.9)" stroke="#a78bfa" stroke-width="2" />
+        <text x="1396" y="58" font-size="17" font-weight="800" fill="#ddd6fe">3. APP INSIGHTS FINOPS</text>
+        <text x="1396" y="88" font-size="14.5" fill="#e2e8f0">&bull; Prompt / Cached / Out tokens</text>
+        <text x="1396" y="114" font-size="14.5" fill="#e2e8f0">&bull; Spillover % alert (&gt;15%)</text>
+        <text x="1396" y="140" font-size="14" font-weight="700" fill="#c4b5fd">[G1&ndash;G12 Gate Verified]</text>
+      </svg>
+    </div>
+
+    <div class="four-cards">
+      <div id="s4-c0" class="glass-card mech-card">
         <div>
-          <div class="sp-top"><span class="route-pill">design/07-prefix-taxonomy</span><span class="metric-badge">CH 07 &middot; PAGE 12</span></div>
-          <div class="sp-title">Scope &times; Volatility Six-Position Pipeline</div>
-          <ul class="sp-bullets">
-            <li><strong>Pos 1&ndash;3 (Global T0):</strong> <code>response_format</code> + Core System + Sorted <code>tools[]</code> + Static Rubric (&ge;1,024 tok)</li>
-            <li><strong>Pos 4 (Workspace L2) &amp; Pos 5 (Session L1):</strong> Engagement context card + append-only turn history</li>
-            <li><strong>Pos 6 (Volatile Tail):</strong> Live RAG chunks, MCP outputs, request IDs &amp; timestamps strictly last</li>
-          </ul>
+          <div class="mech-kicker">G1&ndash;G2 &middot; ZERO-SECRET AUTH</div>
+          <div class="mech-title">Managed Identity &amp; Token Quotas</div>
+          <p class="mech-body">Enforces <code>disableLocalAuth=true</code> upstream with RBAC bearer tokens and per-practice <code>azure-openai-token-limit</code> ceilings.</p>
         </div>
-        <div class="sp-foot"><span>Context Category Mapping</span><b>Max Cross-Turn Reuse</b></div>
+        <span class="pill-tag">100% Keyless Upstream</span>
       </div>
-
-      <div id="s4-c1" class="glass-card sp-card amber">
+      <div id="s4-c1" class="glass-card mech-card">
         <div>
-          <div class="sp-top"><span class="route-pill amber">design/08-anti-patterns</span><span class="metric-badge">CH 08 &middot; PAGE 13</span></div>
-          <div class="sp-title">Eliminating 6 Prefix-Breaking Anti-Patterns</div>
-          <ul class="sp-bullets">
-            <li><strong>AP1&ndash;AP3:</strong> Pos-1 clock timestamps, non-deterministic <code>json.dumps</code> / <code>tools[]</code> order &amp; dynamic <code>response_format</code></li>
-            <li><strong>AP4&ndash;AP6:</strong> Per-user / <code>cost_center</code> cache keys, top-injected RAG chunks &amp; unpinned <code>reasoning.context</code></li>
-            <li>Includes side-by-side <em>Before vs. After</em> context middleware refactoring code</li>
-          </ul>
+          <div class="mech-kicker">G3&ndash;G5 &middot; BURST RESILIENCY</div>
+          <div class="mech-title">Retry-After Circuit Breakers</div>
+          <p class="mech-body">Trips cleanly on HTTP <code>429</code> &amp; <code>500&ndash;599</code> with <code>acceptRetryAfter=true</code> across pinned-snapshot Standard deployments.</p>
         </div>
-        <div class="sp-foot"><span>Zero Silent 0%-Hit Bugs</span><b>Before / After Code</b></div>
+        <span class="pill-tag">Zero Escaped 429s</span>
       </div>
-
-      <div id="s4-c2" class="glass-card sp-card teal">
+      <div id="s4-c2" class="glass-card mech-card">
         <div>
-          <div class="sp-top"><span class="route-pill teal">design/09-wire-controls</span><span class="metric-badge">CH 09 &middot; PAGE 14</span></div>
-          <div class="sp-title">Explicit Cache Keys, &gt;15 RPM Sharding &amp; TTL</div>
-          <ul class="sp-bullets">
-            <li><strong>Key Format:</strong> <code>{app}:{node}:{ver}:shard-{0..N-1}</code> where <code>N = &lceil;Peak_RPM &divide; 12&rceil;</code></li>
-            <li><strong>Sticky Routing:</strong> <code>hash(thread_id) % N</code> prevents single-cell overflow while preserving session hits</li>
-            <li><strong>Wire Payloads:</strong> Copy-ready <code>/openai/v1/responses</code> JSON &amp; minimum breakpoint token rules</li>
-          </ul>
+          <div class="mech-kicker">G6&ndash;G7 &middot; SKU WIRE SAFETY</div>
+          <div class="mech-title">Body-Safe Breakpoint Rewrites</div>
+          <p class="mech-body">Snapshots raw JSON before stripping <code>5.6 PTU-M</code> breakpoints, then restores the original body on Standard retry.</p>
         </div>
-        <div class="sp-foot"><span>Prevents Hot-Shard 429s</span><b>[M] Wire JSON Specs</b></div>
+        <span class="pill-tag amber">Offline XML Gated</span>
       </div>
-
-      <div id="s4-c3" class="glass-card sp-card green">
+      <div id="s4-c3" class="glass-card mech-card">
         <div>
-          <div class="sp-top"><span class="route-pill teal">design/10-apim-spillover</span><span class="metric-badge">CH 10 &middot; PAGE 15</span></div>
-          <div class="sp-title">APIM SKU-Aware PTU-to-Standard Spillover</div>
-          <ul class="sp-bullets">
-            <li>Sizes primary <code>PTU-M</code> at <code>&le;65&ndash;70%</code> p95 utilization and overflows bursts onto Standard PAYG</li>
-            <li>Strips <code>prompt_cache_breakpoint</code> &amp; <code>prompt_cache_options</code> only on the <code>GPT-5.6 PTU-M</code> leg</li>
-            <li>Preserves sharded <code>prompt_cache_key</code> &amp; pinned model snapshot across both legs</li>
-          </ul>
+          <div class="mech-kicker">G8&ndash;G12 &middot; STREAMING &amp; FINOPS</div>
+          <div class="mech-title">Unbuffered SSE &amp; Chargeback</div>
+          <p class="mech-body">Sets <code>buffer-response="false"</code> (&lt;35ms TTFT delta) and strips <code>x-cost-center</code> into OTel metrics without cache split.</p>
         </div>
-        <div class="sp-foot"><span>Seamless Hybrid Routing</span><b>Links to Playbook 02</b></div>
+        <span class="pill-tag violet">Out-of-Band Billing</span>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SCENE 05: PLAYBOOK 01 VALIDATE, GOVERN & SOURCES (PAGES 16-20 OF 45) ==================== -->
+  <!-- ==================== SCENE 05: PLAYBOOK 03 MULTI-REGION BCP ==================== -->
   <section id="scene-4" class="scene">
-    <div class="eyebrow">PAGES 16&ndash;20 OF 45 &middot; PLAYBOOK 01 VALIDATE, GOVERN &amp; SOURCES (CHAPTERS 11&ndash;15)</div>
-    <h2 class="h-section">Playbook 01 (Part 3) &mdash; <span class="grad-text">7-Layer Gates, PCR Linter, KQL &amp; R1&ndash;R6 Sources</span></h2>
+    <div class="eyebrow">05 &middot; PLAYBOOK 03 (6 CHAPTERS &middot; B1&ndash;B12) &middot; STAMP BUSINESS CONTINUITY</div>
+    <h2 class="h-section">Multi-Region Foundry BCP, Residency &amp; <span class="grad-text">Cold-Cache Surge Math</span></h2>
 
-    <div class="grid-5">
-      <div id="s5-c0" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">validate/11-seven-layer-gates</span><span class="metric-badge">CH 11</span></div>
-          <div class="sp-title">7-Layer Pipeline &amp; 7-Step Protocol</div>
-          <p class="sp-desc">Integrates caching assertions across Unit, Static Lint, 2-Pass Eval, Peak Load (<code>&gt;15 RPM</code>), 429 Failover, OTel &amp; KQL stages prior to cutover.</p>
-        </div>
-        <div class="sp-foot"><span>Page 16 / 45</span><b>7-Step Staging Runbook</b></div>
+    <div id="s5-stamps" class="glass-card stamp-grid">
+      <div class="stamp-box">
+        <h4>Primary Active AI Stamp (e.g., East US 2)</h4>
+        <p>&bull; APIM Gateway + Primary PTU-M (170 PTUs, 80%+ warm KV hit)<br/>&bull; Cosmos DB multi-region write + AI Search Stamp A + RA-GZRS ADLS<br/>&bull; ACA MicroVM Pool pinned to immutable Git-SHA image</p>
       </div>
-
-      <div id="s5-c1" class="glass-card sp-card green">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">validate/12-ci-lint-deepeval</span><span class="metric-badge">CH 12</span></div>
-          <div class="sp-title">PCR001&ndash;006 Linter &amp; 2-Pass DeepEval</div>
-          <p class="sp-desc">Blocks PR regressions with fail-closed <code>pcr_lint.py</code> (AST recursion + non-blank constant keys) plus a 2-pass test requiring <code>cached_tokens &ge; 1,024</code>.</p>
-        </div>
-        <div class="sp-foot"><span>Page 17 / 45</span><b>Zero-Dep CI Blocker</b></div>
+      <div class="stamp-mid">
+        <div class="stamp-mid-pill">&lt;15s RTO Cutover</div>
+        <div style="font-size:13px;color:#5eead4;font-weight:700;">Continuous Geo-Sync &amp; 5-Min Probe</div>
       </div>
-
-      <div id="s5-c2" class="glass-card sp-card violet">
-        <div>
-          <div class="sp-top"><span class="route-pill violet">govern/13-otel-kql-gate</span><span class="metric-badge">CH 13</span></div>
-          <div class="sp-title">Privacy OTel &amp; Two-Regime KQL Gate</div>
-          <p class="sp-desc">Emits token counters only (prompt text capture <code>OFF</code>) and computes coincident <code>DeployPeakNormTPM</code>, <code>HitRatePct</code> &amp; <code>ReadWriteRatio</code>.</p>
-        </div>
-        <div class="sp-foot"><span>Page 18 / 45</span><b>App Insights Workbook</b></div>
+      <div class="stamp-box dr">
+        <h4>Secondary DR AI Stamp (Symmetric Residency)</h4>
+        <p>&bull; Warm Min-PTU Anchor (15&ndash;25 PTU) + High-TPM Standard PAYG<br/>&bull; Sized &ge;2.6&times; steady TPM to absorb 15-min cold-cache surge<br/>&bull; Cosmos DB failover + AI Search Stamp B (&lt;1% index lag)</p>
       </div>
+    </div>
 
-      <div id="s5-c3" class="glass-card sp-card teal">
+    <div class="three-cards">
+      <div id="s5-c0" class="glass-card mech-card">
         <div>
-          <div class="sp-top"><span class="route-pill teal">govern/14-readiness-standard</span><span class="metric-badge">CH 14 &middot; PAGE 19</span></div>
-          <div class="sp-title">15-Point Migration Readiness Standard (<code>C1&ndash;C15</code>)</div>
-          <p class="sp-desc">Maps every prefix, sharding, SKU boundary, <code>reasoning.context</code>, CI lint, 2-pass eval (<code>&ge;80%</code> hit, <code>&ge;10:1</code> R/W), OTel, and snapshot check across 4 governance stages.</p>
+          <div class="mech-kicker">B1&ndash;B2 &middot; DATA SOVEREIGNTY</div>
+          <div class="mech-title">Global vs. Data Zone vs. Regional</div>
+          <p class="mech-body">Enforces symmetric <code>DataZone (US/EU)</code> or single-country <code>Regional</code> processing across Primary, Spillover, and DR legs with identical pinned model snapshots.</p>
         </div>
-        <div class="sp-foot"><span>Objective Go / No-Go</span><b>C1&ndash;C15 Gate Matrix</b></div>
+        <span class="pill-tag blue">Zero Boundary Leaks</span>
       </div>
-
-      <div id="s5-c4" class="glass-card sp-card amber">
+      <div id="s5-c1" class="glass-card mech-card">
         <div>
-          <div class="sp-top"><span class="route-pill amber">prompt-caching/sources</span><span class="metric-badge">CH 15 &middot; PAGE 20</span></div>
-          <div class="sp-title">Verification Matrix &amp; Official Sources (<code>R1&ndash;R6</code>)</div>
-          <p class="sp-desc">Links every <code>[M]</code> specification directly to published Microsoft Learn Prompt Caching, Responses API, PTU Sizing &amp; Azure Pricing URLs alongside <code>[Validate]</code> probes.</p>
+          <div class="mech-kicker">B3 &middot; FAILOVER ECONOMICS</div>
+          <div class="mech-title">2.56&times; Cold-Cache Surge Buffer</div>
+          <p class="mech-body">Prompt KV caches are stamp-local: failing over drops hits from 80% to 0%. Absorb the 15-minute hydration spike on PAYG at <code>1.0&ndash;1.15&times;</code> annual cost instead of <code>2.0&times;</code> idle PTUs.</p>
         </div>
-        <div class="sp-foot"><span>100% Auditable Citations</span><b>R1&ndash;R6 Reference Register</b></div>
+        <span class="pill-tag">No 2&times; Idle PTU Tax</span>
+      </div>
+      <div id="s5-c2" class="glass-card mech-card">
+        <div>
+          <div class="mech-kicker">B4&ndash;B12 &middot; STATEFUL DRILLS</div>
+          <div class="mech-title">Coupled State &amp; Game-Day Proof</div>
+          <p class="mech-body">Co-fails over Cosmos DB checkpoints and dual AI Search indexers, verified quarterly via 30-minute fault injection and <code>bcp_snapshot_gate.py</code> fresh 200&ndash;299 evidence.</p>
+        </div>
+        <span class="pill-tag amber">&lt;15s Verified RTO</span>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SCENE 06: REGULATED MULTI-ENGAGEMENT PROFILE (PAGE 21 OF 45) ==================== -->
+  <!-- ==================== SCENE 06: PLAYBOOK 04 AGENTIC RAG & EVALS ==================== -->
   <section id="scene-5" class="scene">
-    <div class="eyebrow">PAGE 21 OF 45 &middot; /playbooks/prompt-caching/profiles/regulated-multi-engagement</div>
-    <h2 class="h-section">Dedicated Workload Profile &mdash; <span class="grad-text">Regulated Multi-Engagement &amp; Ethical Walls</span></h2>
+    <div class="eyebrow">06 &middot; PLAYBOOK 04 (6 CHAPTERS &middot; A1&ndash;A12) &middot; INDUSTRIALIZED AGENTS</div>
+    <h2 class="h-section">3-Tier Sandboxed Agentic Harness, <span class="grad-text">Foundry IQ &amp; 7-Layer Evals</span></h2>
 
-    <div class="grid-2x2">
-      <div id="s6-c0" class="glass-card sp-card teal">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">SECTION 01 &middot; ETHICAL WALLS</span><span class="metric-badge">ZERO CLIENT BLEED</span></div>
-          <div class="sp-title">Subscription Isolation &amp; Posture A vs. Posture B</div>
-          <ul class="sp-bullets">
-            <li><strong>Platform Guarantee <code>[M]</code>:</strong> Exact-prefix tensor reuse only; zero cross-subscription KV sharing; Data Zone / Regional bound</li>
-            <li><strong>Posture A (Zero-Client-Cache):</strong> Explicit <code>BP#1</code> caches Practice <code>T0</code> methodology only; zero client bytes enter KV cache</li>
-            <li><strong>Posture B (Matter-Scoped):</strong> <code>BP#1</code> (Practice T0) + exact-prefix <code>BP#2</code> (<code>L2</code> Matter Card) inside authorized matter threads</li>
-          </ul>
-        </div>
-        <div class="sp-foot"><span>Audit, Tax, Legal &amp; GxP</span><b>CISO / Independence Ready</b></div>
+    <div class="s6-pipe">
+      <div id="s6-n0" class="glass-card s6-node">
+        <div class="s6-step">TIER 01 &middot; FRONTEND</div>
+        <h4>Typed AG-UI Client</h4>
+        <p>Deterministic SSE reducer streaming tool, citation &amp; delta events with zero upstream keys.</p>
       </div>
-
-      <div id="s6-c1" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">SECTION 02 &middot; FINOPS DECOUPLING</span><span class="metric-badge">NO KEY FRACTURE</span></div>
-          <div class="sp-title">Chargeback-vs-Cache-Key Separation</div>
-          <ul class="sp-bullets">
-            <li>Putting <code>engagement_code</code> inside <code>prompt_cache_key</code> fractures 1,000+ matters into cold <code>0%</code>-hit buckets</li>
-            <li>Keep <code>prompt_cache_key = practice:node:v4:shard-k</code> shared across the practice</li>
-            <li>Pass <code>x-cost-center</code> strictly out-of-band in HTTP headers; APIM emits OTel dimensions &amp; strips before Foundry</li>
-          </ul>
-        </div>
-        <div class="sp-foot"><span>Exact Department Billing</span><b>80%+ Practice Cache Hit</b></div>
+      <div id="s6-n1" class="glass-card s6-node">
+        <div class="s6-step">TIER 02 &middot; CONTROL</div>
+        <h4>SDK-Free Orchestrator</h4>
+        <p>Never runs shell or Agent SDK code; enforces 50 MB upload limits &amp; line-by-line SSE proxy.</p>
       </div>
-
-      <div id="s6-c2" class="glass-card sp-card green">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">SECTION 03 &middot; FILING CLIFFS</span><span class="metric-badge">71% TCO SAVED</span></div>
-          <div class="sp-title">Seasonal Filing-Cliff &amp; Deal-Sprint PTU Math</div>
-          <ul class="sp-bullets">
-            <li>Statutory tax deadlines, Q1 audit closes &amp; M&amp;A deal rooms create <code>3&times;&ndash;6&times;</code> 6-week surges</li>
-            <li>Reserve <code>110 PTUs</code> for 10-month steady demand instead of <code>440 PTUs</code> year-round</li>
-            <li>Overflow peak filing weeks to Standard PAYG via APIM <code>429 Retry-After</code>, saving <strong>71% annual TCO</strong></li>
-          </ul>
-        </div>
-        <div class="sp-foot"><span>110 PTU Base + PAYG Surge</span><b>Worked Annual TCO Table</b></div>
+      <div id="s6-n2" class="glass-card s6-node">
+        <div class="s6-step">TIER 03 &middot; SANDBOX</div>
+        <h4>ACA Dynamic Sessions</h4>
+        <p>1 hypervisor microVM per session, Git-SHA image tags &amp; realpath workspace containment.</p>
       </div>
+      <div id="s6-n3" class="glass-card s6-node">
+        <div class="s6-step">INGEST &amp; RAG</div>
+        <h4>Content Und. + IQ MCP</h4>
+        <p>Layout-faithful Markdown conversion + Azure AI Search agentic query decomposition &amp; ACLs.</p>
+      </div>
+      <div id="s6-n4" class="glass-card s6-node">
+        <div class="s6-step">RELEASE GATES</div>
+        <h4>7-Layer Eval &amp; OTel</h4>
+        <p>Deterministic <code>ARG001&ndash;007</code> CI blockers, Waza skill evals &amp; privacy-safe <code>gen_ai.*</code> spans.</p>
+      </div>
+    </div>
 
-      <div id="s6-c3" class="glass-card sp-card violet">
-        <div>
-          <div class="sp-top"><span class="route-pill violet">SECTION 04 &middot; WORKPAPER LINEAGE</span><span class="metric-badge">C-WP1&ndash;C-WP4</span></div>
-          <div class="sp-title">Workpaper-Grade Reproducibility Across Waves</div>
-          <ul class="sp-bullets">
-            <li><strong>C-WP1 &amp; C-WP2:</strong> Identical pinned model snapshot (e.g., <code>2026-09-29</code>) + <code>schema_sha256</code> logged per turn</li>
-            <li><strong>C-WP3 &amp; C-WP4:</strong> Metadata-only lineage record (executing region, SKU leg, <code>cached_tokens</code>) with zero raw client PII</li>
-          </ul>
+    <div class="s6-bottom">
+      <div id="s6-b0" class="glass-card panel-box">
+        <div class="panel-head">
+          <div class="panel-title">Binary Document Fidelity &amp; ACL-Trimmed Grounding</div>
+          <span class="pill-tag blue">FOUNDRY IQ MCP</span>
         </div>
-        <div class="sp-foot"><span>Page 21 / 45 Complete</span><b>Regulator-Verifiable</b></div>
+        <p style="font-size:14.5px;line-height:1.48;color:#cbd5e1;">
+          Converts complex PDFs and tables via <strong>ADLS Gen2 + Azure Content Understanding</strong> (fail-closed <code>503</code>), retrieves multi-hop evidence with Managed Identity RBAC &amp; user ACL trimming, and appends dynamic chunks strictly at <strong>Position 6</strong> so prefix caches stay intact.
+        </p>
+      </div>
+      <div id="s6-b1" class="glass-card panel-box violet">
+        <div class="panel-head">
+          <div class="panel-title">Deterministic CI Blockers vs. Calibrated LLM Judges</div>
+          <span class="pill-tag violet">ARG001&ndash;ARG007</span>
+        </div>
+        <p style="font-size:14.5px;line-height:1.48;color:#cbd5e1;">
+          Eliminates flaky PR blocks by gating CI on hard trace contracts (schema validity, tool allowlists, <code>&ge;95%</code> resolved inline citations, Pass-2 cache hits, p95 latency, ACL trimming &amp; zero leaked PII in OTel) alongside <code>microsoft/waza</code> skill evals and Foundry Evals.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SCENE 07: PLAYBOOK 02 APIM AI GATEWAY (PAGES 22-27 OF 45) ==================== -->
+  <!-- ==================== SCENE 07: 5-TOOL DECISION STUDIO ==================== -->
   <section id="scene-6" class="scene">
-    <div class="eyebrow">PAGES 22&ndash;27 OF 45 &middot; PLAYBOOK 02 MULTI-BACKEND APIM AI GATEWAY (ALL 6 SUBPAGES)</div>
-    <h2 class="h-section">Playbook 02 &mdash; <span class="grad-text">Topologies, SSE Scale, Body-Safe Breakers &amp; G1&ndash;G12</span></h2>
+    <div class="eyebrow">07 &middot; INTERACTIVE ARCHITECTURE DECISION STUDIO (/studio/)</div>
+    <h2 class="h-section">Five Client-Side Engineering Calculators &mdash; <span class="grad-text">Zero External Telemetry</span></h2>
 
-    <div class="grid-3x2">
-      <div id="s7-c0" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">apim-gateway/01-executive-thesis</span><span class="metric-badge">CH 01</span></div>
-          <div class="sp-title">Thesis &amp; Gateway Topology Matrix</div>
-          <p class="sp-desc">Centralizes auth, spillover, SKU guards &amp; FinOps across Single-Pool, Priority PTU+PAYG Spillover, and Multi-Region Active-Passive topologies.</p>
-        </div>
-        <div class="sp-foot"><span>Page 22 / 45</span><b>3 Gateway Topologies</b></div>
-      </div>
-
-      <div id="s7-c1" class="glass-card sp-card teal">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">02-capacity-streaming-limits</span><span class="metric-badge">CH 02</span></div>
-          <div class="sp-title">Throughput, Payloads &amp; Unbuffered SSE</div>
-          <p class="sp-desc">Sizes APIM Standard/Premium v2 scale units for <code>272K&ndash;400K</code> contexts, <code>120&ndash;180s</code> timeouts, <code>buffer-response="false"</code> &amp; zero body-buffering stalls.</p>
-        </div>
-        <div class="sp-foot"><span>Page 23 / 45</span><b>&lt;35ms TTFT Overhead</b></div>
-      </div>
-
-      <div id="s7-c2" class="glass-card sp-card green">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">03-circuit-breakers-sku-rewrites</span><span class="metric-badge">CH 03</span></div>
-          <div class="sp-title">Circuit Breakers &amp; Body-Safe Rewrites</div>
-          <p class="sp-desc">Declarative pools with <code>acceptRetryAfter=true</code>, Managed Identity RBAC &amp; per-attempt JSON snapshot/restore around <code>GPT-5.6 PTU-M</code> breakpoint stripping.</p>
-        </div>
-        <div class="sp-foot"><span>Page 24 / 45</span><b>Body-Safe Standard Retry</b></div>
-      </div>
-
-      <div id="s7-c3" class="glass-card sp-card violet">
-        <div>
-          <div class="sp-top"><span class="route-pill violet">04-finops-token-governance</span><span class="metric-badge">CH 04</span></div>
-          <div class="sp-title">Out-of-Band FinOps &amp; Token Quotas</div>
-          <p class="sp-desc">Extracts <code>x-cost-center</code> / Entra JWT claims via <code>azure-openai-emit-token-metric</code>, strips headers upstream &amp; caps noisy neighbors via <code>token-limit</code>.</p>
-        </div>
-        <div class="sp-foot"><span>Page 25 / 45</span><b>Per-Tenant TPM Caps</b></div>
-      </div>
-
-      <div id="s7-c4" class="glass-card sp-card amber">
-        <div>
-          <div class="sp-top"><span class="route-pill amber">05-validation-chaos-testing</span><span class="metric-badge">CH 05</span></div>
-          <div class="sp-title">429 Chaos Testing &amp; G1&ndash;G12 Standard</div>
-          <p class="sp-desc">Runs offline <code>check-apim-xml.py</code> preflight (SSE buffering + retry body checks), a 4-step staging <code>429</code> fault-injection drill &amp; all 12 <code>G1&ndash;G12</code> controls.</p>
-        </div>
-        <div class="sp-foot"><span>Page 26 / 45</span><b>4-Step Chaos Protocol</b></div>
-      </div>
-
-      <div id="s7-c5" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">apim-gateway/06-sources</span><span class="metric-badge">CH 06</span></div>
-          <div class="sp-title">Verification Matrix &amp; Official Sources</div>
-          <p class="sp-desc">Maps every APIM backend pool, circuit breaker, Managed Identity, SSE forwarding, and GenAI token-metric claim to official Microsoft Learn URLs.</p>
-        </div>
-        <div class="sp-foot"><span>Page 27 / 45</span><b>[M] APIM Spec Register</b></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== SCENE 08: PLAYBOOK 03 MULTI-REGION BCP (PAGES 28-33 OF 45) ==================== -->
-  <section id="scene-7" class="scene">
-    <div class="eyebrow">PAGES 28&ndash;33 OF 45 &middot; PLAYBOOK 03 MULTI-REGION FOUNDRY BCP (ALL 6 SUBPAGES)</div>
-    <h2 class="h-section">Playbook 03 &mdash; <span class="grad-text">Residency Symmetry, Cold-Cache Surges &amp; Stamp DR</span></h2>
-
-    <div class="grid-3x2">
-      <div id="s8-c0" class="glass-card sp-card amber">
-        <div>
-          <div class="sp-top"><span class="route-pill amber">multi-region-bcp/01-executive-thesis</span><span class="metric-badge">CH 01</span></div>
-          <div class="sp-title">Thesis &amp; 4 Regional AI Failure Modes</div>
-          <p class="sp-desc">Explains why stateless web DR fails: processing vs. storage residency, non-floating PTUs, cold secondary KV caches &amp; stranded Cosmos/Search state.</p>
-        </div>
-        <div class="sp-foot"><span>Page 28 / 45</span><b>Full AI Stamp Continuity</b></div>
-      </div>
-
-      <div id="s8-c1" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">02-residency-and-sku-matrix</span><span class="metric-badge">CH 02</span></div>
-          <div class="sp-title">Global vs. Data Zone vs. Regional Matrix</div>
-          <p class="sp-desc">Enforces the <strong>Golden Rule of Residency Symmetry</strong>: Primary, Local Spillover &amp; DR backends must share <code>DataZone (US/EU)</code> or <code>Regional</code> scope.</p>
-        </div>
-        <div class="sp-foot"><span>Page 29 / 45</span><b>Zero Sovereignty Leaks</b></div>
-      </div>
-
-      <div id="s8-c2" class="glass-card sp-card green">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">03-active-active-vs-standby-math</span><span class="metric-badge">CH 03</span></div>
-          <div class="sp-title">Standby Economics &amp; Cold-Cache Surge</div>
-          <p class="sp-desc">Quantifies the <code>1.8&times;&ndash;2.56&times;</code> 15-min cold-cache cutover surge; pairs Primary PTU-M with Secondary PAYG (<code>&ge;2.6&times;</code> TPM) at <code>1.0&ndash;1.15&times;</code> cost vs. <code>2&times;</code> PTUs.</p>
-        </div>
-        <div class="sp-foot"><span>Page 30 / 45</span><b>No 2&times; Idle PTU Tax</b></div>
-      </div>
-
-      <div id="s8-c3" class="glass-card sp-card teal">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">04-stateful-stamp-failover</span><span class="metric-badge">CH 04</span></div>
-          <div class="sp-title">Stateful Stamp Failover (Cosmos &amp; Search)</div>
-          <p class="sp-desc">Uses <code>GZRS/RA-GZRS ADLS Gen2</code> as document truth feeding independent regional <code>AI Search</code> stamps (<code>&lt;1%</code> lag) + multi-region <code>Cosmos DB</code> threads.</p>
-        </div>
-        <div class="sp-foot"><span>Page 31 / 45</span><b>Cohesive Stamp Matrix</b></div>
-      </div>
-
-      <div id="s8-c4" class="glass-card sp-card violet">
-        <div>
-          <div class="sp-top"><span class="route-pill violet">05-gameday-failover-drills</span><span class="metric-badge">CH 05</span></div>
-          <div class="sp-title">Game-Day Drills, Drift &amp; B1&ndash;B12 Standard</div>
-          <p class="sp-desc">Codifies daily snapshot-parity probes, a 5-step 30-minute quarterly Game-Day cutover drill (<code>&lt;15s</code> RTO) &amp; all 12 <code>B1&ndash;B12</code> readiness gates.</p>
-        </div>
-        <div class="sp-foot"><span>Page 32 / 45</span><b>&lt;15s Verified RTO</b></div>
-      </div>
-
-      <div id="s8-c5" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">multi-region-bcp/06-sources</span><span class="metric-badge">CH 06</span></div>
-          <div class="sp-title">Verification Matrix &amp; Official Sources</div>
-          <p class="sp-desc">Grounds every residency boundary, regional PTU minimum, ADLS replication, AI Search, and Cosmos DB failover claim in Microsoft Learn citations.</p>
-        </div>
-        <div class="sp-foot"><span>Page 33 / 45</span><b>[M] BCP Spec Register</b></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== SCENE 09: PLAYBOOK 04 AGENTIC RAG & EVALS (PAGES 34-39 OF 45) ==================== -->
-  <section id="scene-8" class="scene">
-    <div class="eyebrow">PAGES 34&ndash;39 OF 45 &middot; PLAYBOOK 04 SANDBOXED AGENTIC HARNESS &amp; EVALS (ALL 6 SUBPAGES)</div>
-    <h2 class="h-section">Playbook 04 &mdash; <span class="grad-text">ACA MicroVMs, Foundry IQ MCP &amp; Contract Evals</span></h2>
-
-    <div class="grid-3x2">
-      <div id="s9-c0" class="glass-card sp-card violet">
-        <div>
-          <div class="sp-top"><span class="route-pill violet">agentic-rag-evals/01-executive-thesis</span><span class="metric-badge">CH 01</span></div>
-          <div class="sp-title">Thesis &amp; 4 Demo-to-Enterprise Gaps</div>
-          <p class="sp-desc">Solves shared-process tool blast radius, brittle binary PDF parsing, un-trimmed RAG citations &amp; non-deterministic LLM-only CI flakiness.</p>
-        </div>
-        <div class="sp-foot"><span>Page 34 / 45</span><b>5-Stage Agent Blueprint</b></div>
-      </div>
-
-      <div id="s9-c1" class="glass-card sp-card teal">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">02-sandboxed-agent-harness</span><span class="metric-badge">CH 02</span></div>
-          <div class="sp-title">3-Tier ACA MicroVM &amp; AG-UI Runtime</div>
-          <p class="sp-desc">5 invariants: typed <code>AG-UI</code> SSE, 100% SDK-free orchestrator (<code>50 MB</code> realpath guard), 1 Git-SHA microVM/session in <code>ACA</code> &amp; <code>Content Understanding</code> MD.</p>
-        </div>
-        <div class="sp-foot"><span>Page 35 / 45</span><b>Hypervisor Isolation</b></div>
-      </div>
-
-      <div id="s9-c2" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">03-foundry-iq-grounded-rag</span><span class="metric-badge">CH 03</span></div>
-          <div class="sp-title">Foundry IQ MCP &amp; Ethical Trimming</div>
-          <p class="sp-desc">Connects <code>Azure AI Search</code> Knowledge Bases via MCP with query decomposition, hybrid+semantic rerank, Entra/ACL trimming &amp; strict <code>Pos 6</code> placement.</p>
-        </div>
-        <div class="sp-foot"><span>Page 36 / 45</span><b>ACL + Cache Preserved</b></div>
-      </div>
-
-      <div id="s9-c3" class="glass-card sp-card green">
-        <div>
-          <div class="sp-top"><span class="route-pill teal">04-deterministic-eval-contracts</span><span class="metric-badge">CH 04</span></div>
-          <div class="sp-title">Golden Rule: Contracts vs. LLM Judges</div>
-          <p class="sp-desc">Deterministic <code>ARG001&ndash;007</code> trace checks &amp; <code>microsoft/waza</code> skill evals block PR merges; calibrated Foundry Evals (<code>&le;2%</code> delta) advise on trends.</p>
-        </div>
-        <div class="sp-foot"><span>Page 37 / 45</span><b>Zero Flaky PR Blocks</b></div>
-      </div>
-
-      <div id="s9-c4" class="glass-card sp-card amber">
-        <div>
-          <div class="sp-top"><span class="route-pill amber">05-otel-tracing-release-gates</span><span class="metric-badge">CH 05</span></div>
-          <div class="sp-title">W3C gen_ai.* OTel &amp; A1&ndash;A12 Standard</div>
-          <p class="sp-desc">Propagates <code>traceparent</code> across <code>Orchestrator &rarr; MicroVM &rarr; APIM &rarr; Foundry/MCP</code> with metadata-only redaction and enforces all 12 <code>A1&ndash;A12</code> gates.</p>
-        </div>
-        <div class="sp-foot"><span>Page 38 / 45</span><b>End-to-End Traceability</b></div>
-      </div>
-
-      <div id="s9-c5" class="glass-card sp-card">
-        <div>
-          <div class="sp-top"><span class="route-pill">agentic-rag-evals/06-sources</span><span class="metric-badge">CH 06</span></div>
-          <div class="sp-title">Verification Matrix &amp; Official Sources</div>
-          <p class="sp-desc">Maps ACA Dynamic Sessions, Content Understanding, Foundry IQ agentic retrieval, and OpenTelemetry <code>gen_ai.*</code> conventions to official specs.</p>
-        </div>
-        <div class="sp-foot"><span>Page 39 / 45</span><b>[M] Agent Spec Register</b></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== SCENE 10: DECISION STUDIO (PAGE 40 OF 45 · 5 TOOLS) ==================== -->
-  <section id="scene-9" class="scene">
-    <div class="eyebrow">PAGE 40 OF 45 &middot; /studio/ (index.md &middot; 5 DEEP-LINKED VUE WORKBENCHES)</div>
-    <h2 class="h-section">Architecture Decision Studio &mdash; <span class="grad-text">All 5 Interactive Browser-Local Tools</span></h2>
-
-    <div class="s10-layout">
-      <div id="s10-left" class="glass-card sp-card">
-        <div class="sp-top">
-          <span class="route-pill">/studio/#ptu &middot; #apim &middot; #bcp &middot; #agent-eval &middot; #triage</span>
-          <span class="metric-badge">ZERO TELEMETRY</span>
+    <div class="two-cols">
+      <div id="s7-left" class="glass-card panel-box">
+        <div class="panel-head">
+          <div class="panel-title">5 Linked Studio Workbenches (Keyboard &amp; Deep-Link Ready)</div>
+          <span class="pill-tag">100% BROWSER-LOCAL</span>
         </div>
         <div class="studio-list">
-          <div id="s10-t0" class="studio-item">
-            <span class="studio-hash">/studio/#ptu</span>
-            <div class="studio-copy">
-              <strong>Tool 01 &middot; Two-Regime PTU, Shard &amp; Spillover TCO Simulator</strong>
-              <span>Models GPT-5.6 vs. 6/6.1 PTU weights, &gt;15 RPM shards &amp; seasonal cliffs with fail-closed validation</span>
+          <div id="s7-t0" class="studio-row">
+            <span class="studio-code">TOOL 01</span>
+            <div class="studio-main">
+              <strong>PTU, Cache Shard &amp; Seasonal Spillover TCO Simulator</strong>
+              <span>Two-regime GPT-5.6 vs. 6/6.1 math, &gt;15 RPM sharding &amp; fail-closed input bounds</span>
             </div>
-            <span class="metric-badge">PB01</span>
+            <span class="pill-tag blue">#ptu</span>
           </div>
-          <div id="s10-t1" class="studio-item">
-            <span class="studio-hash">/studio/#apim</span>
-            <div class="studio-copy">
-              <strong>Tool 02 &middot; APIM AI Gateway XML Policy Builder</strong>
-              <span>Generates Managed Identity, body-safe 429 retry, 5.6 strip, SSE &amp; FinOps OTel policy XML</span>
+          <div id="s7-t1" class="studio-row">
+            <span class="studio-code">TOOL 02</span>
+            <div class="studio-main">
+              <strong>SKU-Aware APIM AI Gateway XML Policy Builder</strong>
+              <span>Generates body-safe 429 Retry-After spillover, 5.6 strip &amp; FinOps OTel XML</span>
             </div>
-            <span class="metric-badge">PB02</span>
+            <span class="pill-tag">#apim</span>
           </div>
-          <div id="s10-t2" class="studio-item">
-            <span class="studio-hash">/studio/#bcp</span>
-            <div class="studio-copy">
-              <strong>Tool 03 &middot; Multi-Region BCP &amp; Cold-Cache Surge Advisor</strong>
-              <span>Selects Global / Data Zone / Regional symmetry &amp; computes 15-min cold-cache burst TPM</span>
+          <div id="s7-t2" class="studio-row">
+            <span class="studio-code">TOOL 03</span>
+            <div class="studio-main">
+              <strong>Multi-Region BCP &amp; Cold-Cache Surge Advisor</strong>
+              <span>Models Global / Data Zone / Regional residency &amp; 0%-cache failover burst TPM</span>
             </div>
-            <span class="metric-badge">PB03</span>
+            <span class="pill-tag amber">#bcp</span>
           </div>
-          <div id="s10-t3" class="studio-item">
-            <span class="studio-hash">/studio/#agent-eval</span>
-            <div class="studio-copy">
-              <strong>Tool 04 &middot; ACA Sandbox Pool &amp; Eval Contract Builder</strong>
-              <span>Sizes microVM concurrency pools &amp; exports strict ARG001&ndash;007 JSON acceptance contracts</span>
+          <div id="s7-t3" class="studio-row">
+            <span class="studio-code">TOOL 04</span>
+            <div class="studio-main">
+              <strong>ACA MicroVM Pool &amp; Eval Contract Builder</strong>
+              <span>Sizes session concurrency pools &amp; emits strict ARG001&ndash;007 JSON contracts</span>
             </div>
-            <span class="metric-badge">PB04</span>
+            <span class="pill-tag violet">#agent-eval</span>
           </div>
-          <div id="s10-t4" class="studio-item">
-            <span class="studio-hash">/studio/#triage</span>
-            <div class="studio-copy">
-              <strong>Tool 05 &middot; 30-Minute 8-Boundary Intake &amp; Scope Builder</strong>
-              <span>Scores 8 production boundaries into a copy-ready 1-session ADS or 3-week engagement SOW</span>
+          <div id="s7-t4" class="studio-row">
+            <span class="studio-code">TOOL 05</span>
+            <div class="studio-main">
+              <strong>30-Minute 8-Boundary Intake &amp; Scope Generator</strong>
+              <span>Scores workload boundaries into a copy-ready 1-session ADS or 3-week plan</span>
             </div>
-            <span class="metric-badge">OP-03</span>
+            <span class="pill-tag">#triage</span>
           </div>
         </div>
       </div>
 
-      <div id="s10-right" class="glass-card sp-card green">
+      <div id="s7-right" class="glass-card panel-box green">
         <div>
-          <div class="sp-top">
-            <span class="route-pill teal">StudioSuite.vue + Node Test Suites</span>
-            <span class="metric-badge">PAGE 40 / 45</span>
+          <div class="panel-head">
+            <div class="panel-title">1-Click Export Artifacts &amp; Regression-Tested UI</div>
+            <span class="pill-tag">NODE TEST GATED</span>
           </div>
-          <div class="sp-title">Automated UI &amp; Math Integrity Guarantees</div>
           <div class="code-win" style="margin-bottom:14px;">
-            <div><span class="c-dim">$</span> npm run check:studio</div>
-            <div><span class="c-kw">&#10003; check-studio-tabs.test.mjs</span> &rarr; WAI-ARIA roving tabindex,</div>
-            <div>&nbsp;&nbsp;Arrow/Home/End keys &amp; URL hash deep-link sync</div>
-            <div><span class="c-kw">&#10003; check-studio-ptu.test.mjs</span>  &rarr; Blocks NaN / out-of-range</div>
-            <div>&nbsp;&nbsp;inputs &amp; verifies short-context / regime exports</div>
-            <div><span class="c-ok">&#10003; 1-Click Export: Markdown SOW, APIM XML &amp; Contract JSON</span></div>
+            <div><span class="c-dim">// Instant copy/download outputs for ADS &amp; PRs:</span></div>
+            <div><span class="c-kw">1. Capacity Brief (.md)</span>  &rarr; 170 PTU base + 4 shards + 71% TCO math</div>
+            <div><span class="c-kw">2. APIM Policy (.xml)</span>   &rarr; Body-restored 429 retry + buffer-response=false</div>
+            <div><span class="c-kw">3. BCP Plan (.md)</span>       &rarr; DataZone US/EU + 2.6x surge PAYG envelope</div>
+            <div><span class="c-kw">4. Eval Contract (.json)</span> &rarr; Strict schema + citation_precision &ge; 0.95</div>
+            <div><span class="c-kw">5. Scoped SOW (.md)</span>     &rarr; Activated tracks + Week 1&ndash;3 exit artifacts</div>
           </div>
         </div>
-        <div class="sp-foot"><span>100% Client-Side Execution</span><b>Safe for Live Customer Calls</b></div>
+        <div class="callout-strip">
+          <strong>Hardened Engineering UX Guarantees</strong>
+          <p>Fail-closed range validation blocks invalid estimates &bull; WAI-ARIA roving tabindex &amp; arrow-key navigation &bull; Zero customer numbers ever leave the browser.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SCENE 11: PAPERS, 5 MIT KITS & CHECKLISTS (PAGES 41-45 OF 45) ==================== -->
-  <section id="scene-10" class="scene">
-    <div class="eyebrow">PAGES 41&ndash;45 OF 45 &middot; /papers/* (ALL 5 DELIVERABLE SUBPAGES)</div>
-    <h2 class="h-section">Papers &amp; MIT Kits &mdash; <span class="grad-text">2 PDF Blueprints, 5 Kits, 52 Checklists &amp; 4 OSS Repos</span></h2>
+  <!-- ==================== SCENE 08: PAPERS, 5 MIT KITS, 52 CHECKLISTS & OSS ==================== -->
+  <section id="scene-7" class="scene">
+    <div class="eyebrow">08 &middot; DROP-IN DELIVERABLES, MIT AUTOMATION &amp; ECOSYSTEM</div>
+    <h2 class="h-section">Printable White Papers, 5 MIT Kits, <span class="grad-text">52 Checklists &amp; Companion OSS</span></h2>
 
-    <div class="grid-5">
-      <div id="s11-c0" class="glass-card sp-card">
+    <div class="s8-bento">
+      <div id="s8-t0" class="glass-card s8-tile">
         <div>
-          <div class="sp-top"><span class="route-pill">/papers/ (index.md)</span><span class="metric-badge">PAGE 41</span></div>
-          <div class="sp-title">Deliverables Index &amp; 4 OSS Harnesses</div>
-          <p class="sp-desc">Central catalog linking papers, kits, checklists &amp; 4 companion repos: <code>microsoft/waza</code>, <code>sentinel-evals</code>, <code>agentic-rag-scanner</code> &amp; <code>personal-assistant-agent-harness</code>.</p>
+          <div class="panel-head">
+            <span class="mech-kicker" style="margin:0;">01 &middot; CONSOLIDATED EXECUTIVE EDITIONS</span>
+            <span class="pill-tag blue">@media print PDF</span>
+          </div>
+          <div class="mech-title">Two Print-Ready Architecture White Papers</div>
+          <p class="mech-body">1-click <em>Save as PDF</em> handouts formatted for CTO, CISO, FinOps, and Architecture Review Board sign-off:</p>
         </div>
-        <div class="sp-foot"><span>4 Companion Repos</span><b>Unified Index</b></div>
+        <div class="code-win">
+          <div><span class="c-kw">&bull; Full-Stack Enterprise Foundry Platform Blueprint (v2.0)</span></div>
+          <div><span class="c-kw">&bull; Prompt Caching Readiness on GPT-5.6, GPT-6 &amp; 6.1 (v1.0)</span></div>
+        </div>
       </div>
 
-      <div id="s11-c1" class="glass-card sp-card teal">
+      <div id="s8-t1" class="glass-card s8-tile">
         <div>
-          <div class="sp-top"><span class="route-pill teal">enterprise-foundry-platform-blueprint</span><span class="metric-badge">PAGE 42</span></div>
-          <div class="sp-title">Full-Stack Platform Blueprint (v2.0)</div>
-          <p class="sp-desc">Consolidated executive &amp; ARB white paper uniting Playbooks 01&ndash;04, the 4-layer matrix, two-regime PTU summary &amp; 3-week sprint with <code>@media print</code> PDF export.</p>
+          <div class="panel-head">
+            <span class="mech-kicker" style="margin:0;color:#34d399;">02 &middot; ZERO-DEPENDENCY PYTHON CI GATES</span>
+            <span class="pill-tag">MIT &middot; --self-test</span>
+          </div>
+          <div class="mech-title"><code>pcr_lint.py</code>, <code>agent_release_gate.py</code> &amp; <code>bcp_snapshot_gate.py</code></div>
         </div>
-        <div class="sp-foot"><span>CTO / CISO Edition</span><b>1-Click Save as PDF</b></div>
+        <div class="code-win">
+          <div><span class="c-kw">[PCR000&ndash;006]</span> Fail-closed AST recursion, non-blank keys &amp; sorted tools ... <span class="c-ok">PASS</span></div>
+          <div><span class="c-kw">[ARG001&ndash;007]</span> Unique JSON, strict contracts, citations &amp; OTel privacy ... <span class="c-ok">PASS</span></div>
+          <div><span class="c-kw">[BCP-GATE]</span>   Fresh 200&ndash;299 multi-stamp pinned snapshot parity ... <span class="c-ok">PASS</span></div>
+        </div>
       </div>
 
-      <div id="s11-c2" class="glass-card sp-card violet">
+      <div id="s8-t2" class="glass-card s8-tile">
         <div>
-          <div class="sp-top"><span class="route-pill violet">foundry-prompt-caching-gpt56-whitepaper</span><span class="metric-badge">PAGE 43</span></div>
-          <div class="sp-title">GPT-5.6+ Prompt Caching White Paper</div>
-          <p class="sp-desc">Single-page print edition consolidating all 15 Playbook 01 chapters—hydration tax, KV mechanics, Pos 1&ndash;6, break-even math, CI/KQL gates &amp; <code>R1&ndash;R6</code> sources.</p>
+          <div class="panel-head">
+            <span class="mech-kicker" style="margin:0;color:#c4b5fd;">03 &middot; GATEWAY XML &amp; 2 APP INSIGHTS KQL WORKBOOKS</span>
+            <span class="pill-tag violet">APIM + Kusto</span>
+          </div>
+          <div class="mech-title"><code>apim-foundry-spillover-policy.xml</code> + 2 Live KQL Gates</div>
         </div>
-        <div class="sp-foot"><span>Deep-Dive Print Edition</span><b>1-Click Save as PDF</b></div>
+        <div class="code-win">
+          <div><span class="c-fn">apim-foundry-spillover-policy.xml</span> &rarr; Body-safe 429 retry + unbuffered SSE</div>
+          <div><span class="c-fn">ptu-cache-release-gate.kql</span>        &rarr; Coincident DeployPeakNormTPM &amp; R/W</div>
+          <div><span class="c-fn">bcp-failover-readiness-gate.kql</span>   &rarr; Stamp health &amp; ColdCacheSurgeRatio</div>
+        </div>
       </div>
 
-      <div id="s11-c3" class="glass-card sp-card green">
+      <div id="s8-t3" class="glass-card s8-tile">
         <div>
-          <div class="sp-top"><span class="route-pill teal">/papers/engineering-kits</span><span class="metric-badge">PAGE 44 &middot; 5 MIT KITS</span></div>
-          <div class="sp-title">5 Runnable Zero-Dependency MIT Engineering Kits</div>
-          <p class="sp-desc">Inline live code + raw downloads: <code>pcr_lint.py</code> (<code>PCR000&ndash;006</code>), <code>agent_release_gate.py</code> (<code>ARG001&ndash;007</code>), <code>bcp_snapshot_gate.py</code> (unique JSON + fresh 2xx stamp parity), <code>apim-foundry-spillover-policy.xml</code> &amp; 2 KQL gates.</p>
+          <div class="panel-head">
+            <span class="mech-kicker" style="margin:0;color:#fcd34d;">04 &middot; RELEASE GOVERNANCE &amp; COMPANION REPOS</span>
+            <span class="pill-tag amber">52 PR Controls</span>
+          </div>
+          <div class="mech-title">Unified Checklists (<code>C/G/B/A</code>) &amp; 4 Open-Source Harnesses</div>
+          <p class="mech-body" style="margin-bottom:8px;">Modular GitHub / ADO PR templates paired with companion reference repos:</p>
         </div>
-        <div class="sp-foot"><span>Self-Tested on Every Build</span><b>MIT Licensed</b></div>
-      </div>
-
-      <div id="s11-c4" class="glass-card sp-card amber">
-        <div>
-          <div class="sp-top"><span class="route-pill amber">/papers/migration-readiness-checklist</span><span class="metric-badge">PAGE 45 &middot; 52 GATES</span></div>
-          <div class="sp-title">Unified 52-Point PR &amp; Cutover Checklists</div>
-          <p class="sp-desc">Copy-paste Markdown blocks for GitHub / Azure DevOps PR templates covering <code>C1&ndash;C15</code> (+ <code>C-WP1&ndash;4</code>), <code>G1&ndash;G12</code>, <code>B1&ndash;B12</code>, and <code>A1&ndash;A12</code>.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="s2-chip blue">microsoft/waza</span>
+          <span class="s2-chip">sentinel-evals</span>
+          <span class="s2-chip blue">agentic-rag-scanner</span>
+          <span class="s2-chip violet">personal-assistant-agent-harness</span>
         </div>
-        <div class="sp-foot"><span>All 45 Pages Covered!</span><b>Drop-In PR Governance</b></div>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SCENE 12: 24/7 DUAL-AGENT LOOP & CALL TO ACTION ==================== -->
-  <section id="scene-11" class="scene s12-center">
-    <div class="eyebrow" style="align-self:center;">12 &middot; CONTINUOUS 24/7 SELF-IMPROVEMENT &amp; CALL TO ACTION</div>
-    <h1 class="h-hero" style="font-size:46px;max-width:1640px;">
-      45 Verified Pages, Continuously Hardened &mdash; <span class="grad-text">Ready for Every Cutover</span>
+  <!-- ==================== SCENE 09: 5-STAGE FACTORY, 3-WK & 24/7 DUAL-AGENT LOOP ==================== -->
+  <section id="scene-8" class="scene">
+    <div class="eyebrow">09 &middot; OPERATING MODEL, 3-WEEK DELIVERY &amp; BUILT-IN AUTONOMY</div>
+    <h2 class="h-section">5-Stage Factory, 3-Week Sprint &amp; <span class="grad-text">24/7 Dual-Agent Self-Improvement</span></h2>
+
+    <div class="s9-top">
+      <div id="s9-factory" class="glass-card panel-box">
+        <div class="panel-head">
+          <div class="panel-title">5-Stage Industrialization Factory &amp; 4-Tier Evidence</div>
+          <span class="pill-tag blue">[M] [Arch] [Agree] [Validate]</span>
+        </div>
+        <div class="s9-stages">
+          <div class="s9-st"><b>01. Customer-Zero</b><span>Measured live telemetry</span></div>
+          <div class="s9-st"><b>02. Sanitization</b><span>Strips IDs, emails &amp; GUIDs</span></div>
+          <div class="s9-st"><b>03. Peer ARB</b><span>Learn &amp; link gate check</span></div>
+          <div class="s9-st"><b>04. Tri-Path IP</b><span>4A Hold / 4B PG / 4C Hub</span></div>
+          <div class="s9-st"><b>05. 1:N Scale</b><span>Named CODEOWNERS</span></div>
+        </div>
+      </div>
+
+      <div id="s9-sprint" class="glass-card panel-box green">
+        <div class="panel-head">
+          <div class="panel-title">Turnkey 3-Week Customer Sprint</div>
+          <span class="pill-tag">SIGNED EXIT ARTIFACTS</span>
+        </div>
+        <div class="s9-wks">
+          <div class="s9-wk"><b>Phase 0 &middot; 30 Min</b><span>8-boundary triage &amp; scope</span></div>
+          <div class="s9-wk"><b>Week 1 &middot; Audit</b><span>Baseline telemetry &amp; pcr_lint</span></div>
+          <div class="s9-wk"><b>Week 2 &middot; Refactor</b><span>Pos 1&ndash;6, APIM &amp; ACA microVMs</span></div>
+          <div class="s9-wk"><b>Week 3 &middot; Sign-Off</b><span>Game-Day, Evals &amp; 52 gates</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="s9-loop" class="glass-card s9-loop">
+      <div class="panel-head" style="margin-bottom:6px;">
+        <div class="panel-title">Built-In 24/7 Closed-Loop Self-Improvement Engine (Windows / macOS / Linux / GitHub Actions)</div>
+        <span class="pill-tag violet">DUAL-AGENT GOVERNANCE</span>
+      </div>
+      <div class="s9-loop-flow">
+        <div id="s9-l0" class="s9-lcard">
+          <b>1. Memory &amp; Track Balancer</b>
+          <p>Ranks least-recently-improved tracks across all 6 Hub domains &amp; synthesizes ARB lessons.</p>
+        </div>
+        <div id="s9-l1" class="s9-lcard">
+          <b>2. Author (<code>hub-improver</code>)</b>
+          <p>Executes surgical hardening in an isolated Git worktree with hard <code>--deny-tool</code> governance guards.</p>
+        </div>
+        <div id="s9-l2" class="s9-lcard">
+          <b>3. Deterministic <code>npm run verify</code></b>
+          <p>Enforces sanitization, Python CLI self-tests, Studio tests, VitePress build, 1,424 links &amp; APIM XML.</p>
+        </div>
+        <div id="s9-l3" class="s9-lcard">
+          <b>4. Reviewer (<code>hub-arb-reviewer</code>)</b>
+          <p>Audits PR diff against 3-Gate <code>&lt;arb_verdict&gt;</code>, auto-merges passing PRs &amp; publishes <code>gh-pages</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 10: CALL TO ACTION ==================== -->
+  <section id="scene-9" class="scene s10-center">
+    <div class="eyebrow" style="align-self:center;">10 &middot; CSA FORUM CALL TO ACTION</div>
+    <h1 class="h-hero" style="font-size:50px;max-width:1620px;">
+      Bring Full-Stack Industrialized Leverage to <span class="grad-text">Every Enterprise Account</span>
     </h1>
 
-    <div id="s12-loop" class="glass-card s12-loop-strip">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <strong style="font-size:16.5px;color:#ffffff;">Built-In 24/7 Dual-Agent Autonomous Improvement Loop (Windows / macOS / Linux / GitHub Actions)</strong>
-        <span class="route-pill violet">hub-improver + hub-arb-reviewer</span>
+    <div class="s10-cards">
+      <div id="s10-c0" class="glass-card s10-card">
+        <span class="s10-num">ACTION 01 &middot; SIMULATE &amp; SCOPE</span>
+        <h3>Run the 5-Tool Decision Studio</h3>
+        <p>Model two-regime PTU math, APIM spillover XML, regional cold-cache surges, and 3-week scopes live in your browser.</p>
       </div>
-      <div class="s12-loop-grid">
-        <div class="s12-lbox"><b>1. Track Balancer &amp; Ledger</b><span>Prioritizes least-recently-improved tracks across all 6 Hub domains</span></div>
-        <div class="s12-lbox"><b>2. Isolated Worktree Author</b><span><code>hub-improver</code> hardens kits, tests &amp; docs with protected-file guards</span></div>
-        <div class="s12-lbox"><b>3. 6-Suite <code>npm run verify</code></b><span>Sanitization + Kit CLIs + Studio + Build + 1,424 Links + APIM XML</span></div>
-        <div class="s12-lbox"><b>4. Independent ARB Verdict</b><span><code>hub-arb-reviewer</code> audits 3 gates, squash-merges &amp; deploys <code>gh-pages</code></span></div>
+      <div id="s10-c1" class="glass-card s10-card">
+        <span class="s10-num">ACTION 02 &middot; AUTOMATE GATES</span>
+        <h3>Deploy the 5 MIT Kits &amp; 52 Checklists</h3>
+        <p>Drop <code>pcr_lint.py</code>, <code>agent_release_gate.py</code>, <code>bcp_snapshot_gate.py</code>, APIM XML, and KQL gates straight into CI.</p>
       </div>
-    </div>
-
-    <div class="s12-actions">
-      <div id="s12-a0" class="glass-card s12-act">
-        <span class="route-pill">01 &middot; EXPLORE &amp; SEARCH</span>
-        <h4>Navigate All 45 Subpages</h4>
-        <p>Use <code>Ctrl+K</code> instant search, the 4-Playbook Catalog, and 1-click PDF white papers in customer ARBs.</p>
-      </div>
-      <div id="s12-a1" class="glass-card s12-act">
-        <span class="route-pill teal">02 &middot; SIMULATE &amp; GATE</span>
-        <h4>Run Studio &amp; 5 MIT Kits</h4>
-        <p>Size PTU/BCP envelopes in <code>/studio/</code> and wire the Python, XML, KQL &amp; 52 PR gates into CI/CD.</p>
-      </div>
-      <div id="s12-a2" class="glass-card s12-act">
-        <span class="route-pill amber">03 &middot; CO-AUTHOR &amp; SCALE</span>
-        <h4>Industrialize Customer-Zero</h4>
-        <p>Route your next field breakthrough through the 5-stage sanitization, ARB &amp; IP factory.</p>
+      <div id="s10-c2" class="glass-card s10-card">
+        <span class="s10-num">ACTION 03 &middot; CO-AUTHOR &amp; SCALE</span>
+        <h3>Industrialize Your Customer-Zero Win</h3>
+        <p>Route new workload profiles and field breakthroughs through the 5-stage sanitization, ARB, and IP pipeline.</p>
       </div>
     </div>
 
-    <div class="s12-mantra">
-      <div id="s12-m0" class="s12-pillar">Solve Once.</div>
-      <div id="s12-m1" class="s12-pillar" style="border-color:rgba(45,212,191,0.55);color:#5eead4;">Govern Cleanly.</div>
-      <div id="s12-m2" class="s12-pillar" style="border-color:rgba(167,139,250,0.55);background:linear-gradient(90deg,rgba(0,120,212,0.28),rgba(139,92,246,0.25));">Scale Everywhere.</div>
+    <div class="s10-mantra">
+      <div id="s10-m0" class="s10-pillar">Solve Once.</div>
+      <div id="s10-m1" class="s10-pillar" style="border-color:rgba(45,212,191,0.55);color:#5eead4;">Govern Cleanly.</div>
+      <div id="s10-m2" class="s10-pillar" style="border-color:rgba(167,139,250,0.55);background:linear-gradient(90deg,rgba(0,120,212,0.28),rgba(139,92,246,0.25));">Scale Everywhere.</div>
     </div>
 
-    <div id="s12-url" class="s12-url-box">
-      <span>COMPLETE 45-PAGE LIVE HUB</span>
+    <div id="s10-url" class="s10-url-box">
+      <span>EXPLORE THE LIVE HUB</span>
       <code>jluocsa.github.io/enterprise-azure-ai-hub</code>
     </div>
   </section>
 
   <footer class="bottom-bar">
     <div class="bottom-meta">
-      <div><strong>Enterprise Azure AI Solution Industrialization Hub v2.0</strong> &middot; All 45 Website Subpages Covered &middot; 4 Playbooks &middot; 5 Studio Tools &middot; 5 MIT Kits</div>
+      <div><strong>Enterprise Azure AI Solution Industrialization Hub v2.0</strong> &middot; 4 Playbooks (33 Ch) &middot; 5-Tool Studio &middot; 5 MIT Kits &middot; 52 Gates</div>
       <div class="bottom-url">https://jluocsa.github.io/enterprise-azure-ai-hub/</div>
     </div>
     <div class="seg-bar">
@@ -1504,28 +1822,24 @@
       <div class="seg-track"><div id="seg-7" class="seg-fill"></div></div>
       <div class="seg-track"><div id="seg-8" class="seg-fill"></div></div>
       <div class="seg-track"><div id="seg-9" class="seg-fill"></div></div>
-      <div class="seg-track"><div id="seg-10" class="seg-fill"></div></div>
-      <div class="seg-track"><div id="seg-11" class="seg-fill"></div></div>
     </div>
   </footer>
 </div>
 
 <script>
   window.TIMELINE = {
-    totalDuration: 481.01,
+    totalDuration: 300.00,
     scenes: [
-      { index: 0, start: 0.00, end: 30.60 },
-      { index: 1, start: 30.60, end: 66.80 },
-      { index: 2, start: 66.80, end: 116.09 },
-      { index: 3, start: 116.09, end: 158.60 },
-      { index: 4, start: 158.60, end: 197.51 },
-      { index: 5, start: 197.51, end: 239.48 },
-      { index: 6, start: 239.48, end: 284.92 },
-      { index: 7, start: 284.92, end: 329.85 },
-      { index: 8, start: 329.85, end: 379.58 },
-      { index: 9, start: 379.58, end: 411.05 },
-      { index: 10, start: 411.05, end: 453.95 },
-      { index: 11, start: 453.95, end: 481.01 }
+      { index: 0, start: 0.00, end: 34.80 },
+      { index: 1, start: 34.80, end: 61.59 },
+      { index: 2, start: 61.59, end: 97.56 },
+      { index: 3, start: 97.56, end: 131.65 },
+      { index: 4, start: 131.65, end: 163.63 },
+      { index: 5, start: 163.63, end: 195.28 },
+      { index: 6, start: 195.28, end: 223.49 },
+      { index: 7, start: 223.49, end: 253.62 },
+      { index: 8, start: 253.62, end: 279.96 },
+      { index: 9, start: 279.96, end: 300.00 }
     ]
   };
 
@@ -1536,18 +1850,16 @@
   };
 
   const CHAPTER_LABELS = [
-    "01 / 12 · HOME & CATALOG (PAGES 1–2 OF 45)",
-    "02 / 12 · OPERATING MODEL (PAGES 3–5 OF 45)",
-    "03 / 12 · PLAYBOOK 01: START & QUALIFY (PAGES 6–11)",
-    "04 / 12 · PLAYBOOK 01: DESIGN (PAGES 12–15)",
-    "05 / 12 · PLAYBOOK 01: VALIDATE & GOVERN (PAGES 16–20)",
-    "06 / 12 · REGULATED WORKLOAD PROFILE (PAGE 21)",
-    "07 / 12 · PLAYBOOK 02: APIM GATEWAY (PAGES 22–27)",
-    "08 / 12 · PLAYBOOK 03: MULTI-REGION BCP (PAGES 28–33)",
-    "09 / 12 · PLAYBOOK 04: AGENTIC RAG & EVALS (PAGES 34–39)",
-    "10 / 12 · DECISION STUDIO: 5 TOOLS (PAGE 40)",
-    "11 / 12 · WHITE PAPERS, KITS & CHECKLISTS (PAGES 41–45)",
-    "12 / 12 · 24/7 DUAL-AGENT ENGINE & CALL TO ACTION"
+    "01 / 10 · THE PRODUCTION CLIFF",
+    "02 / 10 · SOLUTION INDUSTRIALIZATION HUB v2.0",
+    "03 / 10 · PLAYBOOK 01 & REGULATED PROFILE",
+    "04 / 10 · PLAYBOOK 02: APIM AI GATEWAY & FINOPS",
+    "05 / 10 · PLAYBOOK 03: MULTI-REGION BCP & SURGES",
+    "06 / 10 · PLAYBOOK 04: SANDBOXED AGENTIC RAG",
+    "07 / 10 · 5-TOOL ARCHITECTURE DECISION STUDIO",
+    "08 / 10 · WHITE PAPERS, 5 MIT KITS & 52 GATES",
+    "09 / 10 · 5-STAGE FACTORY, 3-WK & 24/7 LOOP",
+    "10 / 10 · CSA FORUM CALL TO ACTION"
   ];
 
   function clamp(v, min, max) {
@@ -1557,17 +1869,21 @@
     const c = clamp(x, 0, 1);
     return 1 - Math.pow(1 - c, 3);
   }
+  function easeOutExpo(x) {
+    const c = clamp(x, 0, 1);
+    return c === 1 ? 1 : 1 - Math.pow(2, -10 * c);
+  }
   function easeOutBack(x) {
     const c = clamp(x, 0, 1);
     const c1 = 1.45;
     const c3 = c1 + 1;
     return 1 + c3 * Math.pow(c - 1, 3) + c1 * Math.pow(c - 1, 2);
   }
-  function enterProgress(t, tStart, dur = 0.62) {
+  function enterProgress(t, tStart, dur = 0.65) {
     return easeOutCubic((t - tStart) / dur);
   }
 
-  function applyReveal(el, p, dy = 22, scaleFrom = 0.975) {
+  function applyReveal(el, p, dy = 24, scaleFrom = 0.975) {
     if (!el) return;
     const c = clamp(p, 0, 1);
     const y = (1 - c) * dy;
@@ -1580,18 +1896,8 @@
     if (!el) return;
     const a = clamp(activeStrength, 0, 1);
     el.style.boxShadow = a > 0.02
-      ? `0 18px 44px rgba(0,0,0,0.45), 0 0 ${(28 * a).toFixed(1)}px rgba(${glowColor}, ${(0.44 * a).toFixed(3)})`
+      ? `0 18px 44px rgba(0,0,0,0.45), 0 0 ${(28 * a).toFixed(1)}px rgba(${glowColor}, ${(0.42 * a).toFixed(3)})`
       : `0 18px 44px rgba(0,0,0,0.42)`;
-  }
-
-  function revealAndSpotlight(prefix, count, lt, starts, glows) {
-    for (let i = 0; i < count; i++) {
-      const el = document.getElementById(`${prefix}${i}`);
-      const appearAt = Math.min(starts[i], 0.4 + i * 0.55);
-      applyReveal(el, easeOutBack((lt - appearAt) / 0.58), 24, 0.97);
-      const isSpoken = lt >= starts[i] && (i === count - 1 || lt < starts[i + 1]);
-      highlightCard(el, isSpoken ? 1 : 0.18, glows[i % glows.length]);
-    }
   }
 
   const canvas = document.getElementById("bg-canvas");
@@ -1608,17 +1914,15 @@
     ctx.clearRect(0, 0, 1920, 1080);
 
     const palettes = [
+      ["rgba(239, 68, 68, 0.13)", "rgba(0, 120, 212, 0.18)"],
       ["rgba(0, 120, 212, 0.24)", "rgba(0, 183, 195, 0.18)"],
-      ["rgba(20, 184, 166, 0.20)", "rgba(56, 189, 248, 0.18)"],
-      ["rgba(0, 120, 212, 0.22)", "rgba(139, 92, 246, 0.17)"],
-      ["rgba(20, 184, 166, 0.20)", "rgba(245, 158, 11, 0.15)"],
-      ["rgba(16, 185, 129, 0.19)", "rgba(139, 92, 246, 0.18)"],
-      ["rgba(20, 184, 166, 0.22)", "rgba(0, 120, 212, 0.19)"],
-      ["rgba(56, 189, 248, 0.21)", "rgba(16, 185, 129, 0.17)"],
-      ["rgba(245, 158, 11, 0.17)", "rgba(0, 120, 212, 0.20)"],
-      ["rgba(139, 92, 246, 0.21)", "rgba(20, 184, 166, 0.18)"],
       ["rgba(0, 120, 212, 0.22)", "rgba(16, 185, 129, 0.18)"],
-      ["rgba(56, 189, 248, 0.20)", "rgba(245, 158, 11, 0.16)"],
+      ["rgba(20, 184, 166, 0.20)", "rgba(56, 189, 248, 0.19)"],
+      ["rgba(245, 158, 11, 0.16)", "rgba(0, 120, 212, 0.20)"],
+      ["rgba(139, 92, 246, 0.20)", "rgba(20, 184, 166, 0.18)"],
+      ["rgba(0, 120, 212, 0.22)", "rgba(16, 185, 129, 0.18)"],
+      ["rgba(56, 189, 248, 0.19)", "rgba(139, 92, 246, 0.18)"],
+      ["rgba(20, 184, 166, 0.19)", "rgba(139, 92, 246, 0.20)"],
       ["rgba(0, 120, 212, 0.25)", "rgba(20, 184, 166, 0.22)"]
     ];
     const pal = palettes[clamp(activeSceneIdx, 0, palettes.length - 1)];
@@ -1672,8 +1976,6 @@
     }
   }
 
-  const STD_GLOWS = ["56, 189, 248", "20, 184, 166", "167, 139, 250", "16, 185, 129", "245, 158, 11", "56, 189, 248"];
-
   window.renderAt = function (t) {
     const tl = window.TIMELINE;
     const scenes = tl.scenes;
@@ -1712,95 +2014,153 @@
       el.style.transform = `scale(${subtleZoom.toFixed(4)})`;
     }
 
-    // S01: Home & Catalog (Pages 1-2)
+    // ---- S01: Production Cliff (0.00 -> 34.80s) ----
     if (t <= scenes[0].end + 0.6) {
-      applyReveal(document.getElementById("s1-browser"), enterProgress(t, 0.15, 0.8), 26, 0.97);
-      applyReveal(document.getElementById("s1-sps"), enterProgress(t, 8.6, 0.7), 18);
-      const kStarts = [13.5, 19.2, 21.2, 22.5];
+      applyReveal(document.getElementById("s1-eyebrow"), enterProgress(t, 0.15, 0.55), 18);
+      applyReveal(document.getElementById("s1-h1a"), enterProgress(t, 0.70, 0.65), 24);
+      applyReveal(document.getElementById("s1-h1b"), enterProgress(t, 4.10, 0.75), 26);
+      applyReveal(document.getElementById("s1-wave"), enterProgress(t, 7.60, 0.70), 20);
+
+      applyReveal(document.getElementById("s1-c0"), easeOutBack((t - 19.2) / 0.65), 28);
+      applyReveal(document.getElementById("s1-c1"), easeOutBack((t - 23.6) / 0.65), 28);
+      applyReveal(document.getElementById("s1-c2"), easeOutBack((t - 28.2) / 0.65), 28);
+      applyReveal(document.getElementById("s1-c3"), easeOutBack((t - 30.6) / 0.65), 28);
+
+      highlightCard(document.getElementById("s1-c0"), t >= 19.2 && t < 23.6 ? 1 : 0.22, "239, 68, 68");
+      highlightCard(document.getElementById("s1-c1"), t >= 23.6 && t < 28.2 ? 1 : 0.22, "239, 68, 68");
+      highlightCard(document.getElementById("s1-c2"), t >= 28.2 && t < 30.6 ? 1 : 0.22, "245, 158, 11");
+      highlightCard(document.getElementById("s1-c3"), t >= 30.6 ? 1 : 0.22, "239, 68, 68");
+    }
+
+    // ---- S02: Hub v2.0 Overview (34.80 -> 61.59s) ----
+    if (t >= scenes[1].start - 0.6 && t <= scenes[1].end + 0.6) {
+      const lt = t - scenes[1].start;
+      applyReveal(document.getElementById("s2-browser"), enterProgress(lt, 0.15, 0.8), 28, 0.965);
+      applyReveal(document.getElementById("s2-chips"), enterProgress(lt, 6.8, 0.7), 16);
+
+      const kpiStarts = [13.1, 19.3, 21.2, 24.4];
       for (let k = 0; k < 4; k++) {
-        applyReveal(document.getElementById(`s1-k${k}`), easeOutBack((t - kStarts[k]) / 0.62), 24);
+        applyReveal(document.getElementById(`s2-k${k}`), easeOutBack((lt - kpiStarts[k]) / 0.65), 26);
+      }
+      const p3 = easeOutExpo((lt - 24.4) / 0.85);
+      document.getElementById("s2-v3").textContent = `${Math.round(52 * p3)} Gates`;
+    }
+
+    // ---- S03: Playbook 01 + Regulated Profile (61.59 -> 97.56s) ----
+    if (t >= scenes[2].start - 0.6 && t <= scenes[2].end + 0.6) {
+      const lt = t - scenes[2].start;
+      applyReveal(document.getElementById("s3-left"), enterProgress(lt, 0.3, 0.7), 24);
+      for (let l = 0; l < 6; l++) {
+        applyReveal(document.getElementById(`s3-l${l}`), enterProgress(lt, 10.4 + l * 0.65, 0.5), 14);
+      }
+      applyReveal(document.getElementById("s3-right"), enterProgress(lt, 16.5, 0.75), 24);
+      applyReveal(document.getElementById("s3-regimes"), enterProgress(lt, 16.9, 0.65), 18);
+      applyReveal(document.getElementById("s3-wall"), enterProgress(lt, 28.2, 0.65), 18);
+      applyReveal(document.getElementById("s3-bars"), enterProgress(lt, 31.8, 0.65), 18);
+
+      const b1 = document.getElementById("s3-b1");
+      const b2 = document.getElementById("s3-b2");
+      if (b1) b1.style.width = `${(100 * easeOutExpo((lt - 32.0) / 1.2)).toFixed(1)}%`;
+      if (b2) b2.style.width = `${(39 * easeOutExpo((lt - 32.8) / 1.2)).toFixed(1)}%`;
+    }
+
+    // ---- S04: Playbook 02 APIM AI Gateway (97.56 -> 131.65s) ----
+    if (t >= scenes[3].start - 0.6 && t <= scenes[3].end + 0.6) {
+      const lt = t - scenes[3].start;
+      applyReveal(document.getElementById("s4-flow"), enterProgress(lt, 0.35, 0.75), 22);
+      const cTimes = [14.7, 16.8, 18.4, 24.0];
+      const cGlows = ["56, 189, 248", "16, 185, 129", "245, 158, 11", "167, 139, 250"];
+      for (let i = 0; i < 4; i++) {
+        const el = document.getElementById(`s4-c${i}`);
+        applyReveal(el, easeOutBack((lt - Math.min(cTimes[i], 7.8 + i * 2.0)) / 0.62), 26);
+        const active = lt >= cTimes[i] && (i === 3 || lt < cTimes[i + 1] + 0.3) ? 1 : 0.22;
+        highlightCard(el, active, cGlows[i]);
       }
     }
 
-    // S02: Operating Model (Pages 3-5)
-    if (t >= scenes[1].start - 0.6 && t <= scenes[1].end + 0.6) {
-      revealAndSpotlight("s2-c", 3, t - scenes[1].start, [3.6, 16.5, 26.8], ["20, 184, 166", "56, 189, 248", "16, 185, 129"]);
-    }
-
-    // S03: PB01 Start & Qualify (Pages 6-11)
-    if (t >= scenes[2].start - 0.6 && t <= scenes[2].end + 0.6) {
-      revealAndSpotlight("s3-c", 6, t - scenes[2].start, [4.2, 10.1, 17.4, 25.9, 34.6, 41.2], STD_GLOWS);
-    }
-
-    // S04: PB01 Design (Pages 12-15)
-    if (t >= scenes[3].start - 0.6 && t <= scenes[3].end + 0.6) {
-      revealAndSpotlight("s4-c", 4, t - scenes[3].start, [4.5, 21.3, 29.2, 36.6], ["56, 189, 248", "245, 158, 11", "20, 184, 166", "16, 185, 129"]);
-    }
-
-    // S05: PB01 Validate, Govern & Sources (Pages 16-20)
+    // ---- S05: Playbook 03 Multi-Region BCP (131.65 -> 163.63s) ----
     if (t >= scenes[4].start - 0.6 && t <= scenes[4].end + 0.6) {
-      revealAndSpotlight("s5-c", 5, t - scenes[4].start, [4.1, 10.7, 18.2, 26.3, 32.1], STD_GLOWS);
+      const lt = t - scenes[4].start;
+      applyReveal(document.getElementById("s5-stamps"), enterProgress(lt, 0.35, 0.75), 22);
+      const cTimes = [5.9, 10.8, 18.2];
+      const cGlows = ["56, 189, 248", "16, 185, 129", "245, 158, 11"];
+      for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`s5-c${i}`);
+        applyReveal(el, easeOutBack((lt - cTimes[i]) / 0.62), 26);
+        const active = lt >= cTimes[i] && (i === 2 || lt < cTimes[i + 1] + 0.3) ? 1 : 0.22;
+        highlightCard(el, active, cGlows[i]);
+      }
     }
 
-    // S06: Regulated Profile (Page 21)
+    // ---- S06: Playbook 04 Agentic RAG & Evals (163.63 -> 195.28s) ----
     if (t >= scenes[5].start - 0.6 && t <= scenes[5].end + 0.6) {
-      revealAndSpotlight("s6-c", 4, t - scenes[5].start, [7.9, 18.0, 24.8, 32.9], ["20, 184, 166", "56, 189, 248", "16, 185, 129", "167, 139, 250"]);
-    }
-
-    // S07: Playbook 02 APIM (Pages 22-27)
-    if (t >= scenes[6].start - 0.6 && t <= scenes[6].end + 0.6) {
-      revealAndSpotlight("s7-c", 6, t - scenes[6].start, [3.7, 9.5, 18.8, 31.6, 36.9, 43.0], STD_GLOWS);
-    }
-
-    // S08: Playbook 03 BCP (Pages 28-33)
-    if (t >= scenes[7].start - 0.6 && t <= scenes[7].end + 0.6) {
-      revealAndSpotlight("s8-c", 6, t - scenes[7].start, [4.4, 9.4, 16.1, 26.7, 35.9, 42.5], STD_GLOWS);
-    }
-
-    // S09: Playbook 04 Agentic (Pages 34-39)
-    if (t >= scenes[8].start - 0.6 && t <= scenes[8].end + 0.6) {
-      revealAndSpotlight("s9-c", 6, t - scenes[8].start, [5.3, 9.9, 24.4, 31.9, 40.9, 47.0], STD_GLOWS);
-    }
-
-    // S10: Decision Studio (Page 40)
-    if (t >= scenes[9].start - 0.6 && t <= scenes[9].end + 0.6) {
-      const lt = t - scenes[9].start;
-      applyReveal(document.getElementById("s10-left"), enterProgress(lt, 0.3, 0.7), 22);
-      applyReveal(document.getElementById("s10-right"), enterProgress(lt, 2.2, 0.7), 22);
-      const tStarts = [7.7, 14.1, 18.0, 21.9, 26.8];
+      const lt = t - scenes[5].start;
+      const nTimes = [1.0, 6.6, 10.8, 15.5, 24.0];
       for (let i = 0; i < 5; i++) {
-        const row = document.getElementById(`s10-t${i}`);
-        applyReveal(row, enterProgress(lt, 0.9 + i * 0.5, 0.5), 14);
+        applyReveal(document.getElementById(`s6-n${i}`), easeOutBack((lt - nTimes[i]) / 0.58), 22);
+      }
+      applyReveal(document.getElementById("s6-b0"), enterProgress(lt, 15.5, 0.7), 22);
+      applyReveal(document.getElementById("s6-b1"), enterProgress(lt, 24.0, 0.7), 22);
+    }
+
+    // ---- S07: 5-Tool Decision Studio (195.28 -> 223.49s) ----
+    if (t >= scenes[6].start - 0.6 && t <= scenes[6].end + 0.6) {
+      const lt = t - scenes[6].start;
+      applyReveal(document.getElementById("s7-left"), enterProgress(lt, 0.3, 0.7), 24);
+      applyReveal(document.getElementById("s7-right"), enterProgress(lt, 3.2, 0.75), 24);
+      const tTimes = [10.9, 15.5, 19.0, 21.8, 24.9];
+      for (let i = 0; i < 5; i++) {
+        const row = document.getElementById(`s7-t${i}`);
+        applyReveal(row, enterProgress(lt, 1.2 + i * 0.75, 0.5), 14);
         if (row) {
-          const hot = lt >= tStarts[i] && (i === 4 || lt < tStarts[i + 1]);
-          row.style.borderColor = hot ? "rgba(56, 189, 248, 0.9)" : "rgba(56, 189, 248, 0.25)";
-          row.style.background = hot ? "rgba(0, 120, 212, 0.26)" : "rgba(15, 32, 58, 0.88)";
+          const isHot = lt >= tTimes[i] && (i === 4 || lt < tTimes[i + 1]);
+          row.style.borderColor = isHot ? "rgba(56, 189, 248, 0.85)" : "rgba(56, 189, 248, 0.24)";
+          row.style.background = isHot ? "rgba(0, 120, 212, 0.24)" : "rgba(15, 32, 58, 0.88)";
         }
       }
     }
 
-    // S11: Papers, Kits & Checklists (Pages 41-45)
-    if (t >= scenes[10].start - 0.6 && t <= scenes[10].end + 0.6) {
-      revealAndSpotlight("s11-c", 5, t - scenes[10].start, [3.6, 10.9, 15.2, 19.6, 34.4], STD_GLOWS);
+    // ---- S08: Papers, 5 MIT Kits, 52 Checklists & OSS (223.49 -> 253.62s) ----
+    if (t >= scenes[7].start - 0.6 && t <= scenes[7].end + 0.6) {
+      const lt = t - scenes[7].start;
+      const tTimes = [5.5, 11.8, 19.0, 23.9];
+      const tGlows = ["56, 189, 248", "16, 185, 129", "167, 139, 250", "245, 158, 11"];
+      for (let k = 0; k < 4; k++) {
+        const el = document.getElementById(`s8-t${k}`);
+        applyReveal(el, easeOutBack((lt - tTimes[k]) / 0.62), 26, 0.965);
+        const active = lt >= tTimes[k] && (k === 3 || lt < tTimes[k + 1] + 0.3) ? 1 : 0.22;
+        highlightCard(el, active, tGlows[k]);
+      }
     }
 
-    // S12: 24/7 Dual-Agent Loop & CTA
-    if (t >= scenes[11].start - 0.6) {
-      const lt = t - scenes[11].start;
-      applyReveal(document.getElementById("s12-loop"), enterProgress(lt, 0.4, 0.75), 22);
-      applyReveal(document.getElementById("s12-a0"), easeOutBack((lt - 12.3) / 0.58), 22);
-      applyReveal(document.getElementById("s12-a1"), easeOutBack((lt - 14.6) / 0.58), 22);
-      applyReveal(document.getElementById("s12-a2"), easeOutBack((lt - 18.6) / 0.58), 22);
+    // ---- S09: 5-Stage Factory, 3-Wk Sprint & 24/7 Loop (253.62 -> 279.96s) ----
+    if (t >= scenes[8].start - 0.6 && t <= scenes[8].end + 0.6) {
+      const lt = t - scenes[8].start;
+      applyReveal(document.getElementById("s9-factory"), enterProgress(lt, 0.4, 0.7), 22);
+      applyReveal(document.getElementById("s9-sprint"), enterProgress(lt, 11.4, 0.7), 22);
+      applyReveal(document.getElementById("s9-loop"), enterProgress(lt, 15.1, 0.75), 24);
+      const lTimes = [16.3, 18.2, 20.1, 22.3];
+      for (let i = 0; i < 4; i++) {
+        applyReveal(document.getElementById(`s9-l${i}`), easeOutBack((lt - lTimes[i]) / 0.55), 18);
+      }
+    }
 
-      // Exact word-boundary sync: "solve once" (476.31s), "govern cleanly" (476.97s), "scale everywhere" (477.85s)
-      applyReveal(document.getElementById("s12-m0"), easeOutBack((t - 476.26) / 0.46), 20, 0.92);
-      applyReveal(document.getElementById("s12-m1"), easeOutBack((t - 476.93) / 0.46), 20, 0.92);
-      applyReveal(document.getElementById("s12-m2"), easeOutBack((t - 477.81) / 0.50), 20, 0.92);
-      applyReveal(document.getElementById("s12-url"), enterProgress(t, 478.40, 0.70), 18, 0.95);
+    // ---- S10: Call to Action (279.96 -> 300.00s) ----
+    if (t >= scenes[9].start - 0.6) {
+      const lt = t - scenes[9].start;
+      applyReveal(document.getElementById("s10-c0"), easeOutBack((lt - 4.6) / 0.62), 26);
+      applyReveal(document.getElementById("s10-c1"), easeOutBack((lt - 7.5) / 0.62), 26);
+      applyReveal(document.getElementById("s10-c2"), easeOutBack((lt - 10.9) / 0.62), 26);
+
+      // Exact word-boundary sync: "solve once" (294.66s), "govern cleanly" (295.36s), "scale everywhere" (296.26s)
+      applyReveal(document.getElementById("s10-m0"), easeOutBack((t - 294.60) / 0.46), 22, 0.92);
+      applyReveal(document.getElementById("s10-m1"), easeOutBack((t - 295.30) / 0.46), 22, 0.92);
+      applyReveal(document.getElementById("s10-m2"), easeOutBack((t - 296.20) / 0.50), 22, 0.92);
+      applyReveal(document.getElementById("s10-url"), enterProgress(t, 296.85, 0.70), 20, 0.95);
     }
   };
 
-  window.renderAt(28.8);
+  window.renderAt(60.2);
 </script>
 </body>
 </html>

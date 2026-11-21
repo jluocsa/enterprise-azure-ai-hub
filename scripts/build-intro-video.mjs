@@ -251,8 +251,8 @@ async function captureKeyframesAndPoster(browserBin, timeline) {
       console.log(`   ✓ ${path.basename(outFile)} @ t=${sampleT}s`)
     }
 
-    // Poster frame from Scene 01 full reveal (Home Hub + 45-Subpage KPIs visible)
-    const posterT = Number((timeline.scenes[0].start + (timeline.scenes[0].end - timeline.scenes[0].start) * 0.94).toFixed(2))
+    // Poster frame from Scene 02 full reveal (Hub v2.0 + all 4 KPIs visible)
+    const posterT = Number((timeline.scenes[1].start + (timeline.scenes[1].end - timeline.scenes[1].start) * 0.96).toFixed(2))
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: 1920,
       height: 1080,
@@ -379,9 +379,10 @@ async function main() {
   })
   if (keyframesOnly) return
 
-  const totalFrames = Math.ceil(timeline.totalDuration * FPS)
+  const totalFrames = Math.round(timeline.totalDuration * FPS)
+  const exactDurStr = Number(timeline.totalDuration).toFixed(2)
   console.log(
-    `🚀 Rendering ${totalFrames} frames (${timeline.totalDuration}s @ ${FPS}fps, DSF=${DSF}) across ${WORKERS} parallel workers...`
+    `🚀 Rendering ${totalFrames} frames (${exactDurStr}s @ ${FPS}fps, DSF=${DSF}) across ${WORKERS} parallel workers...`
   )
 
   const chunkSize = Math.ceil(totalFrames / WORKERS)
@@ -444,7 +445,8 @@ async function main() {
       '2',
       '-movflags',
       '+faststart',
-      '-shortest',
+      '-t',
+      exactDurStr,
       OUT_MP4,
     ],
     { stdio: 'inherit', windowsHide: true }
@@ -497,7 +499,8 @@ async function main() {
       '48000',
       '-ac',
       '2',
-      '-shortest',
+      '-t',
+      exactDurStr,
       OUT_WEBM,
     ],
     { stdio: 'inherit', windowsHide: true }
