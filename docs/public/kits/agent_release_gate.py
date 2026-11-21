@@ -22,6 +22,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import json
 import math
 import re
@@ -30,6 +32,7 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 CITATION_RE = re.compile(r"\[cite:([A-Za-z0-9_.:#-]+)\]")
 DEFAULT_FORBIDDEN_TOOLS = {"raw_shell_root", "unguarded_http_post", "drop_container"}
@@ -511,6 +514,32 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "UTF-8 acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
+        invalid_utf8_trace = Path(directory) / "invalid-utf8.jsonl"
+        invalid_utf8_trace.write_bytes(json.dumps(valid_records[0]).encode("utf-8") + b"\n\xff")
+        for unreadable in (Path(directory) / "missing.jsonl", Path(directory), invalid_utf8_trace):
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(unreadable), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 2 and "[ARG001]" in result.stderr, result
+                assert "UTF-8 trace evidence" in result.stderr and not result.stdout, result
+                assert str(unreadable) not in result.stderr and "Traceback" not in result.stderr, result
+
+        for error in (PermissionError("private-path"), OSError("private-path")):
+            for output_flags in ([], ["--json"]):
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with (
+                    patch.object(sys, "argv", ["agent_release_gate.py", str(trace), *output_flags]),
+                    patch.object(Path, "read_text", side_effect=error),
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    code = main()
+                assert code == 2 and not stdout.getvalue(), (code, stdout.getvalue())
+                assert "[ARG001]" in stderr.getvalue() and "UTF-8 trace evidence" in stderr.getvalue()
+                assert "private-path" not in stderr.getvalue() and "Traceback" not in stderr.getvalue()
+
         contract_file.write_text("{}", encoding="utf-8")
         result = subprocess.run(
             [sys.executable, str(Path(__file__).resolve()), str(trace),
@@ -533,7 +562,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (unique JSON members + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (trace I/O + unique JSON members + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
@@ -569,12 +598,14 @@ def main() -> int:
         return 2
 
     path = Path(args.trace_path)
-    if not path.is_file():
-        print(f"Error: file not found: {path}", file=sys.stderr)
+    try:
+        trace_text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        print("Error: [ARG001] could not read UTF-8 trace evidence.", file=sys.stderr)
         return 2
 
     records: list[Any] = []
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(trace_text.splitlines(), start=1):
         if not line.strip():
             continue
         try:

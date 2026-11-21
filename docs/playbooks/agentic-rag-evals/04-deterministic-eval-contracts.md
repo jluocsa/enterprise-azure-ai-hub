@@ -84,6 +84,8 @@ description: Structuring non-flaky CI/CD evaluation pipelines for tool-using and
 
 All supplied ACL/privacy flags must be booleans even when their enforcement is disabled. Structurally invalid turns produce `ARG001` failures and exit `1` (including under `--json`); malformed JSON produces a line-numbered `ARG001` error on stderr and exit `2`. Diagnostics for malformed evidence identify the row/field without echoing raw turn content. The zero-dependency `python3 docs/public/kits/agent_release_gate.py --self-test` regression suite is included in `npm run verify`.
 
+Missing/unreadable trace files, directory inputs, and invalid UTF-8 also exit `2` with a sanitized `ARG001` stderr diagnostic and no stdout in text or `--json` mode. The CLI reads the complete file before evaluating any turns, so a valid prefix followed by undecodable bytes cannot produce a partial pass. Read-error diagnostics omit paths, file content, and operating-system exception details; self-tests cover file/encoding failures and injected permission/I/O errors without relying on platform-specific file permissions <span class="ev-badge ev-arch">[Arch]</span>.
+
 ### Unambiguous JSON Inputs
 
 <span class="ev-badge ev-arch">[Arch]</span> Trace records and acceptance-contract files must use unique member names within **every JSON object**, including optional nested metadata. The CLI rejects duplicates before schema validation or evaluation instead of silently keeping the last value: `"raw_prompt_logged": true` followed by `"raw_prompt_logged": false` must not turn failing evidence into a pass. Identical duplicate values are also rejected, and JSON escape sequences are decoded before comparing names.
