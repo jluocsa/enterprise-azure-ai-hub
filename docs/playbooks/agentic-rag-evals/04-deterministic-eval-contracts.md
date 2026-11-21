@@ -86,6 +86,14 @@ All supplied ACL/privacy flags must be booleans even when their enforcement is d
 
 Missing/unreadable trace files, directory inputs, and invalid UTF-8 also exit `2` with a sanitized `ARG001` stderr diagnostic and no stdout in text or `--json` mode. The CLI reads the complete file before evaluating any turns, so a valid prefix followed by undecodable bytes cannot produce a partial pass. Read-error diagnostics omit paths, file content, and operating-system exception details; self-tests cover file/encoding failures and injected permission/I/O errors without relying on platform-specific file permissions <span class="ev-badge ev-arch">[Arch]</span>.
 
+### Unique Case/Pass Evidence (`ARG001`) {#unique-case-pass-evidence}
+
+<span class="ev-badge ev-arch">[Arch]</span> Each structurally valid `(case_id, pass_number)` pair must occur only once per trace file. Repeated evidence can inflate the latency sample: one slow turn followed by twenty copies of a fast turn can put the slow turn outside the nearest-rank p95. Identical copies and conflicting records with the same pair both produce `ARG001` and exit `1`, including under `--json`; no duplicate-containing trace can pass.
+
+Pair comparison uses exact, case-sensitive decoded strings and integer pass numbers, without trimming or coercion. The same case may appear in distinct passes, and different cases may share a pass number. Assign distinct case/turn identifiers within a pass; if a harness emits multiple turns or retries for one scenario, encode the turn/attempt in `case_id`. Diagnostics report the duplicate's record ordinal and the first occurrence, not the identifier or response. Record ordinals count non-blank JSONL records, not physical lines.
+
+Duplicates remain subject to all other checks rather than being silently discarded; JSON `record_count` still reports every parsed record. Offline regressions cover separated/repeated duplicates, conflicting durations, p95 padding, text/JSON failures, preserved tool/citation/cache/ACL/privacy findings, and distinct-pass compatibility. This is a local evidence-integrity rule, not an Azure service schema, a required-corpus completeness check, or proof of provenance; distinct fabricated identifiers cannot be detected by uniqueness alone.
+
 ### Unambiguous JSON Inputs
 
 <span class="ev-badge ev-arch">[Arch]</span> Trace records and acceptance-contract files must use unique member names within **every JSON object**, including optional nested metadata. The CLI rejects duplicates before schema validation or evaluation instead of silently keeping the last value: `"raw_prompt_logged": true` followed by `"raw_prompt_logged": false` must not turn failing evidence into a pass. Identical duplicate values are also rejected, and JSON escape sequences are decoded before comparing names.

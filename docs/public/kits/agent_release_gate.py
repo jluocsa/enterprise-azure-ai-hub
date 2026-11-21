@@ -5,7 +5,7 @@ Artifact: agent_release_gate.py (Playbook 04 · Deterministic CI Release Verifie
 
 Verifies offline agent execution evidence (JSONL turns) against deterministic
 production acceptance contracts:
-  [ARG001] Schema integrity: required turn fields & terminal status=='ok'
+  [ARG001] Schema integrity: required turn fields, unique case/pass pairs & terminal status=='ok'
   [ARG002] Tool governance: zero forbidden tools + optional required grounding tools
   [ARG003] Citation grounding: well-formed inline [cite:ID] markers resolve to retrieved_doc_ids
   [ARG004] Two-pass prefix cache parity: pass>=2 turns with >=1,024 input tokens hit KV cache
@@ -125,6 +125,7 @@ def evaluate_trace(
     req = required_tools or set()
     failures: list[str] = []
     latencies: list[float] = []
+    seen_turns: dict[tuple[str, int], int] = {}
 
     if not records:
         return ["[ARG001] Trace file contains zero execution records."]
@@ -139,6 +140,14 @@ def evaluate_trace(
             continue
 
         case_id = rec["case_id"]
+        turn_key = (case_id, rec["pass_number"])
+        if turn_key in seen_turns:
+            failures.append(
+                f"[ARG001] row-{i}: duplicate case_id/pass_number pair "
+                f"(first seen at row-{seen_turns[turn_key]})."
+            )
+        else:
+            seen_turns[turn_key] = i
         status = rec["status"]
         if status != "ok":
             failures.append(f"[ARG001] {case_id}: terminal status is '{status}' (expected 'ok').")
@@ -285,6 +294,27 @@ def run_self_test() -> int:
         "Expected clean golden trace to pass."
     )
 
+    same_case_passes = [
+        {**rec, "case_id": "golden-case"} for rec in valid_records
+    ]
+    assert evaluate_trace(same_case_passes) == []
+    assert evaluate_trace([
+        valid_records[0], {**valid_records[0], "case_id": "GOLDEN-001-pass1"},
+    ]) == []
+    for duplicate in (valid_records[0], {**valid_records[0], "duration_ms": 900}):
+        errs = evaluate_trace([valid_records[0], valid_records[1], duplicate, duplicate])
+        assert errs == [
+            "[ARG001] row-3: duplicate case_id/pass_number pair (first seen at row-1).",
+            "[ARG001] row-4: duplicate case_id/pass_number pair (first seen at row-1).",
+        ], errs
+    padded_trace = [
+        {**valid_records[0], "case_id": "slow-case", "duration_ms": 24000},
+        *[{**valid_records[0], "case_id": "private-case"} for _ in range(20)],
+    ]
+    errs = evaluate_trace(padded_trace)
+    assert len(errs) == 19 and all("duplicate case_id/pass_number" in e for e in errs), errs
+    assert "private-case" not in "\n".join(errs), errs
+
     citation_record = {**valid_records[0], "retrieved_doc_ids": ["doc_A.2:#-"]}
     for answer in ("", "No citation markers.", "[cite:doc_A.2:#-][cite:doc_A.2:#-]"):
         assert evaluate_trace([{**citation_record, "assistant_response": answer}]) == []
@@ -367,6 +397,13 @@ def run_self_test() -> int:
     ]
     errs = evaluate_trace(broken_records, max_p95_ms=10000)
     assert len(errs) == 6, f"Expected 6 deterministic contract violations, got {errs}"
+    duplicate_broken = [
+        {**valid_records[0], "case_id": "bad-001", "pass_number": 2, "cached_tokens": 3584},
+        *broken_records,
+    ]
+    errs = evaluate_trace(duplicate_broken, max_p95_ms=10000)
+    assert len(errs) == 7 and sum("duplicate case_id/pass_number" in e for e in errs) == 1, errs
+    assert all(any(e.startswith(f"[ARG00{rule}]") for e in errs) for rule in range(1, 8)), errs
 
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as tmp:
         json.dump(
@@ -432,6 +469,29 @@ def run_self_test() -> int:
 
     with tempfile.TemporaryDirectory() as directory:
         trace = Path(directory) / "trace.jsonl"
+        for evidence, expected_duplicates in (
+            (same_case_passes, 0),
+            (padded_trace, 19),
+            (duplicate_broken, 1),
+            ([valid_records[0], {**valid_records[0], "duration_ms": 900}], 1),
+        ):
+            trace.write_text("\n\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == (1 if expected_duplicates else 0), result
+                assert not result.stderr and "Traceback" not in result.stdout, result
+                assert result.stdout.count("duplicate case_id/pass_number") == expected_duplicates, result
+                assert "private-case" not in result.stdout, result
+                if output_flags:
+                    output = json.loads(result.stdout)
+                    assert output["passed"] is (expected_duplicates == 0), output
+                    assert output["record_count"] == len(evidence), output
+                    if evidence is duplicate_broken:
+                        assert len(output["failures"]) == 7, output
+
         for evidence, expected_code in (
             (valid_records, 0),
             ([{**valid_records[0], "metadata": [{"label": "a"}, {"label": "b"}]}], 0),
@@ -512,7 +572,7 @@ def run_self_test() -> int:
                     trace.write_text(
                         json.dumps(valid_records[0]) + "\n\n"
                         + (trace_record if target == "trace" else json.dumps(valid_records[1]))
-                        + "\n" + json.dumps(valid_records[0]),
+                        + "\n" + json.dumps({**valid_records[0], "case_id": "golden-002-pass1"}),
                         encoding="utf-8",
                     )
                     contract_file.write_text(
@@ -690,7 +750,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
