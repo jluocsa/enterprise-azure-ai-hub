@@ -83,6 +83,11 @@ def validate_ptu_rewrite(root):
             "PTU rewrite contract: expected only request-wide cache options and "
             "input/messages content breakpoints to be removed, preserving all other fields"
         )
+    if rewrites[0] not in root.findall("./inbound/set-body"):
+        raise ValueError(
+            "PTU rewrite contract: the fixed GPT-5.6 PTU primary requires an "
+            "unconditional inbound rewrite, not a caller-controlled or conditional branch"
+        )
 
 
 def validate_spillover(root):
@@ -194,10 +199,9 @@ class ApimXmlTests(unittest.TestCase):
             with self.subTest(mutation=mutation):
                 root = deepcopy(source)
                 inbound = root.find("inbound")
-                branch = inbound.find("./choose/when")
-                rewrite = branch.find("set-body")
+                rewrite = inbound.find("set-body")
                 if mutation == "missing-rewrite":
-                    branch.remove(rewrite)
+                    inbound.remove(rewrite)
                 elif mutation == "extra-rewrite":
                     ET.SubElement(inbound, "set-body").text = "@(changedBody)"
                 else:
@@ -219,31 +223,63 @@ class ApimXmlTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "PTU rewrite contract"):
                     validate_ptu_rewrite(root)
 
+    def test_rejects_conditional_ptu_rewrites(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for condition in (
+            '@(context.Request.Headers.GetValueOrDefault("x-target-regime", '
+            '"gpt-5.6-ptu") == "gpt-5.6-ptu")',
+            "@(false)",
+            "@(true)",
+        ):
+            with self.subTest(condition=condition):
+                root = deepcopy(source)
+                inbound = root.find("inbound")
+                rewrite = inbound.find("set-body")
+                inbound.remove(rewrite)
+                branch = ET.SubElement(ET.SubElement(inbound, "choose"), "when",
+                                       condition=condition)
+                branch.append(rewrite)
+                with self.assertRaisesRegex(ValueError, "PTU rewrite contract:.*unconditional"):
+                    validate_ptu_rewrite(root)
+                validate_spillover(root)  # Body capture/restoration alone cannot catch the bypass.
+
     def test_cli_blocks_ptu_rewrite_regressions_in_kit_and_rendered_studio(self):
         from html import escape
         source = KIT.read_text(encoding="utf-8")
         incomplete = source.replace('"input", "messages"', '"input"')
         self.assertNotEqual(source, incomplete)
+        conditional = validate_policy(source)
+        inbound = conditional.find("inbound")
+        rewrite = inbound.find("set-body")
+        inbound.remove(rewrite)
+        branch = ET.SubElement(ET.SubElement(inbound, "choose"), "when", condition=(
+            '@(context.Request.Headers.GetValueOrDefault("x-target-regime", '
+            '"gpt-5.6-ptu") == "gpt-5.6-ptu")'
+        ))
+        branch.append(rewrite)
+        conditional = ET.tostring(conditional, encoding="unicode")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             kit = root / "policy.xml"
             studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
             studio.parent.mkdir(parents=True)
-            for target in (None, "kit", "studio"):
-                kit.write_text(incomplete if target == "kit" else source, encoding="utf-8")
-                rendered = incomplete if target == "studio" else source
-                studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
-                                  encoding="utf-8")
-                stdout, stderr = io.StringIO(), io.StringIO()
-                with self.subTest(target=target), patch.dict(globals(), ROOT=root, KIT=kit), \
-                        patch.object(sys, "argv", ["check-apim-xml.py"]), \
-                        redirect_stdout(stdout), redirect_stderr(stderr):
-                    self.assertEqual(main(), 0 if target is None else 1)
-                self.assertEqual("PASSED" in stdout.getvalue(), target is None)
-                if target is not None:
-                    self.assertIn("PTU rewrite contract", stderr.getvalue())
-                    self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
-                                  stderr.getvalue())
+            for regression in (incomplete, conditional):
+                for target in (None, "kit", "studio"):
+                    kit.write_text(regression if target == "kit" else source, encoding="utf-8")
+                    rendered = regression if target == "studio" else source
+                    studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                      encoding="utf-8")
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with self.subTest(regression=regression, target=target), \
+                            patch.dict(globals(), ROOT=root, KIT=kit), \
+                            patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                            redirect_stdout(stdout), redirect_stderr(stderr):
+                        self.assertEqual(main(), 0 if target is None else 1)
+                    self.assertEqual("PASSED" in stdout.getvalue(), target is None)
+                    if target is not None:
+                        self.assertIn("PTU rewrite contract", stderr.getvalue())
+                        self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                      stderr.getvalue())
 
     def test_rejects_response_buffering_regressions(self):
         source = validate_policy(KIT.read_text(encoding="utf-8"))
