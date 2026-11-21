@@ -1,0 +1,36 @@
+// Application Insights KQL: Per-node cache efficiency + Two-Regime Shard & Deployment-Wide PTU Normalized TPM
+// Last verified: 2026-11-18 21:21 PST | License: MIT
+let AllCalls = AppDependencies
+| where TimeGenerated > ago(24h) and Type == "AzureOpenAI"
+| extend cd = parse_json(Properties)
+| extend cache_key = tostring(cd["gen_ai.prompt_cache.key"]), node_name = tostring(cd["agent.node_name"]),
+         model_name = tostring(cd["gen_ai.request.model"]), sku = tostring(cd["azure.deployment.sku"]),
+         input_tok = tolong(cd["gen_ai.usage.input_tokens"]), output_tok = tolong(cd["gen_ai.usage.output_tokens"]),
+         cached_tok = tolong(coalesce(cd["gen_ai.usage.cached_tokens"], 0)),
+         write_tok = tolong(coalesce(cd["gen_ai.usage.cache_write_tokens"], 0)),
+         ttft_ms = todouble(cd["gen_ai.latency.ttft_ms"])
+| extend uncached_tok = max_of(input_tok - cached_tok - write_tok, 0)
+| extend norm_tok = case(  // Short-context (<=272K) weights; use 2x input/cache & 7.5x output if input_tok > 272000
+         model_name has "6.1", uncached_tok + 0.05 * cached_tok + 1.25 * write_tok + 5.0 * output_tok,
+         model_name has "gpt-6", uncached_tok + 0.10 * cached_tok + 1.25 * write_tok + 5.0 * output_tok,
+         (input_tok - cached_tok) + 6.0 * output_tok);  // Pre-GPT-6 (5.6 / 5.4): 0x cached, 6x output
+let DeployPeak = AllCalls  // Includes <1,024-token & unkeyed calls that share the same PTU deployment
+| summarize DeployMinuteTPM = sum(norm_tok) by model_name, sku, bin(TimeGenerated, 1m)
+| summarize DeployPeakNormTPM = round(max(DeployMinuteTPM), 0), DeployP95NormTPM = round(percentile(DeployMinuteTPM, 95), 0)
+         by model_name, sku;
+let CacheCalls = AllCalls | where isnotempty(cache_key) and input_tok >= 1024;
+let ShardPeak = CacheCalls
+| summarize MinuteNormTPM = sum(norm_tok) by node_name, model_name, sku, cache_key, bin(TimeGenerated, 1m)
+| summarize ShardPeakNormTPM = round(max(MinuteNormTPM), 0) by node_name, model_name, sku, cache_key;
+CacheCalls
+| summarize Calls = count(), HitRatePct = round(100.0 * countif(cached_tok > 0) / count(), 1),
+            CachedSharePct = round(100.0 * sum(cached_tok) / max_of(sum(input_tok), 1), 1),
+            ReadWriteRatio = iff(sum(write_tok) == 0, real(null), round(todouble(sum(cached_tok)) / sum(write_tok), 1)),
+            TTFT_p95_ms = round(percentile(ttft_ms, 95), 0), ShardAvgNormTPM = round(sum(norm_tok) / 1440.0, 0)
+         by node_name, model_name, sku, cache_key
+| join kind=inner ShardPeak on node_name, model_name, sku, cache_key
+| join kind=leftouter DeployPeak on model_name, sku
+| extend GateStatus = iff(HitRatePct >= 80.0 and CachedSharePct >= 60.0
+                          and (isnull(ReadWriteRatio) or ReadWriteRatio >= 10.0), "PASS", "FAIL")
+| project-away node_name1, model_name1, sku1, cache_key1, model_name2, sku2
+| order by GateStatus asc, DeployPeakNormTPM desc, ShardPeakNormTPM desc
