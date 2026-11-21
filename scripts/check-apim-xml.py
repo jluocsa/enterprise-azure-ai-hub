@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Check published APIM XML syntax and the per-attempt spillover body contract."""
+"""Check published APIM XML, per-attempt spillover bodies, and SSE response safety."""
 
 import argparse
+from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 from html.parser import HTMLParser
+import io
 from pathlib import Path
+import re
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 
@@ -121,13 +126,112 @@ def validate_spillover(root):
     )
 
 
+def validate_sse(root):
+    """Guard visible streaming policies; inherited policies and C# need live review."""
+    forwards = root.findall("./backend//forward-request")
+    if not forwards or any(policy.get("buffer-response") != "false" for policy in forwards):
+        raise ValueError("SSE response contract: every forward-request must set buffer-response=\"false\"")
+    outbound = root.find("outbound")
+    if outbound is None:
+        raise ValueError("SSE response contract: missing outbound policies")
+    body_policies = {
+        "set-body", "validate-content", "json-to-xml", "xml-to-json",
+        "find-and-replace", "xsl-transform", "cache-store",
+    }
+    for policy in outbound.iter():
+        if policy.tag in body_policies:
+            raise ValueError(f"SSE response contract: outbound {policy.tag} can buffer or replace events")
+        expressions = [policy.text or "", *policy.attrib.values()]
+        if any(re.search(r"\bcontext\s*\.\s*Response\s*\.\s*Body\b", text) for text in expressions):
+            raise ValueError("SSE response contract: outbound expression accesses context.Response.Body")
+
+
 class ApimXmlTests(unittest.TestCase):
     def test_published_spillover_contract(self):
         root = validate_policy(KIT.read_text(encoding="utf-8"))
         validate_spillover(root)
+        validate_sse(root)
         from html import escape
         rendered = f'<pre class="apim-code"><code>{escape(ET.tostring(root, encoding="unicode"))}</code></pre>'
         validate_spillover(validate_studio(rendered))
+        validate_sse(validate_studio(rendered))
+
+    def test_rejects_response_buffering_regressions(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for value in (None, "true", "@(false)", ""):
+            with self.subTest(value=value):
+                root = deepcopy(source)
+                forward = root.find("./backend/retry/forward-request")
+                if value is None:
+                    forward.attrib.pop("buffer-response")
+                else:
+                    forward.set("buffer-response", value)
+                with self.assertRaisesRegex(ValueError, "SSE response contract"):
+                    validate_sse(root)
+        for mutation in ("missing-forward", "buffered-second-forward", "missing-outbound"):
+            with self.subTest(mutation=mutation):
+                root = deepcopy(source)
+                if mutation == "missing-forward":
+                    retry = root.find("./backend/retry")
+                    retry.remove(retry.find("forward-request"))
+                elif mutation == "buffered-second-forward":
+                    ET.SubElement(root.find("backend"), "forward-request")
+                else:
+                    root.remove(root.find("outbound"))
+                with self.assertRaisesRegex(ValueError, "SSE response contract"):
+                    validate_sse(root)
+
+    def test_rejects_nested_outbound_body_policies_and_expressions(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for tag in ("set-body", "validate-content", "json-to-xml", "xml-to-json",
+                    "find-and-replace", "xsl-transform", "cache-store"):
+            with self.subTest(tag=tag):
+                root = deepcopy(source)
+                branch = ET.SubElement(ET.SubElement(root.find("outbound"), "choose"), "otherwise")
+                ET.SubElement(branch, tag)
+                with self.assertRaisesRegex(ValueError, "SSE response contract"):
+                    validate_sse(root)
+        for expression in ("@(context.Response.Body.As<string>(preserveContent: true))",
+                           "@{ var response = context . Response\n . Body; return response; }"):
+            for attribute in (False, True):
+                with self.subTest(expression=expression, attribute=attribute):
+                    root = deepcopy(source)
+                    policy = ET.SubElement(root.find("outbound"), "set-variable", name="body")
+                    if attribute:
+                        policy.set("value", expression)
+                    else:
+                        policy.text = expression
+                    with self.assertRaisesRegex(ValueError, "SSE response contract"):
+                        validate_sse(root)
+        root = deepcopy(source)
+        ET.SubElement(root.find("outbound"), "set-variable", name="status",
+                      value="@(context.Response.StatusCode)")
+        validate_sse(root)  # Header/status access and inbound request rewriting remain allowed.
+
+    def test_cli_blocks_sse_regressions_in_kit_and_rendered_studio(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        buffered = source.replace('buffer-response="false"', 'buffer-response="true"')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for target in (None, "kit", "studio"):
+                kit.write_text(buffered if target == "kit" else source, encoding="utf-8")
+                rendered = buffered if target == "studio" else source
+                studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                  encoding="utf-8")
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with self.subTest(target=target), patch.dict(globals(), ROOT=root, KIT=kit), \
+                        patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                        redirect_stdout(stdout), redirect_stderr(stderr):
+                    self.assertEqual(main(), 0 if target is None else 1)
+                self.assertEqual("PASSED" in stdout.getvalue(), target is None)
+                if target is not None:
+                    self.assertIn("SSE response contract", stderr.getvalue())
+                    self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                  stderr.getvalue())
 
     def test_rejects_body_loss_regressions(self):
         source = validate_policy(KIT.read_text(encoding="utf-8"))
@@ -224,13 +328,15 @@ def main() -> int:
     errors = []
     for path, validate in targets:
         try:
-            validate_spillover(validate(path.read_text(encoding="utf-8")))
+            policy = validate(path.read_text(encoding="utf-8"))
+            validate_spillover(policy)
+            validate_sse(policy)
         except (OSError, UnicodeError, ET.ParseError, ValueError) as error:
             errors.append(f"{path.relative_to(ROOT)}: {error}")
     if errors:
         print("APIM XML gate FAILED:\n" + "\n".join(errors), file=sys.stderr)
         return 1
-    print("APIM XML gate PASSED (kit + Studio default; XML and static spillover body contract, not live APIM execution).")
+    print("APIM XML gate PASSED (kit + Studio default; XML, static spillover body and SSE response contracts, not live APIM execution).")
     return 0
 
 
