@@ -185,3 +185,38 @@ test('hidden quotas are ignored only while governance is disabled, across model 
     assert.match(builder.copied.at(-1), /tokens-per-minute="10001"/)
   } finally { builder.close() }
 })
+
+test('GPT-5.6 exports the kit two-API rewrite in both spillover modes; GPT-6 passes bodies through', async () => {
+  const kit = await readFile(new URL('../docs/public/kits/apim-foundry-spillover-policy.xml', import.meta.url), 'utf8')
+  const rewrite = kit.match(/<set-body>(@\{[\s\S]*?\})<\/set-body>/)?.[1]
+  assert.ok(rewrite)
+  const builder = mountBuilder()
+  try {
+    for (const model of ['gpt-5.6-ptu', 'gpt-6-ptu']) {
+      await builder.set('Target Primary PTU-M Regime', model)
+      for (const spillover of [true, false]) {
+        await builder.set('429 / 503 Spillover', spillover)
+        await builder.copyButton().props.onClick()
+        const xml = builder.copied.at(-1)
+        assert.equal(xml, builder.xml())
+        const inbound = xml.match(/<inbound>([\s\S]*?)<\/inbound>/)[1]
+        const actualRewrite = inbound.match(/<set-body>([\s\S]*?)<\/set-body>/)?.[1]
+        if (model === 'gpt-5.6-ptu') {
+          assert.equal(actualRewrite?.replace(/\s+/g, ' ').trim(), rewrite.replace(/\s+/g, ' ').trim())
+        } else {
+          assert.equal(actualRewrite, undefined, 'GPT-6 must retain both APIs cache fields')
+        }
+        if (spillover) {
+          assert.match(inbound, /name="original-request-body"/)
+          if (model === 'gpt-5.6-ptu') {
+            assert.ok(inbound.indexOf('name="original-request-body"') < inbound.indexOf('<set-body>'))
+          }
+          assert.match(xml, /<set-body>@\(\(string\)context\.Variables\["original-request-body"\]\)<\/set-body>/)
+        } else {
+          assert.ok(!xml.includes('original-request-body'))
+          assert.ok(!xml.includes('<retry'))
+        }
+      }
+    }
+  } finally { builder.close() }
+})

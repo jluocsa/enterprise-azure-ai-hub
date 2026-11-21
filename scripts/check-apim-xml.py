@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check published APIM XML, per-attempt spillover bodies, and SSE response safety."""
+"""Check published APIM XML, PTU rewrites, spillover bodies, and SSE response safety."""
 
 import argparse
 from contextlib import redirect_stderr, redirect_stdout
@@ -21,6 +21,22 @@ RETRY_CONDITION = (
     "@(context.Response != null && "
     "(context.Response.StatusCode == 429 || context.Response.StatusCode == 503))"
 )
+PTU_REWRITE = """@{
+    var body = context.Request.Body.As<JObject>(preserveContent: true);
+    body.Remove("prompt_cache_options");
+    foreach (var field in new [] { "input", "messages" }) {
+        if (body[field] is JArray items) {
+            foreach (var msg in items.OfType<JObject>()) {
+                if (msg["content"] is JArray parts) {
+                    foreach (var part in parts.OfType<JObject>()) {
+                        part.Remove("prompt_cache_breakpoint");
+                    }
+                }
+            }
+        }
+    }
+    return body.ToString(Newtonsoft.Json.Formatting.None);
+}"""
 
 
 class StudioPolicies(HTMLParser):
@@ -57,6 +73,16 @@ def validate_studio(text: str):
     if len(policies) != 1:
         raise ValueError(f"expected exactly one rendered APIM policy, found {len(policies)}")
     return validate_policy(policies[0])
+
+
+def validate_ptu_rewrite(root):
+    """Whitelist the published two-API rewrite, without executing its C#."""
+    rewrites = root.findall("./inbound//set-body")
+    if len(rewrites) != 1 or " ".join((rewrites[0].text or "").split()) != " ".join(PTU_REWRITE.split()):
+        raise ValueError(
+            "PTU rewrite contract: expected only request-wide cache options and "
+            "input/messages content breakpoints to be removed, preserving all other fields"
+        )
 
 
 def validate_spillover(root):
@@ -149,12 +175,75 @@ def validate_sse(root):
 class ApimXmlTests(unittest.TestCase):
     def test_published_spillover_contract(self):
         root = validate_policy(KIT.read_text(encoding="utf-8"))
+        validate_ptu_rewrite(root)
         validate_spillover(root)
         validate_sse(root)
         from html import escape
         rendered = f'<pre class="apim-code"><code>{escape(ET.tostring(root, encoding="unicode"))}</code></pre>'
+        validate_ptu_rewrite(validate_studio(rendered))
         validate_spillover(validate_studio(rendered))
         validate_sse(validate_studio(rendered))
+
+    def test_rejects_incomplete_or_destructive_ptu_rewrites(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for mutation in (
+            "missing-rewrite", "extra-rewrite", "responses-only", "chat-only",
+            "lost-key", "lost-content", "lost-options-strip", "lost-breakpoint-strip",
+            "unguarded-array", "wrong-request-body",
+        ):
+            with self.subTest(mutation=mutation):
+                root = deepcopy(source)
+                inbound = root.find("inbound")
+                branch = inbound.find("./choose/when")
+                rewrite = branch.find("set-body")
+                if mutation == "missing-rewrite":
+                    branch.remove(rewrite)
+                elif mutation == "extra-rewrite":
+                    ET.SubElement(inbound, "set-body").text = "@(changedBody)"
+                else:
+                    old, new = {
+                        "responses-only": ('"input", "messages"', '"input"'),
+                        "chat-only": ('"input", "messages"', '"messages"'),
+                        "lost-key": ('body.Remove("prompt_cache_options");',
+                                     'body.Remove("prompt_cache_options"); body.Remove("prompt_cache_key");'),
+                        "lost-content": ('part.Remove("prompt_cache_breakpoint");',
+                                         'part.Remove("content");'),
+                        "lost-options-strip": ('body.Remove("prompt_cache_options");', ''),
+                        "lost-breakpoint-strip": ('part.Remove("prompt_cache_breakpoint");', ''),
+                        "unguarded-array": ('if (body[field] is JArray items)',
+                                            'if (true)'),
+                        "wrong-request-body": ('context.Request.Body', 'context.Response.Body'),
+                    }[mutation]
+                    self.assertIn(old, rewrite.text)
+                    rewrite.text = rewrite.text.replace(old, new)
+                with self.assertRaisesRegex(ValueError, "PTU rewrite contract"):
+                    validate_ptu_rewrite(root)
+
+    def test_cli_blocks_ptu_rewrite_regressions_in_kit_and_rendered_studio(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        incomplete = source.replace('"input", "messages"', '"input"')
+        self.assertNotEqual(source, incomplete)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for target in (None, "kit", "studio"):
+                kit.write_text(incomplete if target == "kit" else source, encoding="utf-8")
+                rendered = incomplete if target == "studio" else source
+                studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                  encoding="utf-8")
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with self.subTest(target=target), patch.dict(globals(), ROOT=root, KIT=kit), \
+                        patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                        redirect_stdout(stdout), redirect_stderr(stderr):
+                    self.assertEqual(main(), 0 if target is None else 1)
+                self.assertEqual("PASSED" in stdout.getvalue(), target is None)
+                if target is not None:
+                    self.assertIn("PTU rewrite contract", stderr.getvalue())
+                    self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                  stderr.getvalue())
 
     def test_rejects_response_buffering_regressions(self):
         source = validate_policy(KIT.read_text(encoding="utf-8"))
@@ -329,6 +418,7 @@ def main() -> int:
     for path, validate in targets:
         try:
             policy = validate(path.read_text(encoding="utf-8"))
+            validate_ptu_rewrite(policy)
             validate_spillover(policy)
             validate_sse(policy)
         except (OSError, UnicodeError, ET.ParseError, ValueError) as error:
@@ -336,7 +426,7 @@ def main() -> int:
     if errors:
         print("APIM XML gate FAILED:\n" + "\n".join(errors), file=sys.stderr)
         return 1
-    print("APIM XML gate PASSED (kit + Studio default; XML, static spillover body and SSE response contracts, not live APIM execution).")
+    print("APIM XML gate PASSED (kit + Studio default; XML, static two-API PTU rewrite, spillover body and SSE response contracts, not live APIM execution).")
     return 0
 
 
