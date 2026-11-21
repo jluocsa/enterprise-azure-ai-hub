@@ -3,6 +3,7 @@
 
 Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
+Every JSON object must have unique member names, including nested metadata.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
 LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
 --max-age-minutes (default: 15). SuccessfulCalls must be positive (HTTP 2xx).
@@ -21,6 +22,15 @@ import sys
 import tempfile
 from typing import Any
 import unittest
+
+
+def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError("duplicate JSON object members are not allowed.")
+        obj[key] = value
+    return obj
 
 
 def identifier(row: dict[str, Any], field: str) -> str:
@@ -250,6 +260,64 @@ class SnapshotGateTests(unittest.TestCase):
             with self.subTest(manifest=manifest), self.assertRaises(ValueError):
                 validate_expected(manifest)
 
+    def test_cli_rejects_duplicate_json_members_in_both_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            fresh_rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time)
+                          for row in self.rows]
+            manifest_text = json.dumps([dict(row, metadata={"label": "probe"})
+                                       for row in self.manifest])
+            evidence_text = json.dumps([dict(row, metadata={"label": "probe"})
+                                       for row in fresh_rows])
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            cases = (
+                (manifest, manifest_text, (
+                    ('"expectedSnapshot"', "snapshot-b"),
+                    ('"expectedSnapshot"', "snapshot-a"),
+                    ('"stampReg\\u0069on"', "northeurope"),
+                    ('"reqModel"', "model-b"),
+                )),
+                (evidence, evidence_text, (
+                    ('"SuccessfulCalls"', 0),
+                    ('"TotalCalls"', 0),
+                    ('"LastSeen"', "2000-01-01T00:00:00Z"),
+                    ('"LastSuccessfulSeen"', "2000-01-01T00:00:00Z"),
+                    ('"SnapshotsObserved"', ["snapshot-b"]),
+                    ('"stampReg\\u0069on"', "northeurope"),
+                    ('"reqModel"', "model-b"),
+                    ('"SuccessfulCalls"', 8),
+                )),
+            )
+            for target, original, members in cases:
+                contents = [
+                    "[{" + name + ":" + json.dumps(value) + "," + original[2:]
+                    for name, value in members
+                ]
+                contents.append(
+                    '[{"probeMetadata":{"private-field":"private-value","private-field":0},'
+                    + original[2:]
+                )
+                for content in contents:
+                    manifest.write_text(manifest_text, encoding="utf-8")
+                    evidence.write_text(evidence_text, encoding="utf-8")
+                    target.write_text(content, encoding="utf-8")
+                    result = subprocess.run(command, capture_output=True, text=True, check=False)
+                    with self.subTest(target=target.name, content=content):
+                        self.assertEqual(result.returncode, 2, result.stderr)
+                        self.assertEqual(result.stdout, "")
+                        self.assertIn("duplicate JSON object members", result.stderr)
+                        self.assertNotIn("Traceback", result.stderr)
+                        self.assertNotIn("private-field", result.stderr)
+                        self.assertNotIn("private-value", result.stderr)
+            manifest.write_text(manifest_text, encoding="utf-8")
+            evidence.write_text(evidence_text, encoding="utf-8")
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("PASSED", result.stdout)
+
     def test_cli_exit_codes_and_file_errors(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = Path(directory) / "expected.json"
@@ -343,8 +411,12 @@ def main() -> int:
     if args.evidence is None or args.expected is None:
         parser.error("evidence and --expected are required")
     try:
-        expected = validate_expected(json.loads(args.expected.read_text(encoding="utf-8")))
-        raw = json.loads(args.evidence.read_text(encoding="utf-8"))
+        expected = validate_expected(json.loads(
+            args.expected.read_text(encoding="utf-8"), object_pairs_hook=unique_json_object,
+        ))
+        raw = json.loads(
+            args.evidence.read_text(encoding="utf-8"), object_pairs_hook=unique_json_object,
+        )
         failures = evaluate_evidence(raw, expected, max_age_minutes=args.max_age_minutes)
     except (OSError, UnicodeError, ValueError) as error:
         print(f"BCP snapshot gate input error: {error}", file=sys.stderr)

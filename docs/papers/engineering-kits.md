@@ -100,6 +100,8 @@ The companion exits `1` for missing/duplicate/unexpected stamps, empty or malfor
 
 This verifies the snapshot portion of `B2` and recent successful model/region evidence coverage for `B11`, **not** content-filter parity, telemetry authenticity, continuous availability, RTO, capacity, or all `B1–B12` controls. A recent timestamp or HTTP `2xx` does not authenticate an export or prove streamed output completed correctly; retain trusted model-dependency telemetry provenance and clock synchronization. Continue the [Game-Day probes](/playbooks/multi-region-bcp/05-gameday-failover-drills) and review KQL error/cache metrics separately <span class="ev-badge ev-val">[Validate]</span>. `npm run verify` executes the companion's offline regression suite; it does not execute KQL against Azure.
 
+Both the expected-stamp manifest and evidence export must use **unique member names within every JSON object**, including nested metadata. The companion rejects duplicates before evaluation: `"SuccessfulCalls": 0` followed by `"SuccessfulCalls": 8` must not conceal an error-only stamp, and duplicate snapshot pins must not silently redefine the approved inventory. Identical duplicate values and escape-equivalent names are also rejected; the same name in separate objects remains valid. Ambiguous JSON exits `2` with no stdout or traceback and a diagnostic that does not echo member names or values. This is a local input-integrity rule, not an Azure service requirement or evidence-authenticity check; offline CLI regressions cover both inputs <span class="ev-badge ev-arch">[Arch]</span>.
+
 Companion download: <a :href="withBase('/kits/bcp_snapshot_gate.py')" download target="_blank" rel="noopener"><strong><code>Download bcp_snapshot_gate.py</code></strong></a>
 
 ---
