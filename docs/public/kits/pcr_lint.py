@@ -225,7 +225,12 @@ def scan_path(target: Path) -> list[Finding]:
             all_findings.append(Finding("PCR000", f.as_posix(), 1, f"Cannot read source as UTF-8: {exc}"))
             continue
         if f.suffix.lower() == ".py":
-            all_findings.extend(scan_python_ast(f, text))
+            try:
+                all_findings.extend(scan_python_ast(f, text))
+            except RecursionError:
+                all_findings.append(
+                    Finding("PCR000", f.as_posix(), 1, "Python AST processing exceeded the recursion limit; scan is incomplete.")
+                )
         all_findings.extend(scan_text_patterns(f, text))
     # Deduplicate by (rule, file, line)
     seen: set[tuple[str, str, int]] = set()
@@ -358,6 +363,48 @@ def run_self_test() -> int:
         assert "PASSED" not in result.stdout, result.stdout
         with patch.object(Path, "read_text", side_effect=PermissionError("read denied")):
             assert scan_path(clean)[0].rule == "PCR000"
+        for phase in ("parse", "unparse"):
+            with patch.object(ast, phase, side_effect=RecursionError("source details must not be echoed")):
+                findings = scan_path(clean)
+                assert len(findings) == 1 and findings[0].rule == "PCR000", findings
+                assert findings[0].file == clean.as_posix() and findings[0].line == 1, findings
+                assert "source details" not in findings[0].message, findings
+
+        deep_sources = root / "deep_sources"
+        deep_sources.mkdir()
+        deep_call = deep_sources / "deep_call.py"
+        deep_call.write_text(
+            'client' + '.nested' * 1500 + '.responses.create(prompt_cache_key="shared:v1:s0")\n',
+            encoding="utf-8",
+        )
+        deep_parse = deep_sources / "deep_parse.py"
+        deep_parse.write_text("value = " + "+".join(["1"] * 5000) + "\n", encoding="utf-8")
+        bad_key = deep_sources / "bad_key.py"
+        bad_key.write_text('client.responses.create(prompt_cache_key="")\n', encoding="utf-8")
+        findings = scan_path(deep_sources)
+        assert [(f.rule, f.file, f.line) for f in findings] == [
+            ("PCR001", bad_key.as_posix(), 1),
+            ("PCR000", deep_call.as_posix(), 1),
+            ("PCR000", deep_parse.as_posix(), 1),
+        ], findings
+        for output_flags in ([], ["--json"]):
+            result = subprocess.run(
+                [sys.executable, str(SELF_PATH), str(clean), str(deep_call),
+                 str(deep_parse), str(bad_key), *output_flags],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            assert result.returncode == 1 and not result.stderr, result
+            assert "PASSED" not in result.stdout and "Traceback" not in result.stdout, result.stdout
+            if output_flags:
+                findings = json.loads(result.stdout)
+                assert [(f["rule"], f["file"], f["line"]) for f in findings] == [
+                    ("PCR000", deep_call.as_posix(), 1),
+                    ("PCR000", deep_parse.as_posix(), 1),
+                    ("PCR001", bad_key.as_posix(), 1),
+                ], findings
+            else:
+                assert result.stdout.count("[PCR000]") == 2, result.stdout
+                assert result.stdout.count("[PCR001]") == 1, result.stdout
         with patch.object(os, "walk") as walk:
             def denied_walk(target, onerror):
                 onerror(PermissionError(13, "enumeration denied", str(target)))
@@ -365,7 +412,7 @@ def run_self_test() -> int:
             walk.side_effect = denied_walk
             assert scan_path(empty)[0].rule == "PCR000"
 
-    print("✅ pcr_lint.py self-test PASSED (PCR000 scan integrity + PCR001 constant keys/CLI + PCR001–PCR006 verified).")
+    print("✅ pcr_lint.py self-test PASSED (PCR000 scan integrity/AST recursion + PCR001 constant keys/CLI + PCR001–PCR006 verified).")
     return 0
 
 

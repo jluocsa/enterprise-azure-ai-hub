@@ -68,6 +68,8 @@ Preview and copy the full zero-dependency CLI scanner on the [Copy-Ready Enginee
 
 The scanner fails closed with `PCR000` and exit code `1` for missing/inaccessible targets, unsupported explicit files, directories with no eligible sources, unreadable/non-UTF-8 files, or invalid Python syntax. Directory scans exclude generated/dependency folders such as `node_modules` and `.venv`, and the linter itself; a clean file does not mask another target's failure. `--json` includes these diagnostics in the same finding array as readiness defects <span class="ev-badge ev-arch">[Arch]</span>. This validates scan integrity, not TypeScript/JavaScript/C# syntax or runtime cache behavior; retain native build checks and Layer 2 probes.
 
+Python AST recursion failures also block the scan with a file-level `PCR000` at line `1`, whether triggered by parsing deeply nested source or rendering an expression for a readiness check. Other files and targets are still scanned, with their findings retained in text/JSON output and no traceback. The offline self-test exercises both phases and actual deep-source CLI inputs; the linter does not evaluate expressions or increase the interpreter's recursion limit <span class="ev-badge ev-arch">[Arch]</span>.
+
 | Rule ID | Defect Flagged | AST / Regex Detection Specification (Python, C#, TypeScript) | Readiness Item |
 | :--- | :--- | :--- | :--- |
 | `PCR001` | Missing, invalid constant, or high-cardinality `prompt_cache_key` | Calls to `responses.create` / `chat.completions.create` missing `prompt_cache_key`, supplying a blank/non-string Python AST constant, or interpolating `user_id`, `request_id`, `uuid4()`, `engagement_id`, `matter_id`, `client_id`, or `cost_center` into the key. | `C6`, `C7` |
