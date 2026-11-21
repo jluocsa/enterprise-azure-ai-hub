@@ -7,7 +7,7 @@ description: Authoritative Microsoft Learn and Azure Architecture Center sources
 
 <PlaybookMeta
   track="02 · Multi-Backend Foundry APIM AI Gateway & Governance"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
 />
 

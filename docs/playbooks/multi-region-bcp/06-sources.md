@@ -7,7 +7,7 @@ description: Authoritative Microsoft Learn sources backing Playbook 03 (Multi-Re
 
 <PlaybookMeta
   track="03 · Multi-Region Foundry BCP, Residency & Failover Drills"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
 />
 

@@ -7,7 +7,7 @@ description: Copy-ready Pull Request and Azure DevOps release sign-off templates
 
 <PlaybookMeta
   track="Release Governance · All 4 Live Playbooks"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
   printable
 />

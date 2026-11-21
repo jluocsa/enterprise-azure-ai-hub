@@ -7,7 +7,7 @@ description: Gateway SKU selection, large-context payload sizing, timeout budget
 
 <PlaybookMeta
   track="02 · Multi-Backend Foundry APIM AI Gateway & Governance"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
   studioHref="/studio/#apim"
   studioLabel="APIM XML Policy Builder →"

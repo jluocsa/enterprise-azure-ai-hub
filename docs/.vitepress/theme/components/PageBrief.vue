@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useVerifiedStamp } from '../useVerifiedStamp'
+
 const props = defineProps<{
   stage?: 'start' | 'qualify' | 'design' | 'validate' | 'govern' | 'profile' | 'reference'
   stepLabel?: string
@@ -8,6 +10,8 @@ const props = defineProps<{
   takeaway: string
   csaUse: string
 }>()
+
+const verifiedStamp = useVerifiedStamp(() => props.verifiedAt)
 
 const journey = [
   { id: 'start', label: '1 · Start' },
@@ -39,7 +43,7 @@ const journey = [
         <span v-if="props.readTime" class="pb-chip">{{ props.readTime }}</span>
         <span class="pb-chip pb-chip-verified">
           <span class="ms-live-dot" aria-hidden="true"></span>
-          <span>Verified {{ props.verifiedAt || '2026-11-19 PST' }}</span>
+          <span>Verified {{ verifiedStamp }}</span>
         </span>
       </div>
     </div>

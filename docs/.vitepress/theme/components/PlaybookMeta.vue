@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { withBase } from 'vitepress'
+import { useVerifiedStamp } from '../useVerifiedStamp'
 
-defineProps<{
+const props = defineProps<{
   track: string
   status?: string
   provenance?: string
@@ -16,6 +17,8 @@ defineProps<{
   kitLabel?: string
   printable?: boolean
 }>()
+
+const verifiedStamp = useVerifiedStamp(() => props.verified)
 
 function printPage() {
   if (typeof window !== 'undefined') window.print()
@@ -43,7 +46,7 @@ function printPage() {
       </div>
       <div>
         <span class="pb-label">Last Verified</span>
-        <strong>{{ verified || '2026-11-19 PST' }} ({{ status || 'Live v2.0' }})</strong>
+        <strong>{{ verifiedStamp }} ({{ status || 'Live v2.0' }})</strong>
       </div>
       <div v-if="paperHref" class="pb-pdf no-print">
         <span class="pb-label">Consolidated Reader</span>

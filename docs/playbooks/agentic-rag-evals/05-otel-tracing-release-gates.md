@@ -7,7 +7,7 @@ description: End-to-end OpenTelemetry span correlation across Orchestrator, APIM
 
 <PlaybookMeta
   track="04 · Sandboxed Agentic Harness, Foundry IQ RAG & 7-Layer Evals"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
   printable
 />

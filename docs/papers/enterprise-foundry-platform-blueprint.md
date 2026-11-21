@@ -10,7 +10,7 @@ description: Consolidated executive white paper uniting Prompt Caching & PTU Eco
   provenance="Customer-Zero Validated Across Regulated Enterprise Platforms"
   governance="Sanitized · Peer Reviewed · IP Screened"
   owners="John Luo (@jluocsa) · Co-Authors Welcome"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
   studioHref="/studio/"
   studioLabel="Open Decision Studio →"

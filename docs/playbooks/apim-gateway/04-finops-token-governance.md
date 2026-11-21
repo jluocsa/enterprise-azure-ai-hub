@@ -7,7 +7,7 @@ description: Decoupling internal cost-center chargeback from prompt_cache_key ca
 
 <PlaybookMeta
   track="02 · Multi-Backend Foundry APIM AI Gateway & Governance"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
 />
 

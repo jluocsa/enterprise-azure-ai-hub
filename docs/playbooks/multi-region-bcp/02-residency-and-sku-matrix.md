@@ -7,7 +7,7 @@ description: Mapping regulatory sovereignty contracts to Microsoft Foundry deplo
 
 <PlaybookMeta
   track="03 · Multi-Region Foundry BCP, Residency & Failover Drills"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
   studioHref="/studio/#bcp"
   studioLabel="BCP Residency Advisor →"

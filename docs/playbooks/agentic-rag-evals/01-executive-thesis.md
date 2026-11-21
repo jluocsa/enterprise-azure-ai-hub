@@ -10,7 +10,7 @@ description: Architectural thesis for taking multi-step tool-using and RAG-groun
   provenance="Customer-Zero Validated (Enterprise Proposal, Research & Compliance Agent Platform)"
   governance="Sanitized · Peer Reviewed · IP Screened"
   owners="John Luo (@jluocsa) · Co-Authors Welcome"
-  verified="2026-11-19 PST"
+  verified="2026-11-19 22:12 PST"
   status="Live v2.0"
   paperHref="/papers/enterprise-foundry-platform-blueprint"
   paperLabel="Full-Stack Blueprint →"

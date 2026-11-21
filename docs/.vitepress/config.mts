@@ -1,9 +1,11 @@
 import { defineConfig } from 'vitepress'
+import { formatPacificTimestamp } from './theme/verifiedStamp'
 
 const base = process.env.VITEPRESS_BASE || '/enterprise-azure-ai-hub/'
 const siteOrigin = 'https://jluocsa.github.io'
 const siteUrl = `${siteOrigin}${base}`
 const buildTimestamp = Date.now()
+const buildVerifiedStamp = formatPacificTimestamp(buildTimestamp)
 
 export default defineConfig({
   title: 'Azure AI Industrialization Hub',
@@ -16,6 +18,7 @@ export default defineConfig({
 
   transformPageData(pageData) {
     pageData.lastUpdated = buildTimestamp
+    ;(pageData as Record<string, unknown>).verifiedStamp = buildVerifiedStamp
   },
 
   sitemap: {
@@ -475,6 +478,7 @@ export default defineConfig({
     lastUpdated: {
       text: 'Last verified',
       formatOptions: {
+        timeZone: 'America/Los_Angeles',
         year: 'numeric',
         month: 'short',
         day: '2-digit',

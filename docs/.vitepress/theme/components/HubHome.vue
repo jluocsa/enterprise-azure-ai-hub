@@ -2,12 +2,14 @@
 import { computed, ref } from 'vue'
 import { withBase } from 'vitepress'
 import IntroVideoShowcase from './IntroVideoShowcase.vue'
+import { useVerifiedStamp } from '../useVerifiedStamp'
 
 const copiedPitch = ref(false)
 const introVideoRef = ref<InstanceType<typeof IntroVideoShowcase> | null>(null)
 const selectedLayerIdx = ref(0)
 const activeFilter = ref<'all' | 'playbooks' | 'studio' | 'kits'>('all')
 const searchQuery = ref('')
+const verifiedStamp = useVerifiedStamp()
 
 function watchIntroVideo() {
   introVideoRef.value?.playFromStart()
@@ -19,7 +21,7 @@ function printOverview() {
 
 async function copyCustomerPitch() {
   const pitch = [
-    `Enterprise Azure AI — Solution Industrialization Hub (v2.0 · Verified 2026-11-19 PST)`,
+    `Enterprise Azure AI — Solution Industrialization Hub (v2.0 · Verified ${verifiedStamp.value})`,
     `• Full-Stack Scope: 4 Customer-Zero validated playbooks covering Prompt Caching & PTU Economics (GPT-5.6/6/6.1), Multi-Backend APIM AI Gateway, Multi-Region Foundry BCP & Residency, and Sandboxed Agentic RAG + 7-Layer Evals.`,
     `• Proven Outcomes: 2.56× PTU capacity spike prevented · 71% seasonal filing-cliff TCO saved · <15s gateway failover RTO · 52 release readiness gates.`,
     `• Interactive Workbench & MIT Kits: Live PTU/TCO simulator, 30-min multi-track intake triage, BCP cold-cache surge advisor, APIM XML policy generator, Python AST linters, and App Insights KQL gates.`,
@@ -357,7 +359,7 @@ const deliveryWeeks = [
             <span class="ev-badge ev-agree">[Agree] Gate SLOs</span>
             <span class="pb-chip pb-chip-verified">
               <span class="ms-live-dot" aria-hidden="true"></span>
-              <span>v2.0 Full-Stack &middot; Verified 2026-11-19 PST</span>
+              <span>v2.0 Full-Stack &middot; Verified {{ verifiedStamp }}</span>
             </span>
           </div>
         </div>
