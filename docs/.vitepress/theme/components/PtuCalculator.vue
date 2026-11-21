@@ -110,14 +110,14 @@ const MODELS: ModelSpec[] = [
 ]
 
 const selectedId = ref('gpt-5.6-terra')
-const peakRpm = ref(100)
-const avgInput = ref(10000)
-const avgOutput = ref(500)
-const cacheHitPct = ref(80)
-const rwRatio = ref(10)
+const peakRpm = ref<number | string>(100)
+const avgInput = ref<number | string>(10000)
+const avgOutput = ref<number | string>(500)
+const cacheHitPct = ref<number | string>(80)
+const rwRatio = ref<number | string>(10)
 const showSeasonal = ref(true)
-const surgeMultiplier = ref(4)
-const surgeMonths = ref(2)
+const surgeMultiplier = ref<number | string>(4)
+const surgeMonths = ref<number | string>(2)
 const activePreset = ref('doc-review')
 const copiedSizing = ref(false)
 
@@ -199,17 +199,54 @@ function applyPreset(p: Preset) {
 
 const spec = computed(() => MODELS.find(m => m.id === selectedId.value) || MODELS[0])
 
+const validatedInputs = computed(() => {
+  const errors: Record<string, string> = {}
+  function check(key: string, label: string, value: number | string, min: number, max = Infinity) {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
+      errors[key] = `${label}: enter a finite number ${max === Infinity ? `at least ${min}` : `from ${min} to ${max}`}.`
+      return null
+    }
+    return value
+  }
+  const rpm = check('peakRpm', 'Steady Peak RPM', peakRpm.value, 1)
+  const input = check('avgInput', 'Avg Input Tokens / Call (short-context estimator)', avgInput.value, 100, 272000)
+  const output = check('avgOutput', 'Avg Output Tokens / Call', avgOutput.value, 10)
+  const hitPct = check('cacheHitPct', 'Cached Input Share (%)', cacheHitPct.value, 0, 98)
+  const rw = spec.value.regime === 'gpt6'
+    ? check('rwRatio', 'Steady-State Read/Write Ratio', rwRatio.value, 1, 100)
+    : 1
+  const mult = showSeasonal.value
+    ? check('surgeMultiplier', 'Seasonal Cliff Surge', surgeMultiplier.value, 1, 10)
+    : 1
+  const months = showSeasonal.value
+    ? check('surgeMonths', 'Peak Surge Window (Months / Yr)', surgeMonths.value, 1, 6)
+    : 1
+  if (rpm === null || input === null || output === null || hitPct === null ||
+      rw === null || mult === null || months === null) {
+    return { errors, values: null }
+  }
+  if (!Number.isFinite(rpm * (input * 1.25 + output * 6) * mult * 12)) {
+    errors.peakRpm = 'Traffic and token volumes exceed finite calculator arithmetic; reduce the workload.'
+    errors.avgOutput = errors.peakRpm
+    return { errors, values: null }
+  }
+  return { errors, values: { rpm, input, output, hitPct, rw, mult, months } }
+})
+const inputErrors = computed(() => validatedInputs.value.errors)
+
 function roundToDeployable(raw: number, minPtu: number, inc: number): number {
   if (raw <= minPtu) return minPtu
   return Math.ceil(raw / inc) * inc
 }
 
 const calc = computed(() => {
+  const values = validatedInputs.value.values
+  if (!values) return null
   const m = spec.value
-  const inputTpm = Math.max(0, peakRpm.value) * Math.max(0, avgInput.value)
-  const outputTpm = Math.max(0, peakRpm.value) * Math.max(0, avgOutput.value)
-  const rawHitRate = Math.min(100, Math.max(0, cacheHitPct.value)) / 100
-  const k = Math.max(0.1, rwRatio.value || 1)
+  const inputTpm = values.rpm * values.input
+  const outputTpm = values.rpm * values.output
+  const rawHitRate = values.hitPct / 100
+  const k = values.rw
   const maxSteadyHitRate = m.regime === 'gpt6' ? k / (k + 1) : 1
   const effectiveHitRate = Math.min(rawHitRate, maxSteadyHitRate)
   const isCapped = m.regime === 'gpt6' && rawHitRate > maxSteadyHitRate + 1e-6
@@ -238,11 +275,11 @@ const calc = computed(() => {
   const spike = depCached > 0 ? depUncached / depCached : 1
   const savedPtu = Math.max(0, depUncached - depCached)
   const cachedBarPct = depUncached > 0 ? Math.max(8, Math.round((depCached / depUncached) * 100)) : 100
-  const shards = Math.max(1, Math.ceil(Math.max(1, peakRpm.value) / 12))
+  const shards = Math.max(1, Math.ceil(values.rpm / 12))
 
   // Seasonal surge / filing-cliff hybrid PTU-Months comparison
-  const mult = Math.max(1, surgeMultiplier.value)
-  const mo = Math.min(11, Math.max(1, surgeMonths.value))
+  const mult = values.mult
+  const mo = values.months
   const peakAllYearPtu = roundToDeployable(rawCached * mult, m.minGlobalDz, m.incGlobalDz)
   const annualAllPeakPtuMonths = peakAllYearPtu * 12
   // Hybrid: steady PTU all 12 months + burst PAYG equivalent (~0.35x annualized PTU-month equivalent during active burst windows)
@@ -273,14 +310,17 @@ const calc = computed(() => {
 })
 
 async function copyEstimate() {
+  const estimate = calc.value
+  const values = validatedInputs.value.values
+  if (!estimate || !values) return
   const m = spec.value
   const text = [
     `### PTU, Cache-Shard & Spillover Estimate (${m.label})`,
-    `- **Traffic Profile:** ${peakRpm.value} Peak RPM · ${avgInput.value.toLocaleString()} Input Tok · ${avgOutput.value.toLocaleString()} Output Tok`,
-    `- **Tuned PTU Allocation (${calc.value.effectiveHitPct}% Cache Hit):** **${calc.value.depCached} PTUs** (${calc.value.normCached.toLocaleString()} Norm TPM)`,
-    `- **Un-Tuned 0%-Hit Exposure:** ${calc.value.depUncached} PTUs (${calc.value.spike}× spike · saves ${calc.value.savedPtu} PTUs)`,
-    `- **Recommended Key Shards (>15 RPM Rule):** \`${calc.value.shards}\` shard(s) (\`shard-0..${calc.value.shards - 1}\`)`,
-    `- **Seasonal Spillover Model (${surgeMultiplier.value}× surge for ${surgeMonths.value} mo/yr):** Base ${calc.value.depCached} PTUs + APIM PAYG overflow vs. ${calc.value.peakAllYearPtu} PTUs year-round (~${calc.value.seasonalSavingsPct}% annual capacity TCO saved)`,
+    `- **Traffic Profile:** ${values.rpm} Peak RPM · ${values.input.toLocaleString()} Input Tok · ${values.output.toLocaleString()} Output Tok`,
+    `- **Tuned PTU Allocation (${estimate.effectiveHitPct}% Cache Hit):** **${estimate.depCached} PTUs** (${estimate.normCached.toLocaleString()} Norm TPM)`,
+    `- **Un-Tuned 0%-Hit Exposure:** ${estimate.depUncached} PTUs (${estimate.spike}× spike · saves ${estimate.savedPtu} PTUs)`,
+    `- **Recommended Key Shards (>15 RPM Rule):** \`${estimate.shards}\` shard(s) (\`shard-0..${estimate.shards - 1}\`)`,
+    `- **Seasonal Spillover Model (${values.mult}× surge for ${values.months} mo/yr):** Base ${estimate.depCached} PTUs + APIM PAYG overflow vs. ${estimate.peakAllYearPtu} PTUs year-round (~${estimate.seasonalSavingsPct}% annual capacity TCO saved)`,
   ].join('\n')
   try {
     await navigator.clipboard.writeText(text)
@@ -301,7 +341,7 @@ async function copyEstimate() {
       </div>
       <div class="ptu-header-right">
         <span class="ev-badge ev-m">[M] Learn Formulas</span>
-        <button type="button" class="ptu-copy-btn no-print" @click="copyEstimate">
+        <button type="button" class="ptu-copy-btn no-print" :disabled="!calc" @click="copyEstimate">
           {{ copiedSizing ? '✓ Copied Estimate' : 'Copy Markdown Estimate' }}
         </button>
       </div>
@@ -329,35 +369,42 @@ async function copyEstimate() {
       </label>
       <label>
         <span>Steady Peak RPM (per family)</span>
-        <input v-model.number="peakRpm" type="number" min="1" step="10" />
+        <input v-model.number="peakRpm" type="number" min="1" step="10" :aria-invalid="Boolean(inputErrors.peakRpm)" :aria-describedby="inputErrors.peakRpm ? 'ptu-input-errors' : undefined" />
       </label>
       <label>
         <span>Avg Input Tokens / Call (&le;272K)</span>
-        <input v-model.number="avgInput" type="number" min="100" step="500" />
+        <input v-model.number="avgInput" type="number" min="100" max="272000" step="500" :aria-invalid="Boolean(inputErrors.avgInput)" :aria-describedby="inputErrors.avgInput ? 'ptu-input-errors' : undefined" />
       </label>
       <label>
         <span>Avg Output Tokens / Call</span>
-        <input v-model.number="avgOutput" type="number" min="10" step="50" />
+        <input v-model.number="avgOutput" type="number" min="10" step="50" :aria-invalid="Boolean(inputErrors.avgOutput)" :aria-describedby="inputErrors.avgOutput ? 'ptu-input-errors' : undefined" />
       </label>
       <label>
         <span>Cached Input Share (%)</span>
-        <input v-model.number="cacheHitPct" type="number" min="0" max="98" step="5" />
+        <input v-model.number="cacheHitPct" type="number" min="0" max="98" step="5" :aria-invalid="Boolean(inputErrors.cacheHitPct)" :aria-describedby="inputErrors.cacheHitPct ? 'ptu-input-errors' : undefined" />
       </label>
       <label v-if="spec.regime === 'gpt6'">
         <span>Steady-State Read/Write Ratio (k:1)</span>
-        <input v-model.number="rwRatio" type="number" min="1" max="100" step="1" />
+        <input v-model.number="rwRatio" type="number" min="1" max="100" step="1" :aria-invalid="Boolean(inputErrors.rwRatio)" :aria-describedby="inputErrors.rwRatio ? 'ptu-input-errors' : undefined" />
       </label>
       <label v-if="showSeasonal">
         <span>Seasonal Cliff Surge (&times; Steady)</span>
-        <input v-model.number="surgeMultiplier" type="number" min="1" max="10" step="0.5" />
+        <input v-model.number="surgeMultiplier" type="number" min="1" max="10" step="0.5" :aria-invalid="Boolean(inputErrors.surgeMultiplier)" :aria-describedby="inputErrors.surgeMultiplier ? 'ptu-input-errors' : undefined" />
       </label>
       <label v-if="showSeasonal">
         <span>Peak Surge Window (Months / Yr)</span>
-        <input v-model.number="surgeMonths" type="number" min="1" max="6" step="1" />
+        <input v-model.number="surgeMonths" type="number" min="1" max="6" step="1" :aria-invalid="Boolean(inputErrors.surgeMonths)" :aria-describedby="inputErrors.surgeMonths ? 'ptu-input-errors' : undefined" />
       </label>
     </div>
 
-    <div class="ptu-results">
+    <div v-if="!calc" id="ptu-input-errors" class="ptu-input-errors" role="alert">
+      <strong>Estimate unavailable. Correct the input values before calculating or exporting.</strong>
+      <ul>
+        <li v-for="(message, key) in inputErrors" :key="key">{{ message }}</li>
+      </ul>
+    </div>
+
+    <div v-if="calc" class="ptu-results">
       <div class="ptu-card highlight">
         <span class="k">Tuned Baseline ({{ calc.effectiveHitPct }}% Hit<template v-if="calc.isCapped"> · R/W Capped</template>)</span>
         <div class="v">{{ calc.depCached }} PTUs</div>
@@ -380,7 +427,7 @@ async function copyEstimate() {
       </div>
     </div>
 
-    <div class="ptu-bars">
+    <div v-if="calc" class="ptu-bars">
       <div class="ptu-bar-row">
         <div class="ptu-bar-meta">
           <span><strong>Tuned Prefix Architecture</strong> ({{ calc.effectiveHitPct }}% cached share)</span>
@@ -465,6 +512,18 @@ async function copyEstimate() {
 .ptu-copy-btn:hover {
   background: var(--vp-c-brand-1);
   color: #fff;
+}
+.ptu-copy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ptu-input-errors {
+  margin-bottom: 16px;
+  color: var(--vp-c-text-1);
+  border-left: 3px solid #d97706;
+  padding: 10px 14px;
+  background: var(--ms-surface-card);
+  font-size: 0.8rem;
 }
 .ptu-presets {
   display: flex;

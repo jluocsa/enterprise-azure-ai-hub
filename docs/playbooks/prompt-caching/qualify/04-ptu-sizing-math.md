@@ -74,6 +74,8 @@ Enterprise production workloads commonly pair **Provisioned Throughput (PTU-M)**
 
 ## 4. Live PTU & Cache-Shard Estimator
 
+The calculator blocks results and Markdown export for blank, non-finite, out-of-range, or arithmetic-overflow inputs instead of silently clamping them. Its **100–272,000 input-token range** is the local short-context estimator boundary, not a model context limit; inputs above it require a long-context sizing model. Other accepted ranges are shown on the controls, and read/write validation applies only to GPT-6/6.1. Field-linked errors clear when valid inputs or a preset are restored. These offline UI checks do not certify regional capacity, quota, or measured throughput <span class="ev-badge ev-arch">[Arch]</span>.
+
 <PtuCalculator />
 
 ::: tip Seasonal Filing-Cliff & Deal-Sprint Workloads

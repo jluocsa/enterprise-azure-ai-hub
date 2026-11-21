@@ -12,7 +12,7 @@
     "check:kits": "node scripts/run-python.mjs docs/public/kits/pcr_lint.py --self-test && node scripts/run-python.mjs docs/public/kits/pcr_lint.py docs/public/kits && node scripts/run-python.mjs docs/public/kits/agent_release_gate.py --self-test && node scripts/run-python.mjs docs/public/kits/bcp_snapshot_gate.py --self-test",
     "check:links": "node scripts/run-python.mjs scripts/check-links.py --self-test && node scripts/run-python.mjs scripts/check-links.py",
     "check:apim": "node scripts/run-python.mjs scripts/check-apim-xml.py --self-test && node scripts/run-python.mjs scripts/check-apim-xml.py",
-    "check:studio": "node --test scripts/check-studio-tabs.test.mjs",
+    "check:studio": "node --test scripts/check-studio-tabs.test.mjs scripts/check-studio-ptu.test.mjs",
     "deploy:pages": "node scripts/deploy-gh-pages.mjs",
     "verify": "npm run check:sanitized && npm run check:kits && npm run check:studio && npm run docs:build && npm run check:links && npm run check:apim",
     "check:daemon": "node scripts/run-python.mjs --self-test && node scripts/auto-improve-daemon.mjs --self-test && node scripts/auto-improve-service.mjs --self-test",
