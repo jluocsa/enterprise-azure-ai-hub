@@ -8,6 +8,7 @@ JSON parser nesting failures produce an input error, not a traceback.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
 LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
 --max-age-minutes (default: 15). SuccessfulCalls must be positive (HTTP 2xx).
+LastSuccessfulSeen must not be later than LastSeen for the same stamp.
 This checks B2 snapshot parity and B11 coverage, not the entire BCP readiness standard.
 """
 
@@ -111,6 +112,7 @@ def evaluate_evidence(
             failures.append(f"{prefix} SuccessfulCalls must be a positive integer")
         elif type(row.get("TotalCalls")) is int and row["SuccessfulCalls"] > row["TotalCalls"]:
             failures.append(f"{prefix} SuccessfulCalls must not exceed TotalCalls")
+        fresh_timestamps: dict[str, datetime] = {}
         for field in ("LastSeen", "LastSuccessfulSeen"):
             try:
                 last_seen = datetime.fromisoformat(identifier(row, field).replace("Z", "+00:00"))
@@ -124,6 +126,13 @@ def evaluate_evidence(
                     failures.append(f"{prefix} {field} must not be in the future")
                 elif age_seconds > max_age_minutes * 60:
                     failures.append(f"{prefix} {field} exceeds the {max_age_minutes}-minute freshness limit")
+                else:
+                    fresh_timestamps[field] = last_seen
+        if (
+            len(fresh_timestamps) == 2
+            and fresh_timestamps["LastSuccessfulSeen"] > fresh_timestamps["LastSeen"]
+        ):
+            failures.append(f"{prefix} LastSuccessfulSeen must not exceed LastSeen")
         snapshots = row.get("SnapshotsObserved")
         if (
             not isinstance(snapshots, list)
@@ -204,7 +213,7 @@ class SnapshotGateTests(unittest.TestCase):
     def test_freshness_boundaries_and_timezones(self):
         for timestamp in ("2026-11-20T11:45:00Z", "2026-11-20T12:00:00+00:00",
                           "2026-11-20T13:45:00+02:00", "2026-11-20T06:45:00-05:00"):
-            rows = [dict(row, LastSeen=timestamp) for row in self.rows]
+            rows = [dict(row, LastSeen=timestamp, LastSuccessfulSeen=timestamp) for row in self.rows]
             with self.subTest(timestamp=timestamp):
                 self.assertEqual(evaluate_evidence(rows, self.expected, now=self.now), [])
         for timestamp, message in (
@@ -221,7 +230,8 @@ class SnapshotGateTests(unittest.TestCase):
                 self.assertIn(message, failures[0])
 
     def test_configurable_freshness_limit(self):
-        rows = [dict(row, LastSeen="2026-11-20T11:30:00Z") for row in self.rows]
+        rows = [dict(row, LastSeen="2026-11-20T11:30:00Z",
+                     LastSuccessfulSeen="2026-11-20T11:30:00Z") for row in self.rows]
         self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
         self.assertEqual(
             evaluate_evidence(rows, self.expected, now=self.now, max_age_minutes=30), [],
@@ -249,6 +259,57 @@ class SnapshotGateTests(unittest.TestCase):
             self.assertEqual(evaluate_evidence(rows, self.expected, now=self.now), [])
         rows = [dict(row, LastSuccessfulSeen="2026-11-20T11:30:00Z") for row in self.rows]
         self.assertEqual(evaluate_evidence(rows, self.expected, now=self.now, max_age_minutes=30), [])
+
+    def test_successful_timestamp_cannot_exceed_total_timestamp(self):
+        for last_seen, last_success, valid in (
+            ("2026-11-20T11:59:00Z", "2026-11-20T11:59:00Z", True),
+            ("2026-11-20T11:59:00Z", "2026-11-20T11:58:59.999999Z", True),
+            ("2026-11-20T11:59:00Z", "2026-11-20T11:59:00.000001Z", False),
+            ("2026-11-20T13:59:00+02:00", "2026-11-20T06:59:00-05:00", True),
+            ("2026-11-20T13:59:00+02:00", "2026-11-20T06:59:00.000001-05:00", False),
+            ("2026-11-20T06:59:00-05:00", "2026-11-20T13:58:00+02:00", True),
+            ("2026-11-20T06:59:00-05:00", "2026-11-20T13:59:01+02:00", False),
+        ):
+            for index in (0, 1):
+                rows = deepcopy(self.rows)
+                rows[index].update(LastSeen=last_seen, LastSuccessfulSeen=last_success)
+                with self.subTest(last_seen=last_seen, last_success=last_success, index=index):
+                    failures = evaluate_evidence(rows, self.expected, now=self.now)
+                    self.assertEqual(failures, [] if valid else [
+                        f"evidence row-{index + 1}: LastSuccessfulSeen must not exceed LastSeen",
+                    ])
+
+    def test_cli_rejects_inconsistent_successful_timestamp(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
+            now = datetime.now(timezone.utc)
+            total_time = (now - timedelta(minutes=2)).isoformat()
+            success_time = (now - timedelta(minutes=1)).isoformat()
+            rows = [dict(row, LastSeen=total_time, LastSuccessfulSeen=total_time)
+                    for row in self.rows]
+            rows[1]["LastSuccessfulSeen"] = success_time
+            evidence.write_text(json.dumps(rows), encoding="utf-8")
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            for flags in ([], ["--max-age-minutes", "60"]):
+                result = subprocess.run(command + flags, capture_output=True, text=True, check=False)
+                with self.subTest(flags=flags):
+                    self.assertEqual(result.returncode, 1)
+                    self.assertEqual(result.stdout, "")
+                    self.assertIn(
+                        "evidence row-2: LastSuccessfulSeen must not exceed LastSeen", result.stderr,
+                    )
+                    self.assertNotIn("Traceback", result.stderr)
+                    self.assertNotIn(total_time, result.stderr)
+                    self.assertNotIn(success_time, result.stderr)
+            rows[1]["LastSeen"] = success_time
+            evidence.write_text(json.dumps(rows), encoding="utf-8")
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stderr, "")
+            self.assertIn("PASSED", result.stdout)
 
     def test_duplicate_and_unexpected_stamps(self):
         for extra in (self.rows[0], dict(self.rows[0], stampRegion="northeurope"),
@@ -376,7 +437,8 @@ class SnapshotGateTests(unittest.TestCase):
                 result = subprocess.run(command, capture_output=True, text=True, check=False)
                 self.assertEqual(result.returncode, code, result.stderr)
                 self.assertEqual("PASSED" in result.stdout, code == 0)
-            stale_rows = [dict(row, LastSeen=(datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat())
+            stale_time = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+            stale_rows = [dict(row, LastSeen=stale_time, LastSuccessfulSeen=stale_time)
                           for row in fresh_rows]
             evidence.write_text(json.dumps(stale_rows), encoding="utf-8")
             result = subprocess.run(command, capture_output=True, text=True, check=False)
