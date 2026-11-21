@@ -5,11 +5,20 @@ const modelGeneration = ref<'gpt-5.6-ptu' | 'gpt-6-ptu'>('gpt-5.6-ptu')
 const enableSpillover = ref(true)
 const stripFinopsHeader = ref(true)
 const enableTokenLimit = ref(true)
-const tokenLimitTpm = ref(450000)
+const tokenLimitTpm = ref<number | string>(450000)
 const streamSafe = ref(true)
 const copied = ref(false)
 
+const quotaError = computed(() => {
+  if (!enableTokenLimit.value) return ''
+  const value = tokenLimitTpm.value
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 10000
+    ? ''
+    : 'Per-Subscription TPM Quota must be a whole number from 10,000 to 9,007,199,254,740,991. Correct the quota before generating or copying XML.'
+})
+
 const policyXml = computed(() => {
+  if (quotaError.value) return null
   const lines: string[] = [
     `<policies>`,
     `  <inbound>`,
@@ -107,8 +116,10 @@ const policyXml = computed(() => {
 })
 
 async function copyXml() {
+  const xml = policyXml.value
+  if (xml === null) return
   try {
-    await navigator.clipboard.writeText(policyXml.value)
+    await navigator.clipboard.writeText(xml)
     copied.value = true
     setTimeout(() => {
       copied.value = false
@@ -124,8 +135,8 @@ async function copyXml() {
         <span class="apim-kicker">INTERACTIVE GATEWAY GENERATOR &middot; PLAYBOOK 02</span>
         <strong class="apim-title">SKU-Aware Azure API Management AI Gateway Policy Builder</strong>
       </div>
-      <button type="button" class="apim-copy-btn no-print" @click="copyXml">
-        {{ copied ? '✓ Copied Policy XML' : 'Copy APIM XML' }}
+      <button type="button" class="apim-copy-btn no-print" :disabled="!policyXml" @click="copyXml">
+        {{ copied && policyXml ? '✓ Copied Policy XML' : 'Copy APIM XML' }}
       </button>
     </div>
 
@@ -140,7 +151,7 @@ async function copyXml() {
 
       <label class="apim-select" v-if="enableTokenLimit">
         <span>Per-Subscription TPM Quota</span>
-        <input v-model.number="tokenLimitTpm" type="number" min="10000" step="50000" />
+        <input v-model.number="tokenLimitTpm" type="number" min="10000" :max="Number.MAX_SAFE_INTEGER" step="1" :aria-invalid="Boolean(quotaError)" :aria-describedby="quotaError ? 'apim-quota-error' : undefined" />
       </label>
 
       <label class="apim-check">
@@ -164,7 +175,8 @@ async function copyXml() {
       </label>
     </div>
 
-    <pre class="apim-code"><code>{{ policyXml }}</code></pre>
+    <div v-if="quotaError" id="apim-quota-error" class="apim-quota-error" role="alert">{{ quotaError }}</div>
+    <pre v-else class="apim-code"><code>{{ policyXml }}</code></pre>
   </div>
 </template>
 
@@ -213,6 +225,16 @@ async function copyXml() {
 .apim-copy-btn:hover {
   background: var(--vp-c-brand-1);
   color: #fff;
+}
+.apim-copy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.apim-quota-error {
+  padding: 12px 14px;
+  border-left: 3px solid #d97706;
+  background: var(--ms-surface-card);
+  color: var(--vp-c-text-1);
 }
 .apim-controls {
   display: grid;
