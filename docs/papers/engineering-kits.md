@@ -108,6 +108,8 @@ Zero-dependency Python 3 CLI (`ARG001–ARG007`) verifying offline `trace.jsonl`
 
 Trace and contract JSON also reject duplicate member names within any object, including nested metadata and escape-equivalent names, before a later value can overwrite an earlier one. Duplicates exit `2` with a sanitized stderr diagnostic and no stdout in either text or `--json` mode. See the [unambiguous-input contract](/playbooks/agentic-rag-evals/04-deterministic-eval-contracts#unambiguous-json-inputs); the kit's self-test exercises these CLI failures <span class="ev-badge ev-arch">[Arch]</span>.
 
+Trace file read failures (missing files, directories, permission/I/O errors, or invalid UTF-8) exit `2` with a sanitized `ARG001` stderr diagnostic, no stdout, and no traceback. No partial evidence is evaluated after a read failure; paths and operating-system error details are not echoed. These offline failure paths are covered by the existing self-test in `npm run verify` <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 agent_release_gate.py --self-test
 python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json
