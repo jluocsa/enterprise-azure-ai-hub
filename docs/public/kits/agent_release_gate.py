@@ -35,6 +35,15 @@ CITATION_RE = re.compile(r"\[cite:([A-Za-z0-9_.:#-]+)\]")
 DEFAULT_FORBIDDEN_TOOLS = {"raw_shell_root", "unguarded_http_post", "drop_container"}
 
 
+def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError("duplicate JSON object members are not allowed.")
+        obj[key] = value
+    return obj
+
+
 def percentile(values: list[float], pct: float) -> float:
     if not values:
         return 0.0
@@ -214,7 +223,9 @@ def validate_contract(raw: Any) -> dict[str, Any]:
 
 def load_contract(contract_path: Path) -> dict[str, Any]:
     try:
-        raw = json.loads(contract_path.read_text(encoding="utf-8"))
+        raw = json.loads(
+            contract_path.read_text(encoding="utf-8"), object_pairs_hook=unique_json_object,
+        )
     except json.JSONDecodeError:
         raise ValueError("contract must contain valid JSON.") from None
     return validate_contract(raw)
@@ -382,6 +393,7 @@ def run_self_test() -> int:
         trace = Path(directory) / "trace.jsonl"
         for evidence, expected_code in (
             (valid_records, 0),
+            ([{**valid_records[0], "metadata": [{"label": "a"}, {"label": "b"}]}], 0),
             ([{"status": "ok"}], 1),
             ([None], 1),
             ([valid_records[0], {**valid_records[1], "duration_ms": math.nan}], 1),
@@ -420,9 +432,55 @@ def run_self_test() -> int:
 
         trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         contract_file = Path(directory) / "contract.json"
+        duplicate_traces = [
+            "{" + json.dumps(field) + ":" + json.dumps(value) + "," + json.dumps(valid_records[1])[1:]
+            for field, value in (
+                ("status", "failed"), ("tools_called", ["raw_shell_root"]),
+                ("cached_tokens", 0), ("acl_trimmed", False),
+                ("raw_prompt_logged", True), ("duration_ms", 24000),
+                ("status", "ok"),
+            )
+        ]
+        duplicate_traces.extend((
+            '{"raw_prompt_logg\\u0065d":true,' + json.dumps(valid_records[1])[1:],
+            '{"metadata":{"private-field":1,"private-field":2},' + json.dumps(valid_records[1])[1:],
+        ))
+        duplicate_contracts = (
+            '{"forbid_raw_prompt_logging":true,"forbid_raw_prompt_logging":false}',
+            '{"max_p95_ms":1,"max_p95_ms":15000}',
+            '{"required_tools":["missing-tool"],"required_tools":[]}',
+            '{"require_acl_trimming":true,"require_acl_trimming":true}',
+            '{"forbid_raw_prompt_logg\\u0069ng":true,"forbid_raw_prompt_logging":false}',
+            '{"metadata":{"private-field":1,"private-field":2}}',
+        )
+        for content in duplicate_traces:
+            trace.write_text(json.dumps(valid_records[0]) + "\n\n" + content, encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 2 and "[ARG001] line-3" in result.stderr, result
+                assert "duplicate" in result.stderr and not result.stdout, result
+                assert "private-field" not in result.stderr and "Traceback" not in result.stderr, result
+
+        trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
+        for content in duplicate_contracts:
+            contract_file.write_text(content, encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace),
+                     "--contract", str(contract_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
+                assert "duplicate" in result.stderr and not result.stdout, result
+                assert "private-field" not in result.stderr and "Traceback" not in result.stderr, result
+
         for content, expected_code, diagnostic in (
             (b"{}", 0, ""),
             (b'{"contract_version":"2.0","required_tools":["knowledge_base_retrieve"]}', 0, ""),
+            (b'{"metadata":{"first":{"label":"a"},"second":{"label":"b"}}}', 0, ""),
             (b'{"max_p95_ms":NaN}', 2, "max_p95_ms"),
             (b'{"min_pass2_cached_tokens":0}', 2, "min_pass2_cached_tokens"),
             (b'{"forbidden_tools":"raw_shell_root"}', 2, "forbidden_tools"),
@@ -475,7 +533,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (unique JSON members + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
@@ -520,9 +578,12 @@ def main() -> int:
         if not line.strip():
             continue
         try:
-            records.append(json.loads(line))
-        except json.JSONDecodeError:
-            print(f"Error: [ARG001] line-{line_number}: invalid JSON execution record.", file=sys.stderr)
+            records.append(json.loads(line, object_pairs_hook=unique_json_object))
+        except ValueError:
+            print(
+                f"Error: [ARG001] line-{line_number}: invalid JSON execution record (malformed JSON or duplicate object members).",
+                file=sys.stderr,
+            )
             return 2
     failures = evaluate_trace(records, **kwargs)
 

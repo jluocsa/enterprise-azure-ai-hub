@@ -84,6 +84,12 @@ description: Structuring non-flaky CI/CD evaluation pipelines for tool-using and
 
 All supplied ACL/privacy flags must be booleans even when their enforcement is disabled. Structurally invalid turns produce `ARG001` failures and exit `1` (including under `--json`); malformed JSON produces a line-numbered `ARG001` error on stderr and exit `2`. Diagnostics for malformed evidence identify the row/field without echoing raw turn content. The zero-dependency `python3 docs/public/kits/agent_release_gate.py --self-test` regression suite is included in `npm run verify`.
 
+### Unambiguous JSON Inputs
+
+<span class="ev-badge ev-arch">[Arch]</span> Trace records and acceptance-contract files must use unique member names within **every JSON object**, including optional nested metadata. The CLI rejects duplicates before schema validation or evaluation instead of silently keeping the last value: `"raw_prompt_logged": true` followed by `"raw_prompt_logged": false` must not turn failing evidence into a pass. Identical duplicate values are also rejected, and JSON escape sequences are decoded before comparing names.
+
+Duplicate trace members produce a line-numbered `ARG001` stderr diagnostic; duplicate contract members produce an invalid-acceptance-contract stderr diagnostic. Both exit `2` with no stdout, including under `--json`, without echoing member names or values. Reusing a name in separate objects or separate JSONL records remains valid. This is a local input-integrity rule, not an Azure service requirement or proof that exported evidence is authentic; preserve trusted trace provenance.
+
 ### Fail-Closed Citation Syntax (`ARG003`)
 
 <span class="ev-badge ev-arch">[Arch]</span> Every literal, case-sensitive `[cite:` opener in `assistant_response` must form a complete `[cite:ID]` marker. IDs must contain one or more ASCII letters, digits, or `_ . : # -` characters (no spaces). Empty IDs, whitespace, unsupported characters, nested markers, and missing closing brackets produce `ARG003` and exit `1`, including under `--json`, rather than disappearing from the resolution check. Malformed-marker diagnostics do not echo the answer or malformed ID; well-formed IDs still must exactly match `retrieved_doc_ids`.
