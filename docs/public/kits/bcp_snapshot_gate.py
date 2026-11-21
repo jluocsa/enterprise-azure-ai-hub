@@ -4,7 +4,8 @@
 Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
-LastSeen must be timezone-aware and no older than --max-age-minutes (default: 15).
+LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
+--max-age-minutes (default: 15). SuccessfulCalls must be positive (HTTP 2xx).
 This checks B2 snapshot parity and B11 coverage, not the entire BCP readiness standard.
 """
 
@@ -87,18 +88,23 @@ def evaluate_evidence(
             failures.append(f"{prefix} unexpected model/region")
         if type(row.get("TotalCalls")) is not int or row["TotalCalls"] <= 0:
             failures.append(f"{prefix} TotalCalls must be a positive integer")
-        try:
-            last_seen = datetime.fromisoformat(identifier(row, "LastSeen").replace("Z", "+00:00"))
-            if last_seen.utcoffset() is None:
-                raise ValueError("timezone required")
-            age_seconds = (now - last_seen).total_seconds()
-        except (ValueError, OverflowError):
-            failures.append(f"{prefix} LastSeen must be an ISO 8601 timestamp with an explicit timezone")
-        else:
-            if age_seconds < 0:
-                failures.append(f"{prefix} LastSeen must not be in the future")
-            elif age_seconds > max_age_minutes * 60:
-                failures.append(f"{prefix} LastSeen exceeds the {max_age_minutes}-minute freshness limit")
+        if type(row.get("SuccessfulCalls")) is not int or row["SuccessfulCalls"] <= 0:
+            failures.append(f"{prefix} SuccessfulCalls must be a positive integer")
+        elif type(row.get("TotalCalls")) is int and row["SuccessfulCalls"] > row["TotalCalls"]:
+            failures.append(f"{prefix} SuccessfulCalls must not exceed TotalCalls")
+        for field in ("LastSeen", "LastSuccessfulSeen"):
+            try:
+                last_seen = datetime.fromisoformat(identifier(row, field).replace("Z", "+00:00"))
+                if last_seen.utcoffset() is None:
+                    raise ValueError("timezone required")
+                age_seconds = (now - last_seen).total_seconds()
+            except (ValueError, OverflowError):
+                failures.append(f"{prefix} {field} must be an ISO 8601 timestamp with an explicit timezone")
+            else:
+                if age_seconds < 0:
+                    failures.append(f"{prefix} {field} must not be in the future")
+                elif age_seconds > max_age_minutes * 60:
+                    failures.append(f"{prefix} {field} exceeds the {max_age_minutes}-minute freshness limit")
         snapshots = row.get("SnapshotsObserved")
         if (
             not isinstance(snapshots, list)
@@ -124,7 +130,9 @@ class SnapshotGateTests(unittest.TestCase):
         self.rows = [
             {"reqModel": row["reqModel"], "stampRegion": row["stampRegion"],
              "TotalCalls": 10, "SnapshotsObserved": ["snapshot-a"],
-             "LastSeen": (self.now - timedelta(minutes=1)).isoformat()}
+             "LastSeen": (self.now - timedelta(minutes=1)).isoformat(),
+             "SuccessfulCalls": 8,
+             "LastSuccessfulSeen": (self.now - timedelta(minutes=2)).isoformat()}
             for row in self.manifest
         ]
 
@@ -155,11 +163,15 @@ class SnapshotGateTests(unittest.TestCase):
         for field, values in {
             "SnapshotsObserved": [None, [], ["unreported"], "snapshot-a", [1], [None]],
             "TotalCalls": [None, 0, -1, True, 1.5, "10"],
+            "SuccessfulCalls": [None, 0, -1, True, 1.5, "8", 11, [], {}],
             "stampRegion": [None, "", "unknown-region", " westus"],
             "reqModel": [None, "", 42],
             "LastSeen": [None, "", 42, True, [], {}, "not-a-time",
                          "2026-11-20", "2026-11-20T11:59:00",
                          "2026-11-20T11:59:00Z ", "2026-13-20T11:59:00Z"],
+            "LastSuccessfulSeen": [None, "", 42, True, [], {}, "not-a-time",
+                                   "2026-11-20", "2026-11-20T11:59:00",
+                                   "2026-11-20T11:59:00Z ", "2026-13-20T11:59:00Z"],
         }.items():
             for value in values:
                 rows = deepcopy(self.rows)
@@ -199,6 +211,26 @@ class SnapshotGateTests(unittest.TestCase):
             with self.subTest(limit=limit), self.assertRaises(ValueError):
                 evaluate_evidence(rows, self.expected, now=self.now, max_age_minutes=limit)
 
+    def test_recent_failures_cannot_refresh_successful_evidence(self):
+        for timestamp, diagnostic in (
+            (None, "explicit timezone"),
+            ("2026-11-20T11:44:59.999999Z", "freshness limit"),
+            ("2026-11-20T12:00:00.000001Z", "future"),
+        ):
+            rows = deepcopy(self.rows)
+            rows[1]["LastSeen"] = self.now.isoformat()
+            rows[1]["LastSuccessfulSeen"] = timestamp
+            with self.subTest(timestamp=timestamp):
+                failures = evaluate_evidence(rows, self.expected, now=self.now)
+                self.assertEqual(len(failures), 1)
+                self.assertIn("evidence row-2: LastSuccessfulSeen", failures[0])
+                self.assertIn(diagnostic, failures[0])
+        for timestamp in ("2026-11-20T11:45:00Z", "2026-11-20T13:45:00+02:00"):
+            rows = [dict(row, SuccessfulCalls=1, LastSuccessfulSeen=timestamp) for row in self.rows]
+            self.assertEqual(evaluate_evidence(rows, self.expected, now=self.now), [])
+        rows = [dict(row, LastSuccessfulSeen="2026-11-20T11:30:00Z") for row in self.rows]
+        self.assertEqual(evaluate_evidence(rows, self.expected, now=self.now, max_age_minutes=30), [])
+
     def test_duplicate_and_unexpected_stamps(self):
         for extra in (self.rows[0], dict(self.rows[0], stampRegion="northeurope"),
                       dict(self.rows[0], reqModel="model-b")):
@@ -225,7 +257,8 @@ class SnapshotGateTests(unittest.TestCase):
             manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
             command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
                        "--expected", str(manifest)]
-            fresh_rows = [dict(row, LastSeen=(datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat())
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            fresh_rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time)
                           for row in self.rows]
             for content, code in ((json.dumps(fresh_rows), 0), ("[]", 1), ("{}", 1),
                                   ("{", 2), ("\ufffd", 2)):
@@ -234,7 +267,7 @@ class SnapshotGateTests(unittest.TestCase):
                 self.assertEqual(result.returncode, code, result.stderr)
                 self.assertEqual("PASSED" in result.stdout, code == 0)
             stale_rows = [dict(row, LastSeen=(datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat())
-                          for row in self.rows]
+                          for row in fresh_rows]
             evidence.write_text(json.dumps(stale_rows), encoding="utf-8")
             result = subprocess.run(command, capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 1)
@@ -243,6 +276,28 @@ class SnapshotGateTests(unittest.TestCase):
             result = subprocess.run(command + ["--max-age-minutes", "60"],
                                     capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr)
+            for field, value, diagnostic in (
+                ("SuccessfulCalls", None, "positive integer"),
+                ("SuccessfulCalls", 0, "positive integer"),
+                ("SuccessfulCalls", True, "positive integer"),
+                ("SuccessfulCalls", 11, "must not exceed TotalCalls"),
+                ("LastSuccessfulSeen", None, "explicit timezone"),
+                ("LastSuccessfulSeen",
+                 (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat(),
+                 "freshness limit"),
+                ("LastSuccessfulSeen",
+                 (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat(), "future"),
+            ):
+                rows = deepcopy(fresh_rows)
+                rows[1][field] = value
+                evidence.write_text(json.dumps(rows), encoding="utf-8")
+                result = subprocess.run(command, capture_output=True, text=True, check=False)
+                with self.subTest(field=field, value=value):
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn(f"evidence row-2: {field}", result.stderr)
+                    self.assertIn(diagnostic, result.stderr)
+                    self.assertNotIn("Traceback", result.stderr)
+                    self.assertEqual(result.stdout, "")
             for timestamp, diagnostic in (
                 (None, "explicit timezone"),
                 ("not-a-time", "explicit timezone"),
@@ -298,7 +353,7 @@ def main() -> int:
         print("BCP snapshot gate FAILED:\n" + "\n".join(failures), file=sys.stderr)
         return 1
     print(f"BCP snapshot gate PASSED ({len(expected)} expected model/region stamps; "
-          f"snapshot parity with evidence age <= {args.max_age_minutes} minutes only).")
+          f"snapshot parity with successful evidence age <= {args.max_age_minutes} minutes only).")
     return 0
 
 
