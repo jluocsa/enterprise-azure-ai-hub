@@ -23,7 +23,8 @@ let Spans =
         cachedTok     = tolong(coalesce(dims["gen_ai.usage.cached_tokens"], dims["llm.cached_tokens"], 0)),
         outputTok     = tolong(coalesce(dims["gen_ai.usage.output_tokens"], dims["llm.output_tokens"], 0)),
         statusCode    = toint(ResultCode)
-    | where isnotempty(reqModel);
+    | where isnotempty(reqModel)
+    | extend successfulInference = statusCode >= 200 and statusCode < 300;
 let MinuteRegionalTpm =
     Spans
     | summarize
@@ -44,6 +45,8 @@ Spans
 | summarize
     TotalCalls        = count(),
     LastSeen          = max(TimeGenerated),
+    SuccessfulCalls   = countif(successfulInference),
+    LastSuccessfulSeen = maxif(TimeGenerated, successfulInference),
     DistinctSnapshots = dcount(resSnapshot),
     SnapshotsObserved = make_set(resSnapshot, 5),
     CachedSharePct    = round(100.0 * sum(cachedTok) / max_of(sum(inputTok), 1), 1),
@@ -63,6 +66,8 @@ Spans
     stampRegion,
     TotalCalls,
     LastSeen,
+    SuccessfulCalls,
+    LastSuccessfulSeen,
     SnapshotsObserved,
     CachedSharePct,
     PeakMinuteNormTPM,
