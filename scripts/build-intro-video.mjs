@@ -232,16 +232,17 @@ async function prepareStagePage(cdp, timeline, dsf) {
 }
 
 async function captureKeyframesAndPoster(browserBin, timeline) {
-  console.log('🖼️  Rendering 7 storyboard keyframes + high-res poster PNG...')
+  console.log(`🖼️  Rendering ${timeline.scenes.length} storyboard keyframes + high-res poster PNG...`)
   const profileDir = path.join(BUILD_DIR, 'profile-keyframes')
   const cdp = await connectCdp(browserBin, 9340, profileDir)
   try {
     await prepareStagePage(cdp, timeline, 1.5)
     const keyframesDir = path.join(BUILD_DIR, 'keyframes')
+    fs.rmSync(keyframesDir, { recursive: true, force: true })
     fs.mkdirSync(keyframesDir, { recursive: true })
 
     for (const sc of timeline.scenes) {
-      const ratio = sc.index === timeline.scenes.length - 1 ? 0.93 : 0.85
+      const ratio = 0.94
       const sampleT = Number((sc.start + (sc.end - sc.start) * ratio).toFixed(2))
       await cdp.send('Runtime.evaluate', { expression: `window.renderAt(${sampleT});` })
       const shot = await cdp.send('Page.captureScreenshot', { format: 'png' })
@@ -251,7 +252,7 @@ async function captureKeyframesAndPoster(browserBin, timeline) {
     }
 
     // Poster frame from Scene 02 full reveal (Hub v2.0 + all 4 KPIs visible)
-    const posterT = Number((timeline.scenes[1].start + (timeline.scenes[1].end - timeline.scenes[1].start) * 0.88).toFixed(2))
+    const posterT = Number((timeline.scenes[1].start + (timeline.scenes[1].end - timeline.scenes[1].start) * 0.94).toFixed(2))
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: 1920,
       height: 1080,

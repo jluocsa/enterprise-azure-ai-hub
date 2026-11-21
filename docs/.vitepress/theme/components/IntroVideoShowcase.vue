@@ -55,12 +55,12 @@ defineExpose({ playFromStart })
           <div>
             <span class="ivs-kicker">
               <span class="ivs-rec-dot" aria-hidden="true"></span>
-              <span>STUDIO BRIEFING &middot; CSA FORUM EDITION (2:53 &middot; 1080p HD &middot; STUDIO VOICEOVER + SCORE)</span>
+              <span>STUDIO BRIEFING &middot; FULL-STACK EDITION (4:06 &middot; 1080p HD &middot; STUDIO VOICEOVER + SCORE)</span>
             </span>
-            <h2 class="ivs-title">Executive &amp; CSA Forum Introduction Film</h2>
+            <h2 class="ivs-title">Executive &amp; CSA Forum Full-Stack Walkthrough Film</h2>
             <p class="ivs-sub">
-              Walk through all 4 full-stack Customer-Zero playbooks, the 5-tool interactive Decision Studio,
-              5 runnable MIT release gates, and the governed 5-stage factory + 3-week delivery cadence in under three minutes.
+              Comprehensive 10-part architectural briefing covering all 4 Customer-Zero playbooks (33 chapters), the Regulated
+              Ethical-Wall Profile, 5-tool Decision Studio, 2 printable white papers, 5 MIT kits, 52 PR checklists, and the 24/7 dual-agent loop.
             </p>
           </div>
 
@@ -116,7 +116,7 @@ defineExpose({ playFromStart })
             v-if="!isPlaying && !hasStarted"
             type="button"
             class="ivs-play-overlay"
-            aria-label="Play 2:53 CSA Forum Studio Introduction Film with sound"
+            aria-label="Play 4:06 Full-Stack Studio Walkthrough Film with sound"
             @click="playWithSound"
           >
             <span class="ivs-play-pill">
@@ -126,7 +126,7 @@ defineExpose({ playFromStart })
                 </svg>
               </span>
               <span class="ivs-play-copy">
-                <strong>Play Studio Intro Film (2:53)</strong>
+                <strong>Play Full-Stack Studio Film (4:06)</strong>
                 <span>1080p HD &middot; Baritone Voiceover + Score &middot; Sound On</span>
               </span>
             </span>

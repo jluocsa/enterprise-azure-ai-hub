@@ -32,18 +32,17 @@ PUBLIC_VIDEO_DIR = ROOT / "docs" / "public" / "video"
 
 SAMPLE_RATE = 48_000
 VOICE_NAME = os.environ.get("INTRO_VIDEO_VOICE", "en-US-BrianMultilingualNeural")
-VOICE_RATE = "+5%"
-VOICE_PITCH = "-3Hz"
+VOICE_RATE = "+3%"
+VOICE_PITCH = "+0Hz"
 
-# Broadcast studio vocal DSP chain (Neumann-style chest warmth + mud cut + presence + air + FET compression + booth reflections)
+# Clean broadcast studio vocal chain (warmth + mud cut + presence + gentle optical-style compression; zero comb-filtering echo)
 STUDIO_VOCAL_CHAIN = (
-    "highpass=f=78,"
-    "equalizer=f=132:t=q:w=1.05:g=4.4,"
-    "equalizer=f=315:t=q:w=1.45:g=-3.2,"
-    "equalizer=f=3450:t=q:w=1.15:g=3.8,"
-    "equalizer=f=8600:t=q:w=0.90:g=3.2,"
-    "acompressor=threshold=-21dB:ratio=3.6:attack=6:release=135:makeup=5.2dB,"
-    "aecho=0.86:0.88:18:0.055"
+    "highpass=f=80,"
+    "equalizer=f=135:t=q:w=1.15:g=2.8,"
+    "equalizer=f=310:t=q:w=1.50:g=-2.6,"
+    "equalizer=f=3350:t=q:w=1.20:g=2.6,"
+    "equalizer=f=8200:t=q:w=0.95:g=2.0,"
+    "acompressor=threshold=-20dB:ratio=2.8:attack=10:release=160:makeup=3.4dB"
 )
 
 SCENES = [
@@ -54,105 +53,143 @@ SCENES = [
         "kicker": "CSA FORUM BRIEFING · THE FULL-STACK BOTTLENECK",
         "title": "Demos Are Easy. Production Cutover Is Where Enterprise AI Stalls.",
         "narration": (
-            "In enterprise AI, anyone can ship a prototype. "
-            "Production cutover is where architectures break. "
-            "Silent cache misses that trigger a two-point-five-six-times PTU spike. "
-            "HTTP 429 gateway storms and stalled SSE streams. "
-            "Cold-cache failover surges across regional stamps. "
-            "And in-process agent tools with flaky CI evals. "
-            "Worse—when one specialist cracks the code, "
-            "that breakthrough stays locked inside a single-account slide deck."
+            "In enterprise AI, building a prototype is easy—surviving production cutover is where architectures stall. "
+            "Migrating stateless workloads onto GPT-5.6, GPT-6, and GPT-6.1 exposes four coupled failure modes: "
+            "silent prefix misses that trigger a two-point-five-six-times PTU spike, "
+            "HTTP 429 gateway storms and buffered SSE stalls, "
+            "cold-cache regional failover surges, "
+            "and unsandboxed agent tools with flaky CI evals."
         ),
     },
     {
-        "id": "02-hub-reveal",
-        "chapter": "02 · Solution Industrialization Hub",
+        "id": "02-hub-overview",
+        "chapter": "02 · Solution Industrialization Hub v2.0",
         "shortLabel": "02 · Full-Stack Hub",
         "kicker": "MICROSOFT FOUNDRY & AZURE AI · SOLUTION INDUSTRIALIZATION HUB",
         "title": "Enterprise Azure AI Solution Industrialization Hub",
         "narration": (
-            "Not anymore. "
             "Welcome to the Enterprise Azure AI Solution Industrialization Hub, version two-point-zero. "
-            "Built by Cloud Solution Architects, for Cloud Solution Architects—turning "
-            "proven Customer-Zero wins into four full-stack playbooks, "
-            "an interactive five-tool Decision Studio, "
-            "and fifty-two executable release gates."
+            "Built for Cloud Solution Architects and platform teams, this governed workbench unites "
+            "four live full-stack playbooks across thirty-three chapters, "
+            "a regulated compliance profile, a five-tool interactive Decision Studio, "
+            "two printable white papers, five MIT release kits, and fifty-two cutover controls."
         ),
     },
     {
-        "id": "03-four-playbooks",
-        "chapter": "03 · 4 Live Full-Stack Playbooks",
-        "shortLabel": "03 · 4 Playbooks",
-        "kicker": "UNIFIED PRODUCTION TOPOLOGY · 33 DEEP-DIVE CHAPTERS",
-        "title": "Four Connected Playbooks Across One Enterprise Request Path",
+        "id": "03-playbook-01-caching-ptu",
+        "chapter": "03 · Playbook 01 & Regulated Profile",
+        "shortLabel": "03 · PB01 Caching & PTU",
+        "kicker": "PLAYBOOK 01 · 15 CHAPTERS + REGULATED ETHICAL-WALL PROFILE",
+        "title": "Prompt Caching, Prefix Taxonomy & Two-Regime PTU Economics",
         "narration": (
-            "Four live playbooks interlock on one enterprise request path. "
-            "Playbook Zero-One masters GPT-5.6 and GPT-6 prefix caching, fifteen-RPM sharding, "
-            "and two-regime PTU math—saving seventy-one percent on peak-season TCO. "
-            "Playbook Zero-Two fronts Foundry with APIM Retry-After spillover, unbuffered SSE streaming, "
-            "and FinOps telemetry. "
-            "Playbook Zero-Three governs Data Zone residency, cold-cache failover surges, "
-            "and sub-fifteen-second Game-Day RTO. "
-            "And Playbook Zero-Four isolates agent tools inside ACA Dynamic Session microVMs "
-            "with Foundry IQ RAG and deterministic evals."
+            "Playbook Zero-One and its Regulated Multi-Engagement Profile govern context assembly and PTU economics across fifteen chapters. "
+            "Enforce the six-position Scope-by-Volatility prefix stack, shard hot cache keys above fifteen RPM, "
+            "and size capacity with two-regime math—contrasting GPT-5.6 zero-weight cached reads "
+            "against GPT-6 and 6.1 normalized read-write weights. "
+            "Paired with Posture A ethical walls and workpaper lineage, "
+            "you eliminate capacity spikes and save seventy-one percent on seasonal filing cliffs."
         ),
     },
     {
-        "id": "04-decision-studio",
-        "chapter": "04 · Interactive Decision Studio",
-        "shortLabel": "04 · Decision Studio",
-        "kicker": "BROWSER-NATIVE WORKBENCH · 5 LIVE CALCULATORS",
-        "title": "Simulate PTU Math, APIM Policies, BCP Surges & Agent Sandboxes",
+        "id": "04-playbook-02-apim-gateway",
+        "chapter": "04 · Playbook 02: APIM AI Gateway",
+        "shortLabel": "04 · PB02 APIM Gateway",
+        "kicker": "PLAYBOOK 02 · 6 CHAPTERS · MULTI-BACKEND GATEWAY & FINOPS",
+        "title": "Multi-Backend Microsoft Foundry APIM AI Gateway & Token Governance",
         "narration": (
-            "Inside the browser-native Decision Studio, five interactive tools model every trade-off live—"
-            "with zero external telemetry. "
-            "Size two-regime PTU baselines and cache shards. "
-            "Generate SKU-aware APIM spillover XML. "
-            "Simulate multi-region cold-cache failover surges. "
-            "And configure ACA microVM pools and deterministic contracts, "
-            "including strict client ethical-wall postures."
+            "Playbook Zero-Two centralizes traffic behind a Multi-Backend Microsoft Foundry APIM AI Gateway. "
+            "It enforces keyless Managed Identity RBAC, trips Retry-After circuit breakers "
+            "from primary PTU-M to Standard pay-as-you-go, "
+            "snapshots and restores request bodies around GPT-5.6 breakpoint stripping, "
+            "streams unbuffered Server-Sent Events, "
+            "and extracts out-of-band cost-center headers into OpenTelemetry FinOps metrics."
         ),
     },
     {
-        "id": "05-executable-kits",
-        "chapter": "05 · 5 Executable MIT Release Gates",
-        "shortLabel": "05 · 5 MIT Gates",
-        "kicker": "DROP-IN AUTOMATION · MIT CODE & PRINTABLE WHITE PAPERS",
-        "title": "Executable Engineering Guardrails, Not Static Slideware",
+        "id": "05-playbook-03-multi-region-bcp",
+        "chapter": "05 · Playbook 03: Multi-Region BCP",
+        "shortLabel": "05 · PB03 Regional BCP",
+        "kicker": "PLAYBOOK 03 · 6 CHAPTERS · RESIDENCY & STAMP CONTINUITY",
+        "title": "Multi-Region Foundry BCP, Data Residency & Cold-Cache Failover",
         "narration": (
-            "Zero slideware. You ship five runnable MIT release gates: "
-            "a zero-dependency Python AST prefix linter, "
-            "deterministic agent trace and cross-region snapshot parity CLIs, "
-            "production APIM spillover policy XML, "
-            "two live Application Insights KQL workbooks, "
-            "and print-ready executive white papers."
+            "Playbook Zero-Three engineers continuity at the full AI Stamp level. "
+            "It aligns Global, Data Zone, and Regional sovereignty across primary and disaster-recovery legs, "
+            "sizes secondary pay-as-you-go buffers to absorb the two-point-five-six-times cold-cache failover surge "
+            "without doubling idle PTUs, "
+            "and synchronizes Cosmos DB state and dual Azure AI Search stamps "
+            "for sub-fifteen-second Game-Day failover."
         ),
     },
     {
-        "id": "06-factory-and-delivery",
-        "chapter": "06 · 5-Stage Factory & 3-Week Scope",
-        "shortLabel": "06 · Factory & 3-Wk",
-        "kicker": "GOVERNED 1:N PIPELINE & REPEATABLE DELIVERY",
-        "title": "Five Governed Factory Stages & Turnkey 3-Week Delivery",
+        "id": "06-playbook-04-agentic-rag-evals",
+        "chapter": "06 · Playbook 04: Sandboxed Agentic RAG",
+        "shortLabel": "06 · PB04 Agentic RAG",
+        "kicker": "PLAYBOOK 04 · 6 CHAPTERS · MICROVM SANDBOXES & 7-LAYER EVALS",
+        "title": "3-Tier Sandboxed Agentic Harness, Foundry IQ & Deterministic Evals",
         "narration": (
-            "Every asset clears a five-stage industrialization factory: "
-            "Customer-Zero production telemetry, automated CI sanitization, "
-            "peer Microsoft Learn verification, and pre-publication IP protection. "
-            "Paired with a thirty-minute triage and a bounded three-week readiness sprint, "
-            "every engagement ships with signed cutover evidence."
+            "Playbook Zero-Four industrializes multi-step agents across a three-tier sandboxed runtime. "
+            "A stateless SDK-free orchestrator proxies typed AG-UI streams "
+            "from one microVM container per session in Azure Container Apps Dynamic Sessions, "
+            "converts binary documents into faithful Markdown via Content Understanding, "
+            "retrieves ACL-trimmed citations through Foundry IQ MCP, "
+            "and blocks regressions with seven-layer deterministic evaluations."
         ),
     },
     {
-        "id": "07-csa-call-to-action",
-        "chapter": "07 · CSA Forum Call to Action",
-        "shortLabel": "07 · Call to Action",
-        "kicker": "SCALE INDUSTRIALIZED ENGINEERING LEVERAGE",
+        "id": "07-decision-studio",
+        "chapter": "07 · 5-Tool Architecture Decision Studio",
+        "shortLabel": "07 · Decision Studio",
+        "kicker": "BROWSER-NATIVE WORKBENCH · 5 LIVE CALCULATORS · ZERO TELEMETRY",
+        "title": "Interactive Sizing, APIM XML, BCP Surge, Sandbox & Triage Studio",
+        "narration": (
+            "In the browser-native Architecture Decision Studio, five client-side calculators "
+            "model every design decision live with zero external telemetry: "
+            "the two-regime PTU and spillover TCO simulator, "
+            "the SKU-aware APIM XML policy builder, "
+            "the multi-region cold-cache surge advisor, "
+            "the ACA sandbox and contract builder, "
+            "and the thirty-minute eight-boundary intake triage."
+        ),
+    },
+    {
+        "id": "08-papers-kits-checklists",
+        "chapter": "08 · White Papers, 5 MIT Kits & 52 Checklists",
+        "shortLabel": "08 · Papers & MIT Kits",
+        "kicker": "PRINTABLE BLUEPRINTS, ZERO-DEP MIT CODE & COMPANION REPOS",
+        "title": "Executive White Papers, 5 MIT Engineering Kits & 52 PR Gates",
+        "narration": (
+            "Every track ships drop-in deliverables rather than static slideware: "
+            "two print-ready executive white papers, five zero-dependency MIT kits—"
+            "including the PCR Python AST linter, agent trace and cross-region snapshot parity CLIs, "
+            "APIM spillover XML, and two Application Insights KQL gates—"
+            "plus fifty-two pull-request checklists and four companion open-source harnesses."
+        ),
+    },
+    {
+        "id": "09-factory-delivery-autonomy",
+        "chapter": "09 · 5-Stage Factory, 3-Wk Scope & Autonomous Loop",
+        "shortLabel": "09 · Factory & Auto-Loop",
+        "kicker": "GOVERNED OPERATING MODEL, 3-WEEK SPRINT & 24/7 DUAL-AGENT LOOP",
+        "title": "5-Stage Factory, 3-Week Delivery & Continuous Self-Improvement",
+        "narration": (
+            "Underneath sits a five-stage industrialization factory with four-tier Microsoft Learn evidence tagging, "
+            "automated CI sanitization, pre-publication IP screening, and a repeatable three-week customer delivery sprint. "
+            "Even better, a built-in twenty-four-seven dual-agent loop pairs an isolated improver agent "
+            "with an independent ARB reviewer agent to continuously harden tests, kits, and live GitHub Pages."
+        ),
+    },
+    {
+        "id": "10-call-to-action",
+        "chapter": "10 · CSA Forum Call to Action",
+        "shortLabel": "10 · Call to Action",
+        "kicker": "SCALE FULL-STACK INDUSTRIALIZED LEVERAGE",
         "title": "Solve Once. Govern Cleanly. Scale Everywhere.",
         "narration": (
-            "Launch the Decision Studio on your next Foundry cutover. "
-            "Drop the five MIT release gates straight into CI and Azure Monitor. "
-            "And bring your toughest Customer-Zero breakthrough into the factory. "
-            "Solve once. Govern cleanly. Scale everywhere."
+            "Put the full-stack Hub to work on your next Foundry architecture review: "
+            "simulate sizing and policies in the Decision Studio, "
+            "wire the five MIT gates and fifty-two checklists into CI, "
+            "and bring your toughest Customer-Zero breakthrough into the factory—"
+            "so every team can solve once, govern cleanly, and scale everywhere."
         ),
     },
 ]
@@ -165,13 +202,22 @@ CAPTION_REPLACEMENTS = [
     (r"\bPlaybook Zero-Three\b", "Playbook 03"),
     (r"\bPlaybook Zero-Four\b", "Playbook 04"),
     (r"\bseventy-one percent\b", "71%"),
-    (r"\bfifteen-RPM\b", "15-RPM"),
+    (r"\bfifteen RPM\b", "15 RPM"),
+    (r"\bfifteen chapters\b", "15 chapters"),
+    (r"\bthirty-three chapters\b", "33 chapters"),
     (r"\bsub-fifteen-second\b", "<15s"),
     (r"\bfifty-two\b", "52"),
     (r"\bthirty-minute\b", "30-minute"),
+    (r"\beight-boundary\b", "8-boundary"),
     (r"\bthree-week\b", "3-week"),
+    (r"\bthree-tier\b", "3-tier"),
+    (r"\bfour-tier\b", "4-tier"),
     (r"\bfive-tool\b", "5-tool"),
     (r"\bfive-stage\b", "5-stage"),
+    (r"\bseven-layer\b", "7-layer"),
+    (r"\bsix-position\b", "6-position"),
+    (r"\btwenty-four-seven\b", "24/7"),
+    (r"\bpay-as-you-go\b", "PAYG"),
 ]
 
 
@@ -308,24 +354,40 @@ def format_vtt_ts(seconds: float) -> str:
 
 
 def build_caption_cues(narration: str, words: list[dict], voice_start: float, voice_end: float) -> list[dict]:
-    """Align clean punctuated sentences/clauses to exact word-boundary timestamps."""
+    """Align clean punctuated broadcast phrases (~7-13 words) to exact word-boundary timestamps."""
     polished = polish_caption_text(narration)
-    raw_clauses = re.split(
-        r"(?<=[.!?;—])\s+|(?<=,)\s+(?=(?:that|an interactive|and fifty-two|and two-regime|and sub-fifteen|including|deterministic|production|two live|and print-ready|every engagement)\b)",
-        polished,
-    )
+    raw_clauses = re.split(r"(?<=[.!?;:])\s+|(?<=—)\s*|(?<=,)\s+", polished)
     clauses: list[str] = []
-    for c in raw_clauses:
-        c = c.strip()
-        if not c:
+    buf = ""
+    for part in raw_clauses:
+        part = part.strip()
+        if not part:
             continue
-        tokens = c.split()
+        candidate = f"{buf} {part}".strip() if buf else part
+        if buf and len(candidate.split()) > 13:
+            clauses.append(buf)
+            buf = part
+        else:
+            buf = candidate
+        if buf.endswith((".", "!", "?", ";", ":")) and len(buf.split()) >= 6:
+            clauses.append(buf)
+            buf = ""
+    if buf:
+        if clauses and len(buf.split()) < 4:
+            clauses[-1] = f"{clauses[-1]} {buf}"
+        else:
+            clauses.append(buf)
+
+    final_clauses: list[str] = []
+    for cl in clauses:
+        tokens = cl.split()
         if len(tokens) > 15:
             mid = len(tokens) // 2
-            clauses.append(" ".join(tokens[:mid]))
-            clauses.append(" ".join(tokens[mid:]))
+            final_clauses.append(" ".join(tokens[:mid]))
+            final_clauses.append(" ".join(tokens[mid:]))
         else:
-            clauses.append(c)
+            final_clauses.append(cl)
+    clauses = final_clauses
 
     if not words:
         dur = max(0.5, voice_end - voice_start)
@@ -425,7 +487,8 @@ def synthesize_studio_score(
 
     beat_sec = 0.48
     n_beats = int((total_samples / SAMPLE_RATE) / beat_sec)
-    for bi in range(2, n_beats - 3):
+    # Stop percussive kicks well before the closing mantra so the final line sits over a pure ambient pad
+    for bi in range(2, max(2, n_beats - 12)):
         bp = int(bi * beat_sec * SAMPLE_RATE)
         blen = min(int(0.22 * SAMPLE_RATE), total_samples - bp)
         if blen <= 0:
@@ -466,7 +529,7 @@ def synthesize_studio_score(
 
     for idx, sc in enumerate(scene_records):
         b_time = sc["start"]
-        if idx in (0, 1, 6):
+        if idx in (0, 1, len(scene_records) - 1):
             dp = int(max(0.0, b_time + 0.02) * SAMPLE_RATE)
             dlen = min(int(1.25 * SAMPLE_RATE), total_samples - dp)
             if dlen > 0:
@@ -517,7 +580,10 @@ async def main() -> None:
     voice_segments: list[tuple[int, np.ndarray]] = []
     all_cues: list[dict] = []
 
-    print(f"🎙️  Synthesizing & studio-mastering 7 voiceover stems ({VOICE_NAME}, pitch={VOICE_PITCH}, rate={VOICE_RATE})...")
+    print(
+        f"🎙️  Synthesizing & studio-mastering {len(SCENES)} voiceover stems "
+        f"({VOICE_NAME}, pitch={VOICE_PITCH}, rate={VOICE_RATE})..."
+    )
     for idx, scene in enumerate(SCENES):
         mp3_path = BUILD_DIR / f"{scene['id']}.mp3"
         wav_path = BUILD_DIR / f"{scene['id']}_studio.wav"
@@ -602,6 +668,35 @@ async def main() -> None:
         wf.writeframes(pcm16.tobytes())
 
     master_wav = BUILD_DIR / "master_audio.wav"
+    # Two-pass linear EBU R128 loudness normalization: constant gain across the entire film (zero dynamic AGC pumping)
+    pass1 = subprocess.run(
+        [
+            ffmpeg_bin,
+            "-hide_banner",
+            "-i",
+            str(pre_wav),
+            "-af",
+            "loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json",
+            "-f",
+            "null",
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    json_match = re.search(r"\{\s*\"input_i\"[\s\S]*?\}", pass1.stderr)
+    if json_match:
+        ln = json.loads(json_match.group(0))
+        af_master = (
+            f"loudnorm=I=-14:TP=-1.0:LRA=11:linear=true:"
+            f"measured_I={ln['input_i']}:measured_TP={ln['input_tp']}:"
+            f"measured_LRA={ln['input_lra']}:measured_thresh={ln['input_thresh']}:"
+            f"offset={ln['target_offset']},alimiter=limit=0.89:attack=5:release=80:level=disabled"
+        )
+    else:
+        af_master = "alimiter=limit=0.89:attack=5:release=80:level=disabled"
+
     subprocess.run(
         [
             ffmpeg_bin,
@@ -611,7 +706,7 @@ async def main() -> None:
             "-i",
             str(pre_wav),
             "-af",
-            "loudnorm=I=-14:TP=-1.0:LRA=7,volume=3.8dB,alimiter=limit=0.89",
+            af_master,
             "-ar",
             str(SAMPLE_RATE),
             "-ac",
