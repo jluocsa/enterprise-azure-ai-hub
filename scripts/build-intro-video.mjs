@@ -251,8 +251,8 @@ async function captureKeyframesAndPoster(browserBin, timeline) {
       console.log(`   ✓ ${path.basename(outFile)} @ t=${sampleT}s`)
     }
 
-    // Poster frame from Scene 02 full reveal (Hub v2.0 + all 4 KPIs visible)
-    const posterT = Number((timeline.scenes[1].start + (timeline.scenes[1].end - timeline.scenes[1].start) * 0.94).toFixed(2))
+    // Poster frame from Scene 01 full reveal (Home Hub + 45-Subpage KPIs visible)
+    const posterT = Number((timeline.scenes[0].start + (timeline.scenes[0].end - timeline.scenes[0].start) * 0.94).toFixed(2))
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: 1920,
       height: 1080,
@@ -293,7 +293,7 @@ async function renderSegment(workerIdx, startFrame, endFrame, browserBin, ffmpeg
     '-preset',
     'medium',
     '-crf',
-    '18',
+    '21',
     '-profile:v',
     'high',
     '-level:v',
@@ -437,7 +437,7 @@ async function main() {
       '-c:a',
       'aac',
       '-b:a',
-      '256k',
+      '192k',
       '-ar',
       '48000',
       '-ac',
@@ -472,7 +472,7 @@ async function main() {
       '-b:v',
       '0',
       '-crf',
-      '28',
+      '30',
       '-deadline',
       'good',
       '-cpu-used',

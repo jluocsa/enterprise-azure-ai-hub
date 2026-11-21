@@ -78,13 +78,13 @@ def main() -> None:
     f_sub = load_font(19, bold=False)
     draw.text(
         (cx + 54, py0 + 20),
-        f"Watch CSA Forum Intro Film ({dur_label})",
+        f"Watch Complete 45-Page Hub Film ({dur_label})",
         font=f_main,
         fill=(255, 255, 255, 255),
     )
     draw.text(
         (cx + 54, py0 + 60),
-        "1080p HD  ·  Studio Voiceover + Soundtrack  ·  10 Full-Stack Chapters & Captions",
+        "1080p HD  ·  Studio Voiceover + Score  ·  All 45 Subpages & Captions",
         font=f_sub,
         fill=(125, 211, 252, 255),
     )

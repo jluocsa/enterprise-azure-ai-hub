@@ -47,147 +47,185 @@ STUDIO_VOCAL_CHAIN = (
 
 SCENES = [
     {
-        "id": "01-production-cliff",
-        "chapter": "01 · The Production Cliff",
-        "shortLabel": "01 · Production Cliff",
-        "kicker": "CSA FORUM BRIEFING · THE FULL-STACK BOTTLENECK",
-        "title": "Demos Are Easy. Production Cutover Is Where Enterprise AI Stalls.",
+        "id": "01-home-and-catalog",
+        "chapter": "01 · Home Hub & 4-Playbook Catalog",
+        "shortLabel": "01 · Home & Catalog",
+        "kicker": "SITE TOUR (2 PAGES) · / AND /playbooks/",
+        "title": "Enterprise Azure AI Hub v2.0 — 45 Verified Subpages Across the Stack",
         "narration": (
-            "In enterprise AI, building a prototype is easy—surviving production cutover is where architectures stall. "
-            "Migrating stateless workloads onto GPT-5.6, GPT-6, and GPT-6.1 exposes four coupled failure modes: "
-            "silent prefix misses that trigger a two-point-five-six-times PTU spike, "
-            "HTTP 429 gateway storms and buffered SSE stalls, "
-            "cold-cache regional failover surges, "
-            "and unsandboxed agent tools with flaky CI evals."
+            "Welcome to the complete forty-five-page tour of the Enterprise Azure AI Solution Industrialization Hub, version two-point-zero. "
+            "On the Home Overview and the unified Architecture Catalog at slash-playbooks, "
+            "an interactive four-layer reference stack, live request-path topology, and instant keyword filters "
+            "connect every playbook, calculator, white paper, and release gate preventing production cutover failures "
+            "across GPT-5.6, GPT-6, and GPT-6.1."
         ),
     },
     {
-        "id": "02-hub-overview",
-        "chapter": "02 · Solution Industrialization Hub v2.0",
-        "shortLabel": "02 · Full-Stack Hub",
-        "kicker": "MICROSOFT FOUNDRY & AZURE AI · SOLUTION INDUSTRIALIZATION HUB",
-        "title": "Enterprise Azure AI Solution Industrialization Hub",
+        "id": "02-operating-model",
+        "chapter": "02 · Industrialization Operating Model (3 Subpages)",
+        "shortLabel": "02 · Operating Model",
+        "kicker": "OPERATING MODEL (3 SUBPAGES) · /operating-model/01–03",
+        "title": "5-Stage Factory, 4-Tier Evidence Discipline & 3-Week Delivery Scope",
         "narration": (
-            "Welcome to the Enterprise Azure AI Solution Industrialization Hub, version two-point-zero. "
-            "Built for Cloud Solution Architects and platform teams, this governed workbench unites "
-            "four live full-stack playbooks across thirty-three chapters, "
-            "a regulated compliance profile, a five-tool interactive Decision Studio, "
-            "two printable white papers, five MIT release kits, and fifty-two cutover controls."
+            "The Operating Model section spans three subpages. "
+            "Subpage Zero-One defines the five-stage factory—moving Customer-Zero telemetry through automated sanitization, "
+            "peer ARB review, and tri-path disposition across patent hold, Product Group PRs, or field playbooks. "
+            "Subpage Zero-Two enforces four-tier evidence tags—Microsoft Learn verified, Architecture pattern, "
+            "Agreed gate SLO, and Empirical probe—backed by CODEOWNERS and outcome metrics. "
+            "And Subpage Zero-Three provides a six-dimension thirty-minute intake scorecard, "
+            "a phased three-week readiness sprint, and four workstream ownership boundaries."
         ),
     },
     {
-        "id": "03-playbook-01-caching-ptu",
-        "chapter": "03 · Playbook 01 & Regulated Profile",
-        "shortLabel": "03 · PB01 Caching & PTU",
-        "kicker": "PLAYBOOK 01 · 15 CHAPTERS + REGULATED ETHICAL-WALL PROFILE",
-        "title": "Prompt Caching, Prefix Taxonomy & Two-Regime PTU Economics",
+        "id": "03-pb01-start-qualify",
+        "chapter": "03 · Playbook 01: Start & Qualify (Ch 01–06)",
+        "shortLabel": "03 · PB01 Ch 01–06",
+        "kicker": "PLAYBOOK 01 · START & QUALIFY (6 SUBPAGES · CH 01–06)",
+        "title": "Hydration Tax, KV-Tensor Rules, Two-Regime PTU Math & Break-Even",
         "narration": (
-            "Playbook Zero-One and its Regulated Multi-Engagement Profile govern context assembly and PTU economics across fifteen chapters. "
-            "Enforce the six-position Scope-by-Volatility prefix stack, shard hot cache keys above fifteen RPM, "
-            "and size capacity with two-regime math—contrasting GPT-5.6 zero-weight cached reads "
-            "against GPT-6 and 6.1 normalized read-write weights. "
-            "Paired with Posture A ethical walls and workpaper lineage, "
-            "you eliminate capacity spikes and save seventy-one percent on seasonal filing cliffs."
+            "Playbook Zero-One opens with six Start and Qualify chapters. "
+            "Chapter One frames core migration questions preventing a two-point-five-six-times PTU spike. "
+            "Chapter Two contrasts stateful CLIs with Model Two stateless backends that re-send twelve thousand tokens up to eight times per turn. "
+            "Chapter Three details exact one-thousand-twenty-four-token wire matching from response-format, all-turns reasoning defaults, and write billing. "
+            "Chapter Four contrasts GPT-5.6 zero-weight cached PTU reads against GPT-6 and 6.1 normalized weights. "
+            "Chapter Five ranks workflow nodes by RPM times tokens so top nodes capture eighty-five percent of savings. "
+            "And Chapter Six proves even a one-to-one read-write ratio cuts prefix cost thirty-five percent, reaching eighty-four percent at ten-to-one."
         ),
     },
     {
-        "id": "04-playbook-02-apim-gateway",
-        "chapter": "04 · Playbook 02: APIM AI Gateway",
-        "shortLabel": "04 · PB02 APIM Gateway",
-        "kicker": "PLAYBOOK 02 · 6 CHAPTERS · MULTI-BACKEND GATEWAY & FINOPS",
-        "title": "Multi-Backend Microsoft Foundry APIM AI Gateway & Token Governance",
+        "id": "04-pb01-design",
+        "chapter": "04 · Playbook 01: Design Architecture (Ch 07–10)",
+        "shortLabel": "04 · PB01 Ch 07–10",
+        "kicker": "PLAYBOOK 01 · DESIGN (4 SUBPAGES · CH 07–10)",
+        "title": "Pos 1–6 Prefix Taxonomy, Anti-Patterns, Key Sharding & Spillover",
         "narration": (
-            "Playbook Zero-Two centralizes traffic behind a Multi-Backend Microsoft Foundry APIM AI Gateway. "
-            "It enforces keyless Managed Identity RBAC, trips Retry-After circuit breakers "
-            "from primary PTU-M to Standard pay-as-you-go, "
-            "snapshots and restores request bodies around GPT-5.6 breakpoint stripping, "
-            "streams unbuffered Server-Sent Events, "
-            "and extracts out-of-band cost-center headers into OpenTelemetry FinOps metrics."
+            "Four Design subpages govern prompt construction and wire routing. "
+            "Chapter Seven enforces the six-position Scope-by-Volatility pipeline: static system rules, canonically sorted tools, "
+            "and methodology rubrics in Positions One through Three, workspace cards at Position Four, "
+            "append-only history at Position Five, and live RAG chunks last at Position Six. "
+            "Chapter Eight refactors six prefix-breaking middleware anti-patterns, including early timestamps and unsorted JSON schemas. "
+            "Chapter Nine specifies deterministic prompt-cache-key sharding at ceiling RPM divided by twelve above fifteen RPM. "
+            "And Chapter Ten wires SKU-aware APIM spillover from PTU-M onto Standard pay-as-you-go."
         ),
     },
     {
-        "id": "05-playbook-03-multi-region-bcp",
-        "chapter": "05 · Playbook 03: Multi-Region BCP",
-        "shortLabel": "05 · PB03 Regional BCP",
-        "kicker": "PLAYBOOK 03 · 6 CHAPTERS · RESIDENCY & STAMP CONTINUITY",
-        "title": "Multi-Region Foundry BCP, Data Residency & Cold-Cache Failover",
+        "id": "05-pb01-validate-govern",
+        "chapter": "05 · Playbook 01: Validate, Govern & Sources (Ch 11–15)",
+        "shortLabel": "05 · PB01 Ch 11–15",
+        "kicker": "PLAYBOOK 01 · VALIDATE, GOVERN & SOURCES (5 SUBPAGES · CH 11–15)",
+        "title": "7-Layer Pipeline, PCR Linter, Privacy OTel, C1–C15 & Official Sources",
         "narration": (
-            "Playbook Zero-Three engineers continuity at the full AI Stamp level. "
-            "It aligns Global, Data Zone, and Regional sovereignty across primary and disaster-recovery legs, "
-            "sizes secondary pay-as-you-go buffers to absorb the two-point-five-six-times cold-cache failover surge "
-            "without doubling idle PTUs, "
-            "and synchronizes Cosmos DB state and dual Azure AI Search stamps "
-            "for sub-fifteen-second Game-Day failover."
+            "Chapters Eleven through Fifteen lock in standing verification. "
+            "Chapter Eleven embeds a seven-step pre-cutover validation protocol across a seven-layer quality pipeline. "
+            "Chapter Twelve pairs the PCR Zero-Zero-One through Zero-Zero-Six static AST scanner with a two-pass DeepEval cache-hit test. "
+            "Chapter Thirteen emits privacy-safe metadata-only OpenTelemetry spans feeding the two-regime Deploy-Peak-Norm-TPM KQL gate. "
+            "Chapter Fourteen establishes the fifteen-point C1-to-C15 release standard. "
+            "And Chapter Fifteen maps every platform claim to official Microsoft Learn and pricing citations R1 through R6."
         ),
     },
     {
-        "id": "06-playbook-04-agentic-rag-evals",
-        "chapter": "06 · Playbook 04: Sandboxed Agentic RAG",
-        "shortLabel": "06 · PB04 Agentic RAG",
-        "kicker": "PLAYBOOK 04 · 6 CHAPTERS · MICROVM SANDBOXES & 7-LAYER EVALS",
-        "title": "3-Tier Sandboxed Agentic Harness, Foundry IQ & Deterministic Evals",
+        "id": "06-regulated-profile",
+        "chapter": "06 · Regulated Multi-Engagement Workload Profile",
+        "shortLabel": "06 · Regulated Profile",
+        "kicker": "DEDICATED WORKLOAD PROFILE SUBPAGE · ETHICAL WALLS & FILING CLIFFS",
+        "title": "Assurance, Tax, Legal & Financial Compliance Platform Architecture",
         "narration": (
-            "Playbook Zero-Four industrializes multi-step agents across a three-tier sandboxed runtime. "
-            "A stateless SDK-free orchestrator proxies typed AG-UI streams "
-            "from one microVM container per session in Azure Container Apps Dynamic Sessions, "
-            "converts binary documents into faithful Markdown via Content Understanding, "
-            "retrieves ACL-trimmed citations through Foundry IQ MCP, "
-            "and blocks regressions with seven-layer deterministic evaluations."
+            "A dedicated Regulated Multi-Engagement Profile subpage addresses audit, tax, legal, and financial platforms. "
+            "Section One proves exact-prefix subscription isolation and defines Posture A—caching zero-client practice methodology only—"
+            "versus Posture B matter-scoped breakpoints. "
+            "Section Two prevents cache-key cardinality collapse by moving cost-center billing into out-of-band HTTP headers. "
+            "Section Three pairs a one-hundred-ten-PTU baseline with pay-as-you-go spillover to save seventy-one percent across four-times filing cliffs. "
+            "And Section Four enforces C-WP1 through C-WP4 workpaper snapshot and schema-hash reproducibility."
         ),
     },
     {
-        "id": "07-decision-studio",
-        "chapter": "07 · 5-Tool Architecture Decision Studio",
-        "shortLabel": "07 · Decision Studio",
-        "kicker": "BROWSER-NATIVE WORKBENCH · 5 LIVE CALCULATORS · ZERO TELEMETRY",
-        "title": "Interactive Sizing, APIM XML, BCP Surge, Sandbox & Triage Studio",
+        "id": "07-playbook-02-apim",
+        "chapter": "07 · Playbook 02: APIM AI Gateway (All 6 Subpages)",
+        "shortLabel": "07 · PB02 APIM (Ch 01–06)",
+        "kicker": "PLAYBOOK 02 · MULTI-BACKEND APIM AI GATEWAY (6 SUBPAGES · CH 01–06)",
+        "title": "Topologies, SSE Scale, Body-Safe Breakers, FinOps & G1–G12 Chaos Gates",
         "narration": (
-            "In the browser-native Architecture Decision Studio, five client-side calculators "
-            "model every design decision live with zero external telemetry: "
-            "the two-regime PTU and spillover TCO simulator, "
-            "the SKU-aware APIM XML policy builder, "
-            "the multi-region cold-cache surge advisor, "
-            "the ACA sandbox and contract builder, "
-            "and the thirty-minute eight-boundary intake triage."
+            "Playbook Zero-Two spans six gateway subpages. "
+            "Chapter One maps single-pool, priority spillover, and multi-region gateway topologies. "
+            "Chapter Two sizes APIM v2 scale units for four-hundred-thousand-token payloads, three-minute reasoning timeouts, and unbuffered SSE streaming. "
+            "Chapter Three implements declarative backend pools with Retry-After circuit breakers, Managed Identity RBAC, "
+            "and body-safe per-attempt routing that snapshots and restores raw JSON around GPT-5.6 breakpoint stripping. "
+            "Chapter Four wires out-of-band token-metric FinOps chargeback and noisy-neighbor TPM ceilings, "
+            "while Chapters Five and Six deliver offline XML preflight, four-step 429 chaos testing, G1-to-G12 gates, and Learn sources."
         ),
     },
     {
-        "id": "08-papers-kits-checklists",
-        "chapter": "08 · White Papers, 5 MIT Kits & 52 Checklists",
-        "shortLabel": "08 · Papers & MIT Kits",
-        "kicker": "PRINTABLE BLUEPRINTS, ZERO-DEP MIT CODE & COMPANION REPOS",
-        "title": "Executive White Papers, 5 MIT Engineering Kits & 52 PR Gates",
+        "id": "08-playbook-03-bcp",
+        "chapter": "08 · Playbook 03: Multi-Region BCP (All 6 Subpages)",
+        "shortLabel": "08 · PB03 BCP (Ch 01–06)",
+        "kicker": "PLAYBOOK 03 · MULTI-REGION FOUNDRY BCP (6 SUBPAGES · CH 01–06)",
+        "title": "Residency Symmetry, Cold-Cache Surge Math, Stateful Stamps & Game-Days",
         "narration": (
-            "Every track ships drop-in deliverables rather than static slideware: "
-            "two print-ready executive white papers, five zero-dependency MIT kits—"
-            "including the PCR Python AST linter, agent trace and cross-region snapshot parity CLIs, "
-            "APIM spillover XML, and two Application Insights KQL gates—"
-            "plus fifty-two pull-request checklists and four companion open-source harnesses."
+            "Playbook Zero-Three covers continuity across six subpages. "
+            "Chapter One diagnoses why endpoint-only failover breaks stateful AI agents. "
+            "Chapter Two establishes the Global, Data Zone, and Regional matrix and the Golden Rule of Residency Symmetry. "
+            "Chapter Three quantifies the two-point-five-six-times fifteen-minute cold-cache cutover surge, "
+            "showing how secondary pay-as-you-go buffers achieve continuity without doubling year-round PTUs. "
+            "Chapter Four co-fails over RA-GZRS ADLS storage, dual Azure AI Search stamps, and multi-region Cosmos DB threads. "
+            "And Chapters Five and Six codify quarterly thirty-minute Game-Day drills, sub-fifteen-second RTO, B1-to-B12 gates, and official sources."
         ),
     },
     {
-        "id": "09-factory-delivery-autonomy",
-        "chapter": "09 · 5-Stage Factory, 3-Wk Scope & Autonomous Loop",
-        "shortLabel": "09 · Factory & Auto-Loop",
-        "kicker": "GOVERNED OPERATING MODEL, 3-WEEK SPRINT & 24/7 DUAL-AGENT LOOP",
-        "title": "5-Stage Factory, 3-Week Delivery & Continuous Self-Improvement",
+        "id": "09-playbook-04-agentic",
+        "chapter": "09 · Playbook 04: Sandboxed Agentic RAG (All 6 Subpages)",
+        "shortLabel": "09 · PB04 Agents (Ch 01–06)",
+        "kicker": "PLAYBOOK 04 · SANDBOXED AGENTIC HARNESS & EVALS (6 SUBPAGES · CH 01–06)",
+        "title": "3-Tier ACA MicroVMs, Foundry IQ MCP, Contract Evals & gen_ai.* OTel",
         "narration": (
-            "Underneath sits a five-stage industrialization factory with four-tier Microsoft Learn evidence tagging, "
-            "automated CI sanitization, pre-publication IP screening, and a repeatable three-week customer delivery sprint. "
-            "Even better, a built-in twenty-four-seven dual-agent loop pairs an isolated improver agent "
-            "with an independent ARB reviewer agent to continuously harden tests, kits, and live GitHub Pages."
+            "Playbook Zero-Four industrializes enterprise agents across six subpages. "
+            "Chapter One bridges four gaps from single-process demos to production. "
+            "Chapter Two enforces five three-tier invariants: typed AG-UI SSE, an SDK-free orchestrator, "
+            "one Git-SHA microVM per session in ACA Dynamic Sessions, and fail-closed Content Understanding Markdown ingestion. "
+            "Chapter Three connects Foundry IQ agentic retrieval via MCP with Entra ACL trimming and strict Position-Six placement. "
+            "Chapter Four enforces the Golden Separation Rule—blocking merges on deterministic ARG contracts while calibrated LLM judges advise. "
+            "And Chapters Five and Six propagate W3C traceparent across metadata-only gen-AI spans, A1-to-A12 gates, and Learn sources."
         ),
     },
     {
-        "id": "10-call-to-action",
-        "chapter": "10 · CSA Forum Call to Action",
-        "shortLabel": "10 · Call to Action",
-        "kicker": "SCALE FULL-STACK INDUSTRIALIZED LEVERAGE",
-        "title": "Solve Once. Govern Cleanly. Scale Everywhere.",
+        "id": "10-decision-studio",
+        "chapter": "10 · Interactive Decision Studio (/studio/ · 5 Tools)",
+        "shortLabel": "10 · Decision Studio",
+        "kicker": "DECISION STUDIO SUBPAGE (/studio/) · 5 DEEP-LINKED WORKBENCHES",
+        "title": "Browser-Local PTU, APIM XML, BCP Surge, MicroVM & Triage Calculators",
         "narration": (
-            "Put the full-stack Hub to work on your next Foundry architecture review: "
-            "simulate sizing and policies in the Decision Studio, "
-            "wire the five MIT gates and fifty-two checklists into CI, "
+            "At slash-studio, the Architecture Decision Studio hosts five deep-linked, client-side workbenches with zero external telemetry: "
+            "hash-ptu for two-regime PTU, shard, and seasonal TCO simulation with fail-closed validation; "
+            "hash-apim for generating body-safe gateway policy XML; "
+            "hash-bcp for modeling residency tiers and cold-cache surge envelopes; "
+            "hash-agent-eval for sizing microVM pools and strict acceptance contracts; "
+            "and hash-triage for scoring eight boundaries into a copy-ready three-week scope."
+        ),
+    },
+    {
+        "id": "11-papers-kits-checklists",
+        "chapter": "11 · Papers, 5 MIT Kits & 52 Checklists (All 5 Subpages)",
+        "shortLabel": "11 · Papers & 5 MIT Kits",
+        "kicker": "PAPERS & KITS SECTION (5 SUBPAGES) · /papers/*",
+        "title": "2 Printable White Papers, 5 Zero-Dep MIT Kits, 52 Checklists & 4 OSS Repos",
+        "narration": (
+            "The Papers and Kits section spans five subpages. "
+            "The Overview index links four companion open-source harnesses, including microsoft-slash-waza and sentinel-evals. "
+            "Two print-ready white-paper subpages format the Full-Stack Platform Blueprint and the GPT-5.6 Caching Paper for one-click PDF export. "
+            "The Engineering Kits subpage renders and downloads all five MIT tools—pcr-lint, agent-release-gate, "
+            "bcp-snapshot-gate with duplicate-key and fresh-2xx checks, APIM spillover XML, and two KQL workbooks. "
+            "And the Readiness Checklists subpage supplies copy-paste PR templates for all fifty-two C, G, B, and A controls."
+        ),
+    },
+    {
+        "id": "12-autonomy-and-cta",
+        "chapter": "12 · 24/7 Dual-Agent Engine & Call to Action",
+        "shortLabel": "12 · 24/7 Loop & CTA",
+        "kicker": "CONTINUOUS SELF-IMPROVEMENT ENGINE & CSA FORUM CALL TO ACTION",
+        "title": "Self-Improving Full-Stack Architecture — Solve Once, Govern Cleanly, Scale Everywhere",
+        "narration": (
+            "Keeping all forty-five pages continuously hardened is a built-in twenty-four-seven dual-agent loop—pairing "
+            "an isolated worktree improver agent with an independent ARB reviewer agent and six deterministic verification suites. "
+            "Explore every subpage on the live Hub, run the Decision Studio and MIT release kits on your next Foundry cutover, "
             "and bring your toughest Customer-Zero breakthrough into the factory—"
             "so every team can solve once, govern cleanly, and scale everywhere."
         ),
@@ -195,29 +233,68 @@ SCENES = [
 ]
 
 CAPTION_REPLACEMENTS = [
+    (r"\bforty-five-page\b", "45-page"),
+    (r"\bforty-five pages\b", "45 pages"),
     (r"\btwo-point-five-six-times\b", "2.56×"),
     (r"\btwo-point-zero\b", "2.0"),
+    (r"\bslash-playbooks\b", "/playbooks/"),
+    (r"\bslash-studio\b", "/studio/"),
+    (r"\bhash-ptu\b", "#ptu"),
+    (r"\bhash-apim\b", "#apim"),
+    (r"\bhash-bcp\b", "#bcp"),
+    (r"\bhash-agent-eval\b", "#agent-eval"),
+    (r"\bhash-triage\b", "#triage"),
+    (r"\bmicrosoft-slash-waza\b", "microsoft/waza"),
+    (r"\bpcr-lint\b", "pcr_lint.py"),
+    (r"\bagent-release-gate\b", "agent_release_gate.py"),
+    (r"\bbcp-snapshot-gate\b", "bcp_snapshot_gate.py"),
+    (r"\bDeploy-Peak-Norm-TPM\b", "DeployPeakNormTPM"),
+    (r"\bprompt-cache-key\b", "prompt_cache_key"),
+    (r"\bresponse-format\b", "response_format"),
+    (r"\bPCR Zero-Zero-One through Zero-Zero-Six\b", "PCR001–PCR006"),
+    (r"\bSubpage Zero-One\b", "Subpage 01"),
+    (r"\bSubpage Zero-Two\b", "Subpage 02"),
+    (r"\bSubpage Zero-Three\b", "Subpage 03"),
     (r"\bPlaybook Zero-One\b", "Playbook 01"),
     (r"\bPlaybook Zero-Two\b", "Playbook 02"),
     (r"\bPlaybook Zero-Three\b", "Playbook 03"),
     (r"\bPlaybook Zero-Four\b", "Playbook 04"),
+    (r"\bModel Two\b", "Model 2"),
+    (r"\bone-thousand-twenty-four-token\b", "1,024-token"),
+    (r"\bfour-hundred-thousand-token\b", "400K-token"),
+    (r"\bone-hundred-ten-PTU\b", "110-PTU"),
+    (r"\btwelve thousand\b", "12,000"),
     (r"\bseventy-one percent\b", "71%"),
+    (r"\beighty-five percent\b", "85%"),
+    (r"\beighty-four percent\b", "84%"),
+    (r"\bthirty-five percent\b", "35%"),
+    (r"\bone-to-one\b", "1:1"),
+    (r"\bten-to-one\b", "10:1"),
+    (r"\bfour-times\b", "4×"),
     (r"\bfifteen RPM\b", "15 RPM"),
-    (r"\bfifteen chapters\b", "15 chapters"),
-    (r"\bthirty-three chapters\b", "33 chapters"),
+    (r"\bfifteen-minute\b", "15-minute"),
     (r"\bsub-fifteen-second\b", "<15s"),
     (r"\bfifty-two\b", "52"),
     (r"\bthirty-minute\b", "30-minute"),
     (r"\beight-boundary\b", "8-boundary"),
+    (r"\bsix-dimension\b", "6-dimension"),
     (r"\bthree-week\b", "3-week"),
+    (r"\bthree-minute\b", "3-minute"),
     (r"\bthree-tier\b", "3-tier"),
     (r"\bfour-tier\b", "4-tier"),
+    (r"\bfour-layer\b", "4-layer"),
+    (r"\bfour-step\b", "4-step"),
     (r"\bfive-tool\b", "5-tool"),
     (r"\bfive-stage\b", "5-stage"),
     (r"\bseven-layer\b", "7-layer"),
+    (r"\bseven-step\b", "7-step"),
     (r"\bsix-position\b", "6-position"),
+    (r"\bfifteen-point\b", "15-point"),
+    (r"\btwo-pass\b", "2-pass"),
     (r"\btwenty-four-seven\b", "24/7"),
     (r"\bpay-as-you-go\b", "PAYG"),
+    (r"\bPosition-Six\b", "Position 6"),
+    (r"\bgen-AI\b", "gen_ai.*"),
 ]
 
 
@@ -511,12 +588,20 @@ def synthesize_studio_score(
     left /= music_peak
     right /= music_peak
 
+    def fast_moving_avg(arr: np.ndarray, win: int) -> np.ndarray:
+        if win <= 1:
+            return arr
+        csum = np.cumsum(np.insert(arr.astype(np.float64), 0, 0.0))
+        pad_l = win // 2
+        pad_r = win - 1 - pad_l
+        idx_hi = np.minimum(len(arr), np.arange(len(arr)) + pad_r + 1)
+        idx_lo = np.maximum(0, np.arange(len(arr)) - pad_l)
+        return ((csum[idx_hi] - csum[idx_lo]) / np.maximum(1, idx_hi - idx_lo)).astype(np.float32)
+
     voice_mono_env = np.max(np.abs(voice_stereo), axis=1)
-    win1 = int(0.12 * SAMPLE_RATE)
-    smooth1 = np.convolve(voice_mono_env, np.ones(win1, dtype=np.float32) / win1, mode="same")
+    smooth1 = fast_moving_avg(voice_mono_env, int(0.12 * SAMPLE_RATE))
     speaking = np.clip(smooth1 / 0.025, 0.0, 1.0)
-    win2 = int(0.28 * SAMPLE_RATE)
-    speaking = np.convolve(speaking, np.ones(win2, dtype=np.float32) / win2, mode="same")
+    speaking = fast_moving_avg(speaking, int(0.28 * SAMPLE_RATE))
 
     bed_gain = 0.095 - 0.070 * speaking
     in_n = min(total_samples, int(0.65 * SAMPLE_RATE))
