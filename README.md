@@ -6,6 +6,18 @@ A governed, multi-author architecture hub and interactive engineering workbench 
 
 Built with [VitePress](https://vitepress.dev/), styled with an executive Fluent 2 / Azure Architecture Center design system (adaptive Light & Dark mode), and enforced by an automated confidentiality sanitization gate (`scripts/check-sanitized.mjs`), zero-dependency CLI verification kits (`docs/public/kits/`), and print-ready Markdown white papers (`@media print`).
 
+## CSA Forum Introduction Film (2:53 · 1080p HD with Studio Voiceover)
+
+<video controls playsinline preload="metadata" poster="./docs/public/video/enterprise-azure-ai-hub-csa-forum-intro-poster.png" width="100%">
+  <source src="./docs/public/video/enterprise-azure-ai-hub-csa-forum-intro.mp4" type='video/mp4; codecs="avc1.64002a, mp4a.40.2"' />
+  <source src="./docs/public/video/enterprise-azure-ai-hub-csa-forum-intro.webm" type='video/webm; codecs="vp9, opus"' />
+  <a href="https://jluocsa.github.io/enterprise-azure-ai-hub/#csa-forum-video" title="Watch the 2:53 CSA Forum Studio Introduction Film with Voiceover, Chapters & Captions">
+    <img src="./docs/public/video/readme-video-card.png" alt="Watch the 2:53 CSA Forum Studio Introduction Film (1080p HD with Voiceover, Score & Synchronized Captions)" width="100%" />
+  </a>
+</video>
+
+> **▶ Watch Online with Sound:** [**Open Interactive Hub Cinema Player (7 Chapters + Captions)**](https://jluocsa.github.io/enterprise-azure-ai-hub/#csa-forum-video) &middot; [**Stream / Download 1080p MP4 (PowerPoint & Teams)**](https://jluocsa.github.io/enterprise-azure-ai-hub/video/enterprise-azure-ai-hub-csa-forum-intro.mp4) &middot; [**Stream 1080p WebM (VS Code & Browsers)**](https://jluocsa.github.io/enterprise-azure-ai-hub/video/enterprise-azure-ai-hub-csa-forum-intro.webm)
+
 ---
 
 ## Comprehensive Full-Stack Coverage
@@ -41,10 +53,12 @@ enterprise-azure-ai-hub/
 │  ├─ papers/                            # Printable executive white papers, kits & PR checklists
 │  └─ public/
 │     ├─ favicon.svg / og-card.png       # Custom brand identity & OpenGraph social card
-│     └─ kits/                           # 5 runnable Python, APIM XML & KQL release-gate kits
+│     ├─ kits/                           # 5 runnable Python, APIM XML & KQL release-gate kits
+│     └─ video/                          # 1080p CSA Forum studio intro MP4, WebM, poster PNG & WebVTT
 ├─ scripts/
 │  ├─ auto-improve-daemon.mjs            # Continuous self-improvement dual-agent engine & memory ledger
 │  ├─ auto-improve-service.mjs           # Cross-platform background service & OS watchdog (Win/macOS/Linux)
+│  ├─ build-intro-video.mjs              # Deterministic 1080p studio video, neural VO, ambient score & VTT builder
 │  ├─ check-links.py                     # Deterministic HTML route, download & anchor integrity gate
 │  ├─ check-sanitized.mjs                # Automated confidentiality, GUID, email & lockfile gate
 │  ├─ deploy-gh-pages.mjs                # Runs verify suite & publishes static build to gh-pages
@@ -62,6 +76,7 @@ enterprise-azure-ai-hub/
 ```bash
 npm install
 npm run verify            # Gate 1 (Sanitization) + Gate 2 (Kit CLI tests) + Gate 3 (VitePress build + Links)
+npm run video:build       # Re-synthesize neural voiceover, ambient score, VTT, 1080p MP4 & WebM
 npm run check:daemon      # Self-tests for Python resolver, daemon guards, track balancer & OS watchdog
 npm run docs:dev          # Launch local VitePress dev server with hot reload
 npm run deploy:pages      # Run full verification and publish static site to origin/gh-pages

@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { withBase } from 'vitepress'
+import IntroVideoShowcase from './IntroVideoShowcase.vue'
 
 const copiedPitch = ref(false)
+const introVideoRef = ref<InstanceType<typeof IntroVideoShowcase> | null>(null)
 const selectedLayerIdx = ref(0)
 const activeFilter = ref<'all' | 'playbooks' | 'studio' | 'kits'>('all')
 const searchQuery = ref('')
+
+function watchIntroVideo() {
+  introVideoRef.value?.playFromStart()
+}
 
 function printOverview() {
   if (typeof window !== 'undefined') window.print()
@@ -319,7 +325,13 @@ const deliveryWeeks = [
           </p>
 
           <div class="hh-actions no-print">
-            <a class="ms-btn ms-btn-primary" :href="withBase('/playbooks/')">
+            <button type="button" class="ms-btn ms-btn-primary" @click="watchIntroVideo">
+              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+                <path fill="currentColor" d="M4.5 2.75a.75.75 0 0 1 1.14-.64l8 5a.75.75 0 0 1 0 1.28l-8 5A.75.75 0 0 1 4.5 12.75v-10Z" />
+              </svg>
+              <span>Watch 2.9-Min Forum Intro</span>
+            </button>
+            <a class="ms-btn ms-btn-secondary" :href="withBase('/playbooks/')">
               <span>Explore 4 Live Playbooks</span>
               <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
                 <path
@@ -413,6 +425,9 @@ const deliveryWeeks = [
         </div>
       </div>
     </section>
+
+    <!-- CSA Forum Studio Introduction Film -->
+    <IntroVideoShowcase ref="introVideoRef" />
 
     <!-- Section 01: Interactive Full-Stack Catalog -->
     <section id="catalog" class="hh-section">

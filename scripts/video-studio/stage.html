@@ -1,0 +1,1987 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1920, height=1080, initial-scale=1" />
+<title>Enterprise Azure AI Hub v2.0 — CSA Forum Studio Stage</title>
+<style>
+  :root {
+    --font-sans: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, sans-serif;
+    --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
+    --az-blue: #0078d4;
+    --az-sky: #38bdf8;
+    --az-cyan: #00b7c3;
+    --az-teal: #14b8a6;
+    --az-emerald: #10b981;
+    --az-violet: #8b5cf6;
+    --az-amber: #f59e0b;
+    --az-red: #ef4444;
+    --bg-deep: #050b14;
+    --bg-card: rgba(13, 25, 43, 0.84);
+    --bg-card-strong: rgba(16, 31, 54, 0.93);
+    --border-subtle: rgba(148, 163, 184, 0.18);
+    --border-glow: rgba(56, 189, 248, 0.42);
+    --txt-primary: #f8fafc;
+    --txt-secondary: #cbd5e1;
+    --txt-muted: #94a3b8;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: var(--bg-deep);
+    color: var(--txt-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+    user-select: none;
+  }
+
+  #stage {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 18%, #0c213d 0%, #06101f 58%, #040913 100%);
+  }
+
+  #bg-canvas {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    z-index: 0;
+  }
+
+  .blueprint-grid {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background-image:
+      linear-gradient(to right, rgba(56, 189, 248, 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(56, 189, 248, 0.055) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 88% 78% at 50% 42%, #000 38%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 88% 78% at 50% 42%, #000 38%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Top Broadcast Chrome */
+  .top-ribbon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    z-index: 30;
+    background: linear-gradient(90deg, #0078d4 0%, #00b7c3 50%, #8b5cf6 100%);
+  }
+
+  .top-bar {
+    position: absolute;
+    top: 24px;
+    left: 72px;
+    right: 72px;
+    height: 48px;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #0078d4 0%, #00b7c3 65%, #6d28d9 100%);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 0 20px rgba(0, 183, 195, 0.35);
+  }
+
+  .brand-text {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: #e2e8f0;
+  }
+
+  .brand-text span {
+    color: #38bdf8;
+  }
+
+  .top-right-pills {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .chapter-pill {
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: rgba(15, 29, 50, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+  }
+
+  .forum-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(20, 184, 166, 0.14);
+    border: 1px solid rgba(20, 184, 166, 0.38);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: #5eead4;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+  }
+
+  /* Bottom Scrubber & Metadata */
+  .bottom-bar {
+    position: absolute;
+    left: 72px;
+    right: 72px;
+    bottom: 22px;
+    z-index: 25;
+  }
+
+  .bottom-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #94a3b8;
+    letter-spacing: 0.02em;
+  }
+
+  .bottom-meta strong {
+    color: #e2e8f0;
+    font-weight: 600;
+  }
+
+  .bottom-url {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #38bdf8;
+    font-weight: 600;
+  }
+
+  .seg-bar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    height: 5px;
+  }
+
+  .seg-track {
+    background: rgba(148, 163, 184, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .seg-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0078d4, #38bdf8, #14b8a6);
+  }
+
+  /* Scene Containers */
+  .scene {
+    position: absolute;
+    top: 90px;
+    left: 72px;
+    right: 72px;
+    bottom: 70px;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: rgba(0, 120, 212, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.34);
+    color: #7dd3fc;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .h-hero {
+    font-size: 60px;
+    font-weight: 750;
+    line-height: 1.09;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+  }
+
+  .h-section {
+    font-size: 45px;
+    font-weight: 720;
+    line-height: 1.13;
+    letter-spacing: -0.025em;
+    color: #ffffff;
+  }
+
+  .grad-text {
+    background: linear-gradient(90deg, #38bdf8 0%, #2dd4bf 55%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .sub-lead {
+    font-size: 21px;
+    line-height: 1.48;
+    color: var(--txt-secondary);
+    max-width: 1320px;
+    margin-top: 12px;
+  }
+
+  .glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(16px);
+  }
+
+  /* ==================== SCENE 01: PRODUCTION CLIFF ==================== */
+  .s1-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+    margin-top: 32px;
+  }
+
+  .s1-card {
+    padding: 24px 24px 22px;
+    border-top: 4px solid #f59e0b;
+    position: relative;
+  }
+
+  .s1-card.danger {
+    border-top-color: #ef4444;
+  }
+
+  .s1-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: rgba(245, 158, 11, 0.16);
+    color: #fcd34d;
+    margin-bottom: 14px;
+  }
+
+  .s1-card.danger .s1-tag {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+  }
+
+  .s1-metric {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .s1-card.danger .s1-metric {
+    color: #f87171;
+  }
+
+  .s1-title {
+    font-size: 19px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 8px;
+  }
+
+  .s1-desc {
+    font-size: 15px;
+    line-height: 1.45;
+    color: #94a3b8;
+  }
+
+  .s1-silo-banner {
+    margin-top: 26px;
+    padding: 20px 28px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, rgba(127, 29, 29, 0.36) 0%, rgba(30, 41, 59, 0.82) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.42);
+    border-left: 5px solid #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .s1-silo-steps {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #fecaca;
+  }
+
+  .s1-silo-pill {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(248, 113, 113, 0.28);
+    color: #f8fafc;
+  }
+
+  .s1-silo-badge {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.22);
+    border: 1px solid rgba(248, 113, 113, 0.5);
+    color: #fca5a5;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+  }
+
+  /* ==================== SCENE 02: HUB REVEAL (POSTER) ==================== */
+  #scene-1 {
+    justify-content: flex-start;
+    padding-top: 108px;
+  }
+
+  .s2-browser {
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(15, 29, 52, 0.95) 0%, rgba(9, 19, 35, 0.95) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.36);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55), 0 0 50px rgba(0, 120, 212, 0.22);
+    overflow: hidden;
+  }
+
+  .s2-chrome {
+    height: 46px;
+    padding: 0 22px;
+    background: rgba(6, 13, 25, 0.9);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .s2-dots {
+    display: flex;
+    gap: 8px;
+  }
+
+  .s2-dots i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: block;
+  }
+
+  .s2-addr {
+    padding: 5px 22px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.72);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: #7dd3fc;
+  }
+
+  .s2-body {
+    padding: 34px 44px 36px;
+  }
+
+  .s2-trust-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .s2-chip {
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(20, 184, 166, 0.14);
+    border: 1px solid rgba(45, 212, 191, 0.34);
+    color: #5eead4;
+  }
+
+  .s2-chip.blue {
+    background: rgba(0, 120, 212, 0.18);
+    border-color: rgba(56, 189, 248, 0.36);
+    color: #bae6fd;
+  }
+
+  .s2-chip.violet {
+    background: rgba(139, 92, 246, 0.18);
+    border-color: rgba(167, 139, 250, 0.38);
+    color: #ddd6fe;
+  }
+
+  .s2-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 26px;
+  }
+
+  .s2-kpi {
+    padding: 22px 24px;
+    border-radius: 14px;
+    background: rgba(15, 28, 49, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-top: 4px solid #38bdf8;
+  }
+
+  .s2-kpi:nth-child(2) { border-top-color: #10b981; }
+  .s2-kpi:nth-child(3) { border-top-color: #f59e0b; }
+  .s2-kpi:nth-child(4) { border-top-color: #a78bfa; }
+
+  .s2-kpi-val {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #38bdf8;
+    line-height: 1.08;
+    margin-bottom: 6px;
+  }
+
+  .s2-kpi:nth-child(2) .s2-kpi-val { color: #34d399; }
+  .s2-kpi:nth-child(3) .s2-kpi-val { color: #fbbf24; }
+  .s2-kpi:nth-child(4) .s2-kpi-val { color: #c4b5fd; }
+
+  .s2-kpi-lbl {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 6px;
+  }
+
+  .s2-kpi-txt {
+    font-size: 14.5px;
+    line-height: 1.44;
+    color: #94a3b8;
+  }
+
+  /* ==================== SCENE 03: 4 LIVE PLAYBOOKS ==================== */
+  .s3-flow-strip {
+    margin-top: 22px;
+    padding: 16px 24px;
+    border-radius: 14px;
+    background: rgba(11, 23, 41, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .s3-flow-node {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(15, 31, 56, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .s3-flow-node b {
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+  }
+
+  .s3-flow-node span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+
+  .s3-flow-arr {
+    font-size: 22px;
+    font-weight: 800;
+    color: #2dd4bf;
+  }
+
+  .s3-pb-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 22px;
+  }
+
+  .s3-pb-card {
+    padding: 24px 22px 22px;
+    border-top: 4px solid #38bdf8;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 396px;
+  }
+
+  .s3-pb-card.pb2 { border-top-color: #10b981; }
+  .s3-pb-card.pb3 { border-top-color: #f59e0b; }
+  .s3-pb-card.pb4 { border-top-color: #a78bfa; }
+
+  .s3-pb-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .s3-pb-num {
+    font-size: 12.5px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #38bdf8;
+  }
+
+  .s3-pb-card.pb2 .s3-pb-num { color: #34d399; }
+  .s3-pb-card.pb3 .s3-pb-num { color: #fbbf24; }
+  .s3-pb-card.pb4 .s3-pb-num { color: #c4b5fd; }
+
+  .s3-pb-live {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(16, 185, 129, 0.36);
+    color: #6ee7b7;
+  }
+
+  .s3-pb-title {
+    font-size: 22px;
+    font-weight: 750;
+    line-height: 1.22;
+    color: #ffffff;
+    margin-bottom: 12px;
+  }
+
+  .s3-pb-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-bottom: 16px;
+  }
+
+  .s3-pb-list li {
+    font-size: 14.5px;
+    line-height: 1.42;
+    color: #cbd5e1;
+    padding-left: 16px;
+    position: relative;
+  }
+
+  .s3-pb-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #38bdf8;
+    font-weight: 800;
+  }
+
+  .s3-pb-card.pb2 .s3-pb-list li::before { color: #34d399; }
+  .s3-pb-card.pb3 .s3-pb-list li::before { color: #fbbf24; }
+  .s3-pb-card.pb4 .s3-pb-list li::before { color: #c4b5fd; }
+
+  .s3-pb-list code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #e2e8f0;
+  }
+
+  .s3-pb-foot {
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #7dd3fc;
+  }
+
+  .s3-pb-card.pb2 .s3-pb-foot { color: #6ee7b7; }
+  .s3-pb-card.pb3 .s3-pb-foot { color: #fde68a; }
+  .s3-pb-card.pb4 .s3-pb-foot { color: #ddd6fe; }
+
+  /* ==================== SCENE 04: DECISION STUDIO ==================== */
+  .s4-cols {
+    display: grid;
+    grid-template-columns: 1.04fr 0.96fr;
+    gap: 28px;
+    margin-top: 24px;
+    align-items: stretch;
+  }
+
+  .s4-panel {
+    padding: 24px 28px;
+    border-top: 4px solid #0078d4;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .s4-panel.right {
+    border-top-color: #10b981;
+  }
+
+  .s4-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .s4-panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .s4-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .s4-tool {
+    display: grid;
+    grid-template-columns: 92px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(15, 32, 58, 0.88);
+    border: 1px solid rgba(56, 189, 248, 0.24);
+  }
+
+  .s4-tcode {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: rgba(0, 120, 212, 0.22);
+    text-align: center;
+  }
+
+  .s4-tmain strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 2px;
+  }
+
+  .s4-tmain span {
+    font-size: 13.5px;
+    color: #94a3b8;
+  }
+
+  .s4-badge {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.18);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    white-space: nowrap;
+  }
+
+  .s4-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .s4-ctrl-box {
+    padding: 14px 16px;
+    border-radius: 11px;
+    background: rgba(15, 29, 50, 0.9);
+    border: 1px solid rgba(56, 189, 248, 0.24);
+  }
+
+  .s4-ctrl-box strong {
+    display: block;
+    font-size: 15px;
+    color: #7dd3fc;
+    margin-bottom: 4px;
+  }
+
+  .s4-ctrl-box span {
+    font-size: 13.5px;
+    color: #cbd5e1;
+    line-height: 1.4;
+  }
+
+  .s4-ctrl-box code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: #e2e8f0;
+  }
+
+  .s4-bars {
+    padding: 18px 20px;
+    border-radius: 12px;
+    background: rgba(7, 15, 28, 0.84);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    margin-bottom: 16px;
+  }
+
+  .s4-bar-row {
+    margin-bottom: 14px;
+  }
+
+  .s4-bar-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .s4-bar-lbl {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14.5px;
+    font-weight: 600;
+    margin-bottom: 7px;
+  }
+
+  .s4-bar-track {
+    height: 22px;
+    border-radius: 999px;
+    background: rgba(30, 41, 59, 0.85);
+    overflow: hidden;
+  }
+
+  .s4-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+  }
+
+  .s4-reg-box {
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(15, 118, 110, 0.24), rgba(15, 29, 50, 0.88));
+    border: 1px solid rgba(45, 212, 191, 0.36);
+    border-left: 4px solid #14b8a6;
+  }
+
+  .s4-reg-box strong {
+    display: block;
+    font-size: 15.5px;
+    color: #5eead4;
+    margin-bottom: 4px;
+  }
+
+  .s4-reg-box p {
+    font-size: 14px;
+    line-height: 1.42;
+    color: #e2e8f0;
+  }
+
+  /* ==================== SCENE 05: 5 EXECUTABLE MIT KITS ==================== */
+  .s5-bento {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+    margin-top: 24px;
+    height: 600px;
+  }
+
+  .s5-tile {
+    padding: 22px 26px;
+    border-top: 4px solid #38bdf8;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .s5-tile:nth-child(2) { border-top-color: #a78bfa; }
+  .s5-tile:nth-child(3) { border-top-color: #10b981; }
+  .s5-tile:nth-child(4) { border-top-color: #f59e0b; }
+
+  .s5-tile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .s5-kicker {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #38bdf8;
+  }
+
+  .s5-tile:nth-child(2) .s5-kicker { color: #c4b5fd; }
+  .s5-tile:nth-child(3) .s5-kicker { color: #6ee7b7; }
+  .s5-tile:nth-child(4) .s5-kicker { color: #fcd34d; }
+
+  .s5-pill {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.16);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.32);
+  }
+
+  .s5-title {
+    font-size: 20.5px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 10px;
+  }
+
+  .s5-title code {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    color: #7dd3fc;
+  }
+
+  .code-win {
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #040912;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.54;
+    color: #e2e8f0;
+  }
+
+  .c-kw { color: #38bdf8; }
+  .c-fn { color: #c4b5fd; }
+  .c-ok { color: #34d399; font-weight: 700; }
+  .c-warn { color: #fbbf24; }
+  .c-dim { color: #64748b; }
+
+  /* ==================== SCENE 06: 5-STAGE FACTORY & 3-WEEK SCOPE ==================== */
+  .s6-diagram-wrap {
+    margin-top: 20px;
+    padding: 22px 26px 18px;
+    border-top: 4px solid #00b7c3;
+  }
+
+  .s6-weeks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-top: 20px;
+  }
+
+  .s6-wk {
+    padding: 18px 20px;
+    border-top: 4px solid #38bdf8;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .s6-wk:nth-child(4) {
+    border-top-color: #10b981;
+  }
+
+  .s6-wk-badge {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #38bdf8;
+    margin-bottom: 5px;
+  }
+
+  .s6-wk-title {
+    font-size: 18.5px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+  }
+
+  .s6-wk-desc {
+    font-size: 14px;
+    line-height: 1.42;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+  }
+
+  .s6-exit {
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: #5eead4;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(20, 184, 166, 0.14);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+  }
+
+  /* ==================== SCENE 07: CALL TO ACTION ==================== */
+  .s7-center {
+    text-align: center;
+    align-items: center;
+  }
+
+  .s7-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    width: 100%;
+    margin-top: 28px;
+    text-align: left;
+  }
+
+  .s7-card {
+    padding: 26px 28px;
+    border-top: 4px solid #0078d4;
+  }
+
+  .s7-card:nth-child(2) { border-top-color: #00b7c3; }
+  .s7-card:nth-child(3) { border-top-color: #10b981; }
+
+  .s7-num {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 800;
+    color: #38bdf8;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 120, 212, 0.2);
+    margin-bottom: 12px;
+  }
+
+  .s7-card h3 {
+    font-size: 22.5px;
+    font-weight: 750;
+    color: #ffffff;
+    margin-bottom: 10px;
+  }
+
+  .s7-card p {
+    font-size: 15.5px;
+    line-height: 1.5;
+    color: #cbd5e1;
+  }
+
+  .s7-mantra {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    margin-top: 34px;
+  }
+
+  .s7-pillar {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    padding: 10px 24px;
+    border-radius: 12px;
+    background: rgba(15, 29, 52, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #ffffff;
+  }
+
+  .s7-url-box {
+    margin-top: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 15px 34px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(0, 120, 212, 0.32), rgba(0, 183, 195, 0.28));
+    border: 1.5px solid rgba(56, 189, 248, 0.65);
+    box-shadow: 0 0 42px rgba(0, 183, 195, 0.32);
+  }
+
+  .s7-url-box span {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #bae6fd;
+  }
+
+  .s7-url-box code {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="bg-canvas" width="1920" height="1080"></canvas>
+  <div class="blueprint-grid"></div>
+  <div class="top-ribbon"></div>
+
+  <!-- Top Broadcast Header -->
+  <header class="top-bar">
+    <div class="brand-lockup">
+      <div class="brand-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="#fff" stroke-width="2" />
+          <circle cx="12" cy="12" r="3.5" fill="#fff" />
+        </svg>
+      </div>
+      <div class="brand-text">MICROSOFT FOUNDRY &amp; AZURE AI &middot; <span>SOLUTION INDUSTRIALIZATION HUB</span></div>
+    </div>
+    <div class="top-right-pills">
+      <div id="chapter-indicator" class="chapter-pill">01 / 07 &middot; THE PRODUCTION CLIFF</div>
+      <div class="forum-badge">
+        <span class="live-dot"></span>
+        <span>CSA FORUM PRESENTATION</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== SCENE 01: THE PRODUCTION CLIFF ==================== -->
+  <section id="scene-0" class="scene">
+    <div id="s1-eyebrow" class="eyebrow">01 &middot; THE FULL-STACK PRODUCTION BOTTLENECK</div>
+    <h1 class="h-hero">
+      <span id="s1-h1a" style="display:block;">Demos Are Easy.</span>
+      <span id="s1-h1b" class="grad-text" style="display:block;">Production Cutover Is Where Enterprise AI Stalls.</span>
+    </h1>
+    <p id="s1-lead" class="sub-lead">
+      Across flagship enterprise accounts, capacity spikes, gateway throttling, regional sovereignty, and agent safety collide at cutover.
+    </p>
+
+    <div class="s1-grid">
+      <div id="s1-c0" class="glass-card s1-card danger">
+        <span class="s1-tag">Silent Cache Miss</span>
+        <div class="s1-metric">2.56&times; Spike</div>
+        <div class="s1-title">PTU Capacity Explosion</div>
+        <p class="s1-desc">Early timestamps or unsorted tool schemas zero out prefix reuse on GPT-5.6 &amp; GPT-6 (170 &rarr; 435 PTUs).</p>
+      </div>
+      <div id="s1-c1" class="glass-card s1-card danger">
+        <span class="s1-tag">Gateway Saturation</span>
+        <div class="s1-metric">HTTP 429</div>
+        <div class="s1-title">Spillover &amp; SSE Stalls</div>
+        <p class="s1-desc">Direct SDK calls saturate PTU-M pools, buffer SSE token streams, and leak 5.6 breakpoints.</p>
+      </div>
+      <div id="s1-c2" class="glass-card s1-card">
+        <span class="s1-tag">Regional Cutover</span>
+        <div class="s1-metric">Cold Surge</div>
+        <div class="s1-title">Residency &amp; DR Drift</div>
+        <p class="s1-desc">Secondary stamps hit 0% cold KV caches (2&times;+ TPM surge) while Data Zone &amp; search replicas drift.</p>
+      </div>
+      <div id="s1-c3" class="glass-card s1-card danger">
+        <span class="s1-tag">Agent Runtime</span>
+        <div class="s1-metric">Tenant Bleed</div>
+        <div class="s1-title">Unsandboxed Tools &amp; Evals</div>
+        <p class="s1-desc">In-process tool execution risks cross-matter bleed while LLM-only CI release checks flake.</p>
+      </div>
+    </div>
+
+    <div id="s1-silo" class="s1-silo-banner">
+      <div class="s1-silo-steps">
+        <span class="s1-silo-pill">1. Flagship 1:1 Fire-Drill</span>
+        <span>&rarr;</span>
+        <span class="s1-silo-pill">2. Trapped in Single-Account Deck</span>
+        <span>&rarr;</span>
+        <span class="s1-silo-pill">3. Peer Teams Hit Same Wall Weeks Later</span>
+      </div>
+      <span class="s1-silo-badge">1:1 SILOS DO NOT SCALE</span>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 02: THE HUB REVEAL (POSTER) ==================== -->
+  <section id="scene-1" class="scene">
+    <div id="s2-browser" class="s2-browser">
+      <div class="s2-chrome">
+        <div class="s2-dots">
+          <i style="background:#ef4444"></i>
+          <i style="background:#f59e0b"></i>
+          <i style="background:#10b981"></i>
+        </div>
+        <div class="s2-addr">https://jluocsa.github.io/enterprise-azure-ai-hub/</div>
+        <div style="font-size:12.5px;font-weight:700;color:#5eead4;letter-spacing:0.06em;">ACTIVE v2.0 &middot; MIT &amp; CC BY 4.0</div>
+      </div>
+      <div class="s2-body">
+        <div class="eyebrow" style="margin-bottom:14px;">02 &middot; BUILT BY CLOUD SOLUTION ARCHITECTS, FOR CLOUD SOLUTION ARCHITECTS</div>
+        <h1 class="h-hero" style="font-size:54px;">
+          Enterprise Azure AI <span class="grad-text">Solution Industrialization Hub</span>
+        </h1>
+        <p class="sub-lead" style="max-width:1420px;margin-top:12px;font-size:20.5px;">
+          A governed, multi-author field engineering factory converting proven <strong>Customer-Zero</strong> breakthroughs into <strong>4 full-stack playbooks, a 5-tool interactive Decision Studio, and 5 executable MIT release gates</strong>.
+        </p>
+        <div id="s2-chips" class="s2-trust-row">
+          <span class="s2-chip">&#10003; 100% Automated Sanitization Gate</span>
+          <span class="s2-chip blue">[M] Grounded in Published Microsoft Learn</span>
+          <span class="s2-chip blue">5 Live Sizing, Policy &amp; BCP Calculators</span>
+          <span class="s2-chip violet">52 Executable Release Controls</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="s2-kpis">
+      <div id="s2-k0" class="s2-kpi">
+        <div class="s2-kpi-val" id="s2-v0">2.56&times;</div>
+        <div class="s2-kpi-lbl">PTU Capacity Spike Prevented</div>
+        <p class="s2-kpi-txt">170 PTUs at 80% prefix reuse vs. 435 PTUs un-tuned on gpt-5.6-terra.</p>
+      </div>
+      <div id="s2-k1" class="s2-kpi">
+        <div class="s2-kpi-val" id="s2-v1">71%</div>
+        <div class="s2-kpi-lbl">Peak-Season TCO Saved</div>
+        <p class="s2-kpi-txt">Right-sized PTU-M baseline paired with APIM 429 Retry-After PAYG spillover.</p>
+      </div>
+      <div id="s2-k2" class="s2-kpi">
+        <div class="s2-kpi-val" id="s2-v2">4 Tracks</div>
+        <div class="s2-kpi-lbl">Full-Stack Live Playbooks</div>
+        <p class="s2-kpi-txt">33 chapters spanning Caching/PTU, APIM Gateway, Multi-Region BCP &amp; Agentic RAG.</p>
+      </div>
+      <div id="s2-k3" class="s2-kpi">
+        <div class="s2-kpi-val" id="s2-v3">52 Gates</div>
+        <div class="s2-kpi-lbl">Executable Release Controls</div>
+        <p class="s2-kpi-txt">C1&ndash;C15, G1&ndash;G12, B1&ndash;B12 &amp; A1&ndash;A12 backed by 5 runnable MIT code kits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 03: FOUR CONNECTED PLAYBOOKS ==================== -->
+  <section id="scene-2" class="scene">
+    <div class="eyebrow">03 &middot; UNIFIED PRODUCTION TOPOLOGY &middot; 33 CHAPTERS</div>
+    <h2 class="h-section">Four Live Playbooks Interlocking on <span class="grad-text">One Enterprise Request Path</span></h2>
+
+    <div id="s3-flow" class="s3-flow-strip">
+      <div class="s3-flow-node">
+        <b>1. Agent Runtime (PB04)</b>
+        <span>ACA MicroVM Sandbox + Foundry IQ RAG</span>
+      </div>
+      <span class="s3-flow-arr">&rarr;</span>
+      <div class="s3-flow-node">
+        <b>2. AI Gateway (PB02)</b>
+        <span>APIM Retry-After + Unbuffered SSE + FinOps</span>
+      </div>
+      <span class="s3-flow-arr">&rarr;</span>
+      <div class="s3-flow-node">
+        <b>3. Prefix &amp; PTU (PB01)</b>
+        <span>Pos 1&ndash;6 Cache + Shards + PAYG Spillover</span>
+      </div>
+      <span class="s3-flow-arr">&rarr;</span>
+      <div class="s3-flow-node">
+        <b>4. DR &amp; Release Gates (PB03)</b>
+        <span>Data Zone BCP Stamp + 52 CI/OTel Gates</span>
+      </div>
+    </div>
+
+    <div class="s3-pb-grid">
+      <div id="s3-p0" class="glass-card s3-pb-card">
+        <div>
+          <div class="s3-pb-top">
+            <span class="s3-pb-num">PLAYBOOK 01 &middot; 15 CH</span>
+            <span class="s3-pb-live">LIVE v2.0</span>
+          </div>
+          <div class="s3-pb-title">Prompt Caching &amp; Two-Regime PTU Math</div>
+          <ul class="s3-pb-list">
+            <li>Pos 1&ndash;6 static-first prefix taxonomy</li>
+            <li><code>N = &lceil;RPM &divide; 12&rceil;</code> key sharding (&gt;15 RPM)</li>
+            <li>GPT-5.6 vs. GPT-6 / 6.1 token weights</li>
+            <li>Ethical-Wall Posture A/B isolation</li>
+          </ul>
+        </div>
+        <div class="s3-pb-foot">
+          <span>2.56&times; Spike Saved</span>
+          <span>C1&ndash;C15</span>
+        </div>
+      </div>
+
+      <div id="s3-p1" class="glass-card s3-pb-card pb2">
+        <div>
+          <div class="s3-pb-top">
+            <span class="s3-pb-num">PLAYBOOK 02 &middot; 6 CH</span>
+            <span class="s3-pb-live">LIVE v2.0</span>
+          </div>
+          <div class="s3-pb-title">Multi-Backend Foundry APIM AI Gateway</div>
+          <ul class="s3-pb-list">
+            <li>Managed Identity RBAC token auth</li>
+            <li><code>Retry-After</code> 429/503 circuit breakers</li>
+            <li>Strips <code>5.6 PTU-M</code> breakpoints safely</li>
+            <li><code>buffer-response="false"</code> SSE + FinOps OTel</li>
+          </ul>
+        </div>
+        <div class="s3-pb-foot">
+          <span>Zero Escaped 429s</span>
+          <span>G1&ndash;G12</span>
+        </div>
+      </div>
+
+      <div id="s3-p2" class="glass-card s3-pb-card pb3">
+        <div>
+          <div class="s3-pb-top">
+            <span class="s3-pb-num">PLAYBOOK 03 &middot; 6 CH</span>
+            <span class="s3-pb-live">LIVE v2.0</span>
+          </div>
+          <div class="s3-pb-title">Multi-Region Foundry BCP &amp; Residency</div>
+          <ul class="s3-pb-list">
+            <li>Global vs. Data Zone vs. Regional PTU-M</li>
+            <li>15-min cold-cache cutover surge math</li>
+            <li>Cosmos DB &amp; AI Search replica parity</li>
+            <li>Pinned snapshot &amp; Game-Day drills</li>
+          </ul>
+        </div>
+        <div class="s3-pb-foot">
+          <span>&lt;15s Cutover RTO</span>
+          <span>B1&ndash;B12</span>
+        </div>
+      </div>
+
+      <div id="s3-p3" class="glass-card s3-pb-card pb4">
+        <div>
+          <div class="s3-pb-top">
+            <span class="s3-pb-num">PLAYBOOK 04 &middot; 6 CH</span>
+            <span class="s3-pb-live">LIVE v2.0</span>
+          </div>
+          <div class="s3-pb-title">Sandboxed Agentic RAG &amp; 7-Layer Evals</div>
+          <ul class="s3-pb-list">
+            <li>ACA Dynamic Sessions microVM tools</li>
+            <li>Line-by-line AG-UI SSE proxy isolation</li>
+            <li>Foundry IQ MCP ACL-trimmed citations</li>
+            <li>Deterministic <code>ARG001&ndash;007</code> CI contracts</li>
+          </ul>
+        </div>
+        <div class="s3-pb-foot">
+          <span>100% MicroVM Isolation</span>
+          <span>A1&ndash;A12</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 04: INTERACTIVE DECISION STUDIO ==================== -->
+  <section id="scene-3" class="scene">
+    <div class="eyebrow">04 &middot; BROWSER-NATIVE ENGINEERING WORKBENCH &middot; ZERO TELEMETRY</div>
+    <h2 class="h-section">Architecture Decision Studio &mdash; <span class="grad-text">5 Live Sizing &amp; Policy Generators</span></h2>
+
+    <div class="s4-cols">
+      <!-- Left: 5 Live Studio Tools -->
+      <div id="s4-left" class="glass-card s4-panel">
+        <div class="s4-panel-head">
+          <div class="s4-panel-title">Interactive Studio Suite (<code>/studio/</code>)</div>
+          <span class="s4-badge">1-CLICK JSON / XML / MD</span>
+        </div>
+        <div class="s4-tools">
+          <div id="s4-t0" class="s4-tool">
+            <span class="s4-tcode">TOOL 01</span>
+            <div class="s4-tmain">
+              <strong>PTU, Shard &amp; Spillover TCO Simulator</strong>
+              <span>Two-regime GPT-5.6 vs. GPT-6/6.1 PTU sizing, cache shards &amp; seasonal cliff math</span>
+            </div>
+            <span class="s4-badge">#ptu</span>
+          </div>
+          <div id="s4-t1" class="s4-tool">
+            <span class="s4-tcode">TOOL 02</span>
+            <div class="s4-tmain">
+              <strong>APIM AI Gateway XML Policy Builder</strong>
+              <span>SKU-aware breakpoint stripping, body-safe 429 retry &amp; FinOps OTel headers</span>
+            </div>
+            <span class="s4-badge">#apim</span>
+          </div>
+          <div id="s4-t2" class="s4-tool">
+            <span class="s4-tcode">TOOL 03</span>
+            <div class="s4-tmain">
+              <strong>Multi-Region BCP &amp; Cold-Cache Surge Advisor</strong>
+              <span>Global / Data Zone / Regional sovereignty &amp; 0%-cache failover burst sizing</span>
+            </div>
+            <span class="s4-badge">#bcp</span>
+          </div>
+          <div id="s4-t3" class="s4-tool">
+            <span class="s4-tcode">TOOL 04</span>
+            <div class="s4-tmain">
+              <strong>ACA Sandbox &amp; Eval Contract Builder</strong>
+              <span>MicroVM pool sizing &amp; deterministic ARG001&ndash;007 acceptance contracts</span>
+            </div>
+            <span class="s4-badge">#agent-eval</span>
+          </div>
+          <div id="s4-t4" class="s4-tool">
+            <span class="s4-tcode">TOOL 05</span>
+            <div class="s4-tmain">
+              <strong>30-Minute Multi-Track Intake &amp; Scope Builder</strong>
+              <span>Scores 8 production boundaries into a copy-ready 3-week engagement plan</span>
+            </div>
+            <span class="s4-badge">#triage</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Live Capacity Readout + Ethical Walls -->
+      <div id="s4-right" class="glass-card s4-panel right">
+        <div>
+          <div class="s4-panel-head">
+            <div class="s4-panel-title">Live Studio Output &amp; Compliance Guardrails</div>
+            <span class="s4-badge" style="background:rgba(56,189,248,0.18);color:#7dd3fc;border-color:rgba(56,189,248,0.35);">VERIFIED MATH</span>
+          </div>
+
+          <div id="s4-ctrls" class="s4-controls">
+            <div class="s4-ctrl-box">
+              <strong>&gt;15 RPM Shard &amp; Spillover</strong>
+              <span><code>N = &lceil;PeakRPM &divide; 12&rceil;</code> deterministic keys + body-restored Standard PAYG retry.</span>
+            </div>
+            <div class="s4-ctrl-box">
+              <strong>Cold-Cache Failover Buffer</strong>
+              <span>Absorbs 15-min DR warm-up surge while maintaining <code>&lt;15s</code> gateway RTO.</span>
+            </div>
+          </div>
+
+          <div id="s4-bars" class="s4-bars">
+            <div class="s4-bar-row">
+              <div class="s4-bar-lbl">
+                <span style="color:#fca5a5;">Un-Tuned Cutover (0% Cache Hit &middot; Early Timestamp)</span>
+                <span style="font-family:var(--font-mono);color:#f87171;font-weight:800;">435 PTUs (2.56&times; Spike)</span>
+              </div>
+              <div class="s4-bar-track">
+                <div id="s4-bar-bad" class="s4-bar-fill" style="width:100%;background:linear-gradient(90deg,#dc2626,#f97316);"></div>
+              </div>
+            </div>
+            <div class="s4-bar-row">
+              <div class="s4-bar-lbl">
+                <span style="color:#6ee7b7;">Hub v2.0 Blueprint (80%+ Cache Hit + APIM PAYG Spillover)</span>
+                <span style="font-family:var(--font-mono);color:#34d399;font-weight:800;">170 PTUs &middot; 71% Peak TCO Saved</span>
+              </div>
+              <div class="s4-bar-track">
+                <div id="s4-bar-good" class="s4-bar-fill" style="width:39%;background:linear-gradient(90deg,#0078d4,#10b981);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="s4-reg" class="s4-reg-box">
+          <strong>Regulated Multi-Engagement &amp; Ethical-Wall Profile Included</strong>
+          <p>Posture A zero-client-cache mode &bull; Out-of-band <code>x-cost-center</code> chargeback &bull; <code>C-WP1&ndash;C-WP4</code> workpaper lineage.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 05: 5 EXECUTABLE MIT RELEASE GATES ==================== -->
+  <section id="scene-4" class="scene">
+    <div class="eyebrow">05 &middot; DROP-IN AUTOMATION &amp; ARB ARTIFACTS</div>
+    <h2 class="h-section">Five Executable MIT Release Gates &mdash; <span class="grad-text">Not Static Slideware</span></h2>
+
+    <div class="s5-bento">
+      <!-- Tile 1: pcr_lint.py -->
+      <div id="s5-t0" class="glass-card s5-tile">
+        <div>
+          <div class="s5-tile-top">
+            <span class="s5-kicker">01 &middot; PLAYBOOK 01 STATIC CI GATE</span>
+            <span class="s5-pill">MIT &middot; Zero-Dep CLI</span>
+          </div>
+          <div class="s5-title"><code>pcr_lint.py</code> AST &amp; Wire Scanner (PCR001&ndash;006)</div>
+        </div>
+        <div class="code-win">
+          <div><span class="c-dim">$</span> python docs/public/kits/pcr_lint.py ./src --json</div>
+          <div><span class="c-kw">[PCR001]</span> Deterministic non-blank prompt_cache_key ... <span class="c-ok">PASS</span></div>
+          <div><span class="c-kw">[PCR003]</span> Canonical sorted tools[] JSON schema ... <span class="c-ok">PASS</span></div>
+          <div><span class="c-kw">[PCR005]</span> GPT-5.6 PTU-M breakpoint guard ... <span class="c-ok">PASS</span></div>
+          <div><span class="c-ok">&#10003; Fail-closed AST &amp; UTF-8 integrity verified</span></div>
+        </div>
+      </div>
+
+      <!-- Tile 2: agent_release_gate.py + bcp_snapshot_gate.py -->
+      <div id="s5-t1" class="glass-card s5-tile">
+        <div>
+          <div class="s5-tile-top">
+            <span class="s5-kicker">02 &middot; PLAYBOOKS 03 &amp; 04 CONTRACT CLIs</span>
+            <span class="s5-pill">Deterministic CI</span>
+          </div>
+          <div class="s5-title"><code>agent_release_gate.py</code> &amp; <code>bcp_snapshot_gate.py</code></div>
+        </div>
+        <div class="code-win">
+          <div><span class="c-dim">$</span> python agent_release_gate.py traces.jsonl --contract accept.json</div>
+          <div><span class="c-kw">[ARG001-007]</span> MicroVM session + &ge;95% citation precision ... <span class="c-ok">PASS</span></div>
+          <div><span class="c-dim">$</span> python bcp_snapshot_gate.py bcp.json --expected stamps.json</div>
+          <div><span class="c-ok">&#10003; Pinned snapshot &amp; fresh 200-299 stamp parity: PASS</span></div>
+        </div>
+      </div>
+
+      <!-- Tile 3: APIM XML + 2 KQL Gates -->
+      <div id="s5-t2" class="glass-card s5-tile">
+        <div>
+          <div class="s5-tile-top">
+            <span class="s5-kicker">03 &middot; GATEWAY XML &amp; 2 APP INSIGHTS KQL GATES</span>
+            <span class="s5-pill">APIM + Kusto</span>
+          </div>
+          <div class="s5-title"><code>apim-foundry-spillover-policy.xml</code> + 2 KQL Workbooks</div>
+        </div>
+        <div class="code-win">
+          <div><span class="c-kw">ptu-cache-release-gate.kql</span> &rarr; DeployPeakNormTPM &amp; R/W Ratio</div>
+          <div><span class="c-kw">bcp-failover-readiness-gate.kql</span> &rarr; ColdCacheSurge &amp; Snapshots</div>
+          <div><span class="c-kw">apim-foundry-spillover-policy.xml</span> &rarr; Body-safe 429 retry + SSE</div>
+          <div><span class="c-ok">&#10003; Offline XML &amp; KQL regression-gated on every build</span></div>
+        </div>
+      </div>
+
+      <!-- Tile 4: Printable White Papers & 52 Checklists -->
+      <div id="s5-t3" class="glass-card s5-tile">
+        <div>
+          <div class="s5-tile-top">
+            <span class="s5-kicker">04 &middot; CUSTOMER ARB &amp; CUTOVER SIGN-OFF</span>
+            <span class="s5-pill">CC BY 4.0 &middot; Print PDF</span>
+          </div>
+          <div class="s5-title">Executive White Papers &amp; 52-Point PR Release Gates</div>
+          <p style="font-size:14.5px;color:#cbd5e1;line-height:1.45;">
+            Consolidated Full-Stack Enterprise Foundry Blueprint and GPT-5.6+ Prompt-Caching white papers with 1-click <code>@media print</code> PDF export, paired with <code>C1&ndash;C15</code>, <code>G1&ndash;G12</code>, <code>B1&ndash;B12</code>, and <code>A1&ndash;A12</code> PR checklists.
+          </p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <span class="s2-chip blue">Full-Stack Blueprint PDF</span>
+          <span class="s2-chip">52 Cutover Sign-Off Checks</span>
+          <span class="s2-chip violet">Ctrl+K Instant Search</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 06: 5-STAGE FACTORY & 3-WEEK DELIVERY ==================== -->
+  <section id="scene-5" class="scene">
+    <div class="eyebrow">06 &middot; GOVERNED OPERATING MODEL &amp; REPEATABLE DELIVERY</div>
+    <h2 class="h-section">Five-Stage Industrialization Factory &amp; <span class="grad-text">3-Week Customer Scope</span></h2>
+
+    <div class="glass-card s6-diagram-wrap">
+      <svg viewBox="0 0 1680 264" width="100%" height="264">
+        <defs>
+          <marker id="arr-cyan" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#2dd4bf" />
+          </marker>
+          <linearGradient id="stageActiveGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0f3458" />
+            <stop offset="100%" stop-color="#0c233c" />
+          </linearGradient>
+        </defs>
+
+        <!-- Stage 1 -->
+        <g id="s6-n0">
+          <rect x="12" y="52" width="272" height="156" rx="14" fill="url(#stageActiveGrad)" stroke="#14b8a6" stroke-width="2.5" />
+          <text x="32" y="90" font-size="18" font-weight="800" fill="#5eead4">1. CUSTOMER-ZERO</text>
+          <text x="32" y="120" font-size="15.5" fill="#e2e8f0">Measured live workload</text>
+          <text x="32" y="144" font-size="15.5" fill="#e2e8f0">latency, failover &amp; TCO</text>
+          <rect x="32" y="166" width="164" height="28" rx="6" fill="rgba(20,184,166,0.2)" />
+          <text x="44" y="185" font-size="13.5" font-weight="700" fill="#5eead4">[Proven Baseline]</text>
+        </g>
+
+        <path id="s6-e0" d="M284 130 H336" stroke="#2dd4bf" stroke-width="3" marker-end="url(#arr-cyan)" />
+
+        <!-- Stage 2 -->
+        <g id="s6-n1">
+          <rect x="344" y="52" width="272" height="156" rx="14" fill="url(#stageActiveGrad)" stroke="#38bdf8" stroke-width="2.5" />
+          <text x="364" y="90" font-size="18" font-weight="800" fill="#7dd3fc">2. SANITIZATION GATE</text>
+          <text x="364" y="120" font-size="15.5" fill="#e2e8f0">check-sanitized.mjs strips</text>
+          <text x="364" y="144" font-size="15.5" fill="#e2e8f0">names, emails &amp; GUIDs</text>
+          <rect x="364" y="166" width="176" height="28" rx="6" fill="rgba(56,189,248,0.2)" />
+          <text x="376" y="185" font-size="13.5" font-weight="700" fill="#7dd3fc">[Automated CI Gate]</text>
+        </g>
+
+        <path id="s6-e1" d="M616 130 H668" stroke="#2dd4bf" stroke-width="3" marker-end="url(#arr-cyan)" />
+
+        <!-- Stage 3 -->
+        <g id="s6-n2">
+          <rect x="676" y="52" width="276" height="156" rx="14" fill="url(#stageActiveGrad)" stroke="#38bdf8" stroke-width="2.5" />
+          <text x="696" y="90" font-size="18" font-weight="800" fill="#7dd3fc">3. 4-TIER ARB REVIEW</text>
+          <text x="696" y="120" font-size="15.5" fill="#e2e8f0">Verify [M] Learn facts vs.</text>
+          <text x="696" y="144" font-size="15.5" fill="#e2e8f0">[Arch], [Agree] &amp; [Validate]</text>
+          <rect x="696" y="166" width="166" height="28" rx="6" fill="rgba(56,189,248,0.2)" />
+          <text x="708" y="185" font-size="13.5" font-weight="700" fill="#7dd3fc">[Peer ARB Gate]</text>
+        </g>
+
+        <!-- Tri-path arrows -->
+        <g id="s6-e2">
+          <path d="M952 98 H995 V42 H1026" stroke="#2dd4bf" stroke-width="2.6" fill="none" marker-end="url(#arr-cyan)" />
+          <path d="M952 130 H1026" stroke="#2dd4bf" stroke-width="2.8" fill="none" marker-end="url(#arr-cyan)" />
+          <path d="M952 162 H995 V222 H1026" stroke="#2dd4bf" stroke-width="2.6" fill="none" marker-end="url(#arr-cyan)" />
+        </g>
+
+        <!-- Stage 4A / 4B / 4C -->
+        <g id="s6-n3">
+          <rect x="1034" y="8" width="302" height="68" rx="11" fill="rgba(120,53,15,0.45)" stroke="#f59e0b" stroke-width="2.2" />
+          <text x="1054" y="36" font-size="16" font-weight="800" fill="#fcd34d">4A. Patent / IP Hold</text>
+          <text x="1054" y="59" font-size="14" fill="#fde68a">Confidential prior-art protection</text>
+
+          <rect x="1034" y="96" width="302" height="68" rx="11" fill="rgba(15,45,82,0.75)" stroke="#38bdf8" stroke-width="2.2" />
+          <text x="1054" y="124" font-size="16" font-weight="800" fill="#7dd3fc">4B. Product &amp; Learn PR</text>
+          <text x="1054" y="147" font-size="14" fill="#bae6fd">Upstream engineering &amp; docs</text>
+
+          <rect x="1034" y="184" width="302" height="68" rx="11" fill="rgba(13,66,64,0.75)" stroke="#14b8a6" stroke-width="2.5" />
+          <text x="1054" y="212" font-size="16" font-weight="800" fill="#5eead4">4C. Field Playbook &amp; Studio</text>
+          <text x="1054" y="235" font-size="14" fill="#ccfbf1">Playbooks + Studio + 5 MIT Kits</text>
+        </g>
+
+        <g id="s6-e3">
+          <path d="M1336 130 H1394" stroke="#2dd4bf" stroke-width="2.8" fill="none" marker-end="url(#arr-cyan)" />
+          <path d="M1336 218 H1368 V154 H1394" stroke="#2dd4bf" stroke-width="2.6" fill="none" marker-end="url(#arr-cyan)" />
+        </g>
+
+        <!-- Stage 5 -->
+        <g id="s6-n4">
+          <rect x="1402" y="52" width="266" height="156" rx="14" fill="rgba(13,66,64,0.7)" stroke="#10b981" stroke-width="2.8" />
+          <text x="1422" y="90" font-size="18" font-weight="800" fill="#6ee7b7">5. 1:N PORTFOLIO</text>
+          <text x="1422" y="120" font-size="15.5" fill="#e2e8f0">30-min triage, 3-wk scope</text>
+          <text x="1422" y="144" font-size="15.5" fill="#e2e8f0">&amp; signed cutover gates</text>
+          <rect x="1422" y="166" width="170" height="28" rx="6" fill="rgba(16,185,129,0.22)" />
+          <text x="1434" y="185" font-size="13.5" font-weight="700" fill="#6ee7b7">[Portfolio Scale]</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="s6-weeks">
+      <div id="s6-w0" class="glass-card s6-wk">
+        <div>
+          <div class="s6-wk-badge">Phase 0 &middot; 30 Minutes</div>
+          <div class="s6-wk-title">Discovery &amp; Boundary Triage</div>
+          <p class="s6-wk-desc">Score model waves, PTU/PAYG mix, residency tiers &amp; ethical walls in Decision Studio.</p>
+        </div>
+        <span class="s6-exit">Exit: Tailored Track Scope</span>
+      </div>
+      <div id="s6-w1" class="glass-card s6-wk">
+        <div>
+          <div class="s6-wk-badge">Week 01 &middot; Audit</div>
+          <div class="s6-wk-title">Baseline Telemetry &amp; Lint</div>
+          <p class="s6-wk-desc">Rank agent nodes by RPM&times;Tokens, run pcr_lint.py &amp; audit APIM/BCP exposure.</p>
+        </div>
+        <span class="s6-exit">Exit: Baseline Exposure Report</span>
+      </div>
+      <div id="s6-w2" class="glass-card s6-wk">
+        <div>
+          <div class="s6-wk-badge">Week 02 &middot; Refactor</div>
+          <div class="s6-wk-title">Prefix, APIM &amp; Sandbox Wiring</div>
+          <p class="s6-wk-desc">Enforce Pos 1&ndash;6 + sharding, deploy APIM spillover + FinOps &amp; ACA microVMs.</p>
+        </div>
+        <span class="s6-exit">Exit: Staging-Verified Stack</span>
+      </div>
+      <div id="s6-w3" class="glass-card s6-wk">
+        <div>
+          <div class="s6-wk-badge">Week 03 &middot; Sign-Off</div>
+          <div class="s6-wk-title">2-Pass Evals, Game-Day &amp; KQL</div>
+          <p class="s6-wk-desc">Inject synthetic 429 failover drills, run contract CLIs &amp; sign 52 release gates.</p>
+        </div>
+        <span class="s6-exit">Exit: Signed Cutover Record</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SCENE 07: CALL TO ACTION ==================== -->
+  <section id="scene-6" class="scene s7-center">
+    <div class="eyebrow" style="align-self:center;">07 &middot; CSA FORUM CALL TO ACTION</div>
+    <h1 class="h-hero" style="font-size:50px;max-width:1620px;">
+      Bring Full-Stack Industrialized Leverage to <span class="grad-text">Every Enterprise Account</span>
+    </h1>
+
+    <div class="s7-cards">
+      <div id="s7-c0" class="glass-card s7-card">
+        <span class="s7-num">ACTION 01 &middot; SIMULATE &amp; SCOPE</span>
+        <h3>Launch the 5-Tool Decision Studio</h3>
+        <p>Run the PTU/TCO Simulator, APIM Policy Builder, BCP Surge Advisor, and 30-Minute Triage on your next Foundry cutover.</p>
+      </div>
+      <div id="s7-c1" class="glass-card s7-card">
+        <span class="s7-num">ACTION 02 &middot; AUTOMATE GATES</span>
+        <h3>Wire the 5 MIT Release Kits</h3>
+        <p>Drop <code>pcr_lint.py</code>, <code>agent_release_gate.py</code>, <code>bcp_snapshot_gate.py</code>, APIM XML, and KQL gates into CI/CD.</p>
+      </div>
+      <div id="s7-c2" class="glass-card s7-card">
+        <span class="s7-num">ACTION 03 &middot; INDUSTRIALIZE</span>
+        <h3>Scale Your Customer-Zero Win</h3>
+        <p>Route new workload profiles and field breakthroughs through the 5-stage sanitization, ARB, and IP pipeline.</p>
+      </div>
+    </div>
+
+    <div class="s7-mantra">
+      <div id="s7-m0" class="s7-pillar">Solve Once.</div>
+      <div id="s7-m1" class="s7-pillar" style="border-color:rgba(45,212,191,0.55);color:#5eead4;">Govern Cleanly.</div>
+      <div id="s7-m2" class="s7-pillar" style="border-color:rgba(167,139,250,0.55);background:linear-gradient(90deg,rgba(0,120,212,0.28),rgba(139,92,246,0.25));">Scale Everywhere.</div>
+    </div>
+
+    <div id="s7-url" class="s7-url-box">
+      <span>EXPLORE THE LIVE HUB</span>
+      <code>jluocsa.github.io/enterprise-azure-ai-hub</code>
+    </div>
+  </section>
+
+  <!-- Bottom Progress & Metadata Chrome -->
+  <footer class="bottom-bar">
+    <div class="bottom-meta">
+      <div><strong>Enterprise Azure AI Solution Industrialization Hub v2.0</strong> &middot; 4 Live Playbooks &middot; 5-Tool Studio &middot; 5 MIT Release Gates</div>
+      <div class="bottom-url">https://jluocsa.github.io/enterprise-azure-ai-hub/</div>
+    </div>
+    <div class="seg-bar">
+      <div class="seg-track"><div id="seg-0" class="seg-fill"></div></div>
+      <div class="seg-track"><div id="seg-1" class="seg-fill"></div></div>
+      <div class="seg-track"><div id="seg-2" class="seg-fill"></div></div>
+      <div class="seg-track"><div id="seg-3" class="seg-fill"></div></div>
+      <div class="seg-track"><div id="seg-4" class="seg-fill"></div></div>
+      <div class="seg-track"><div id="seg-5" class="seg-fill"></div></div>
+      <div class="seg-track"><div id="seg-6" class="seg-fill"></div></div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  window.TIMELINE = {
+    totalDuration: 173.14,
+    scenes: [
+      { index: 0, start: 0.00, end: 30.38, chapter: "01 / 07 · THE PRODUCTION CLIFF" },
+      { index: 1, start: 30.38, end: 50.66, chapter: "02 / 07 · SOLUTION INDUSTRIALIZATION HUB" },
+      { index: 2, start: 50.66, end: 90.35, chapter: "03 / 07 · 4 LIVE FULL-STACK PLAYBOOKS" },
+      { index: 3, start: 90.35, end: 116.01, chapter: "04 / 07 · INTERACTIVE DECISION STUDIO" },
+      { index: 4, start: 116.01, end: 135.19, chapter: "05 / 07 · 5 EXECUTABLE MIT RELEASE GATES" },
+      { index: 5, start: 135.19, end: 155.12, chapter: "06 / 07 · 5-STAGE FACTORY & 3-WEEK SCOPE" },
+      { index: 6, start: 155.12, end: 173.14, chapter: "07 / 07 · CSA FORUM CALL TO ACTION" }
+    ]
+  };
+
+  window.initTimeline = function (tl) {
+    if (tl && Array.isArray(tl.scenes)) {
+      window.TIMELINE = tl;
+    }
+  };
+
+  const CHAPTER_LABELS = [
+    "01 / 07 · THE PRODUCTION CLIFF",
+    "02 / 07 · SOLUTION INDUSTRIALIZATION HUB v2.0",
+    "03 / 07 · 4 LIVE FULL-STACK PLAYBOOKS",
+    "04 / 07 · 5-TOOL ARCHITECTURE DECISION STUDIO",
+    "05 / 07 · 5 EXECUTABLE MIT RELEASE GATES",
+    "06 / 07 · 5-STAGE FACTORY & 3-WEEK DELIVERY",
+    "07 / 07 · CSA FORUM CALL TO ACTION"
+  ];
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+  function easeOutCubic(x) {
+    const c = clamp(x, 0, 1);
+    return 1 - Math.pow(1 - c, 3);
+  }
+  function easeOutExpo(x) {
+    const c = clamp(x, 0, 1);
+    return c === 1 ? 1 : 1 - Math.pow(2, -10 * c);
+  }
+  function easeOutBack(x) {
+    const c = clamp(x, 0, 1);
+    const c1 = 1.45;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(c - 1, 3) + c1 * Math.pow(c - 1, 2);
+  }
+  function enterProgress(t, tStart, dur = 0.65) {
+    return easeOutCubic((t - tStart) / dur);
+  }
+
+  function applyReveal(el, p, dy = 26, scaleFrom = 0.975) {
+    if (!el) return;
+    const c = clamp(p, 0, 1);
+    const y = (1 - c) * dy;
+    const s = scaleFrom + (1 - scaleFrom) * c;
+    el.style.opacity = c.toFixed(4);
+    el.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0) scale(${s.toFixed(4)})`;
+  }
+
+  function highlightCard(el, activeStrength, glowColor = "56, 189, 248") {
+    if (!el) return;
+    const a = clamp(activeStrength, 0, 1);
+    el.style.boxShadow = a > 0.02
+      ? `0 18px 44px rgba(0,0,0,0.45), 0 0 ${(28 * a).toFixed(1)}px rgba(${glowColor}, ${(0.42 * a).toFixed(3)})`
+      : `0 18px 44px rgba(0,0,0,0.42)`;
+  }
+
+  const canvas = document.getElementById("bg-canvas");
+  const ctx = canvas.getContext("2d");
+  const NODES = Array.from({ length: 34 }, (_, i) => ({
+    x0: ((i * 197 + 83) % 1920),
+    y0: ((i * 263 + 127) % 1080),
+    vx: ((i % 2 === 0 ? 1 : -1) * (11 + (i % 7) * 3.2)),
+    vy: ((i % 3 === 0 ? -1 : 1) * (7 + (i % 5) * 2.4)),
+    r: 1.6 + (i % 4) * 0.75
+  }));
+
+  function drawBackground(t, activeSceneIdx) {
+    ctx.clearRect(0, 0, 1920, 1080);
+
+    const palettes = [
+      ["rgba(239, 68, 68, 0.13)", "rgba(0, 120, 212, 0.18)"],
+      ["rgba(0, 120, 212, 0.24)", "rgba(0, 183, 195, 0.18)"],
+      ["rgba(56, 189, 248, 0.20)", "rgba(139, 92, 246, 0.18)"],
+      ["rgba(0, 120, 212, 0.22)", "rgba(16, 185, 129, 0.18)"],
+      ["rgba(56, 189, 248, 0.19)", "rgba(139, 92, 246, 0.18)"],
+      ["rgba(20, 184, 166, 0.20)", "rgba(0, 120, 212, 0.20)"],
+      ["rgba(0, 120, 212, 0.25)", "rgba(20, 184, 166, 0.22)"]
+    ];
+    const pal = palettes[clamp(activeSceneIdx, 0, palettes.length - 1)];
+
+    const gx1 = 520 + Math.sin(t * 0.18) * 180;
+    const gy1 = 280 + Math.cos(t * 0.14) * 90;
+    const g1 = ctx.createRadialGradient(gx1, gy1, 20, gx1, gy1, 720);
+    g1.addColorStop(0, pal[0]);
+    g1.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    const gx2 = 1420 + Math.cos(t * 0.15) * 170;
+    const gy2 = 720 + Math.sin(t * 0.12) * 100;
+    const g2 = ctx.createRadialGradient(gx2, gy2, 20, gx2, gy2, 680);
+    g2.addColorStop(0, pal[1]);
+    g2.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    const pts = NODES.map(n => {
+      let x = (n.x0 + n.vx * t) % 1920;
+      let y = (n.y0 + n.vy * t) % 1080;
+      if (x < 0) x += 1920;
+      if (y < 0) y += 1080;
+      return { x, y, r: n.r };
+    });
+
+    ctx.lineWidth = 1;
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const dx = pts[i].x - pts[j].x;
+        const dy = pts[i].y - pts[j].y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 240 * 240) {
+          const alpha = (1 - Math.sqrt(d2) / 240) * 0.085;
+          ctx.strokeStyle = `rgba(125, 211, 252, ${alpha.toFixed(4)})`;
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of pts) {
+      ctx.fillStyle = "rgba(125, 211, 252, 0.24)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  window.renderAt = function (t) {
+    const tl = window.TIMELINE;
+    const scenes = tl.scenes;
+    let activeIdx = 0;
+    for (let i = 0; i < scenes.length; i++) {
+      if (t >= scenes[i].start) activeIdx = i;
+    }
+
+    drawBackground(t, activeIdx);
+
+    const chapEl = document.getElementById("chapter-indicator");
+    if (chapEl) chapEl.textContent = CHAPTER_LABELS[activeIdx] || CHAPTER_LABELS[0];
+
+    for (let i = 0; i < 7; i++) {
+      const seg = document.getElementById(`seg-${i}`);
+      if (!seg || !scenes[i]) continue;
+      const sc = scenes[i];
+      const pct = clamp((t - sc.start) / Math.max(0.1, sc.end - sc.start), 0, 1) * 100;
+      seg.style.width = `${pct.toFixed(2)}%`;
+    }
+
+    for (let i = 0; i < 7; i++) {
+      const el = document.getElementById(`scene-${i}`);
+      const sc = scenes[i];
+      if (!el || !sc) continue;
+      const fadeDur = 0.42;
+      let op = 0;
+      if (t >= sc.start - fadeDur && t <= sc.end + fadeDur) {
+        const fadeIn = i === 0 ? easeOutCubic(t / 0.55) : easeOutCubic((t - (sc.start - fadeDur * 0.5)) / fadeDur);
+        const fadeOut = i === scenes.length - 1 ? 1 : 1 - easeOutCubic((t - (sc.end - fadeDur * 0.5)) / fadeDur);
+        op = clamp(Math.min(fadeIn, fadeOut), 0, 1);
+      }
+      el.style.opacity = op.toFixed(4);
+      const subtleZoom = 0.992 + 0.008 * op;
+      el.style.transform = `scale(${subtleZoom.toFixed(4)})`;
+    }
+
+    // ---- Scene 01 Choreography (0.00 -> 30.38s) ----
+    if (t <= scenes[0].end + 0.6) {
+      applyReveal(document.getElementById("s1-eyebrow"), enterProgress(t, 0.15, 0.55), 18);
+      applyReveal(document.getElementById("s1-h1a"), enterProgress(t, 0.65, 0.65), 26);
+      applyReveal(document.getElementById("s1-h1b"), enterProgress(t, 3.25, 0.75), 28);
+      applyReveal(document.getElementById("s1-lead"), enterProgress(t, 4.10, 0.7), 20);
+
+      applyReveal(document.getElementById("s1-c0"), easeOutBack((t - 7.5) / 0.65), 32);
+      applyReveal(document.getElementById("s1-c1"), easeOutBack((t - 11.2) / 0.65), 32);
+      applyReveal(document.getElementById("s1-c2"), easeOutBack((t - 15.95) / 0.65), 32);
+      applyReveal(document.getElementById("s1-c3"), easeOutBack((t - 20.45) / 0.65), 32);
+
+      highlightCard(document.getElementById("s1-c0"), t >= 7.5 && t < 11.3 ? 1 : 0.22, "239, 68, 68");
+      highlightCard(document.getElementById("s1-c1"), t >= 11.3 && t < 16.0 ? 1 : 0.22, "239, 68, 68");
+      highlightCard(document.getElementById("s1-c2"), t >= 16.0 && t < 20.5 ? 1 : 0.22, "245, 158, 11");
+      highlightCard(document.getElementById("s1-c3"), t >= 20.5 && t < 23.4 ? 1 : 0.22, "239, 68, 68");
+
+      applyReveal(document.getElementById("s1-silo"), enterProgress(t, 23.1, 0.75), 26);
+    }
+
+    // ---- Scene 02 Choreography (30.38 -> 50.66s) ----
+    if (t >= scenes[1].start - 0.6 && t <= scenes[1].end + 0.6) {
+      const lt = t - scenes[1].start;
+      applyReveal(document.getElementById("s2-browser"), enterProgress(lt, 0.1, 0.8), 30, 0.965);
+      applyReveal(document.getElementById("s2-chips"), enterProgress(lt, 5.4, 0.7), 16);
+
+      const kpiStarts = [10.4, 11.8, 13.2, 14.6];
+      for (let k = 0; k < 4; k++) {
+        applyReveal(document.getElementById(`s2-k${k}`), easeOutBack((lt - kpiStarts[k]) / 0.65), 28);
+      }
+      const p0 = easeOutExpo((lt - 10.4) / 1.35);
+      const p1 = easeOutExpo((lt - 11.8) / 1.35);
+      const p3 = easeOutExpo((lt - 14.6) / 1.35);
+      document.getElementById("s2-v0").innerHTML = `${(1.0 + 1.56 * p0).toFixed(2)}&times;`;
+      document.getElementById("s2-v1").textContent = `${Math.round(71 * p1)}%`;
+      document.getElementById("s2-v3").textContent = `${Math.round(52 * p3)} Gates`;
+    }
+
+    // ---- Scene 03 Choreography (50.66 -> 90.35s) ----
+    if (t >= scenes[2].start - 0.6 && t <= scenes[2].end + 0.6) {
+      const lt = t - scenes[2].start;
+      applyReveal(document.getElementById("s3-flow"), enterProgress(lt, 0.35, 0.75), 22);
+
+      const pbStarts = [4.1, 14.3, 22.9, 31.4];
+      const pbColors = ["56, 189, 248", "16, 185, 129", "245, 158, 11", "167, 139, 250"];
+      for (let p = 0; p < 4; p++) {
+        const cardEl = document.getElementById(`s3-p${p}`);
+        applyReveal(cardEl, easeOutBack((lt - pbStarts[p]) / 0.65), 28, 0.965);
+        const isActive = lt >= pbStarts[p] && (p === 3 || lt < pbStarts[p + 1] + 0.3) ? 1 : 0.22;
+        highlightCard(cardEl, isActive, pbColors[p]);
+      }
+    }
+
+    // ---- Scene 04 Choreography (90.35 -> 116.01s) ----
+    if (t >= scenes[3].start - 0.6 && t <= scenes[3].end + 0.6) {
+      const lt = t - scenes[3].start;
+      applyReveal(document.getElementById("s4-left"), enterProgress(lt, 0.3, 0.7), 24);
+      const toolTimes = [1.8, 3.0, 4.2, 5.4, 6.6];
+      for (let i = 0; i < 5; i++) {
+        applyReveal(document.getElementById(`s4-t${i}`), enterProgress(lt, toolTimes[i], 0.52), 16);
+      }
+
+      applyReveal(document.getElementById("s4-right"), enterProgress(lt, 7.6, 0.75), 24);
+      applyReveal(document.getElementById("s4-ctrls"), enterProgress(lt, 8.2, 0.65), 18);
+      applyReveal(document.getElementById("s4-bars"), enterProgress(lt, 12.6, 0.65), 18);
+
+      const badBar = document.getElementById("s4-bar-bad");
+      const goodBar = document.getElementById("s4-bar-good");
+      if (badBar) badBar.style.width = `${(100 * easeOutExpo((lt - 13.0) / 1.4)).toFixed(1)}%`;
+      if (goodBar) goodBar.style.width = `${(39 * easeOutExpo((lt - 14.2) / 1.4)).toFixed(1)}%`;
+
+      applyReveal(document.getElementById("s4-reg"), enterProgress(lt, 19.6, 0.7), 20);
+    }
+
+    // ---- Scene 05 Choreography (116.01 -> 135.19s) ----
+    if (t >= scenes[4].start - 0.6 && t <= scenes[4].end + 0.6) {
+      const lt = t - scenes[4].start;
+      const tileTimes = [2.4, 6.2, 10.4, 14.2];
+      const tileGlows = ["56, 189, 248", "167, 139, 250", "16, 185, 129", "245, 158, 11"];
+      for (let k = 0; k < 4; k++) {
+        const el = document.getElementById(`s5-t${k}`);
+        applyReveal(el, easeOutBack((lt - tileTimes[k]) / 0.65), 28, 0.96);
+        const active = lt >= tileTimes[k] && (k === 3 || lt < tileTimes[k + 1] + 0.4) ? 1 : 0.22;
+        highlightCard(el, active, tileGlows[k]);
+      }
+    }
+
+    // ---- Scene 06 Choreography (135.19 -> 155.12s) ----
+    if (t >= scenes[5].start - 0.6 && t <= scenes[5].end + 0.6) {
+      const lt = t - scenes[5].start;
+      const nodeTimes = [1.4, 4.2, 7.0, 9.4, 11.2];
+      for (let n = 0; n < 5; n++) {
+        applyReveal(document.getElementById(`s6-n${n}`), enterProgress(lt, nodeTimes[n], 0.6), 18, 0.96);
+        if (n < 4) {
+          const edge = document.getElementById(`s6-e${n}`);
+          if (edge) edge.style.opacity = enterProgress(lt, nodeTimes[n] + 0.35, 0.45).toFixed(3);
+        }
+      }
+
+      const wkTimes = [12.4, 13.2, 14.0, 14.8];
+      for (let w = 0; w < 4; w++) {
+        applyReveal(document.getElementById(`s6-w${w}`), easeOutBack((lt - wkTimes[w]) / 0.55), 22);
+      }
+    }
+
+    // ---- Scene 07 Choreography (155.12 -> 173.14s) ----
+    if (t >= scenes[6].start - 0.6) {
+      const lt = t - scenes[6].start;
+      applyReveal(document.getElementById("s7-c0"), easeOutBack((lt - 0.35) / 0.65), 28);
+      applyReveal(document.getElementById("s7-c1"), easeOutBack((lt - 3.60) / 0.65), 28);
+      applyReveal(document.getElementById("s7-c2"), easeOutBack((lt - 6.90) / 0.65), 28);
+
+      // Exact word-boundary sync: "Solve once." (167.07s), "Govern cleanly." (168.23s), "Scale everywhere." (169.81s)
+      applyReveal(document.getElementById("s7-m0"), easeOutBack((t - 167.02) / 0.48), 22, 0.92);
+      applyReveal(document.getElementById("s7-m1"), easeOutBack((t - 168.18) / 0.48), 22, 0.92);
+      applyReveal(document.getElementById("s7-m2"), easeOutBack((t - 169.76) / 0.52), 22, 0.92);
+      applyReveal(document.getElementById("s7-url"), enterProgress(t, 170.35, 0.72), 20, 0.95);
+    }
+  };
+
+  // Render poster frame at t = 48.2s by default if opened directly in a browser
+  window.renderAt(48.2);
+</script>
+</body>
+</html>

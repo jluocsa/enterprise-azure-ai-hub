@@ -8,6 +8,7 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
+    "video:build": "node scripts/build-intro-video.mjs",
     "check:sanitized": "node scripts/check-sanitized.mjs",
     "check:kits": "node scripts/run-python.mjs docs/public/kits/pcr_lint.py --self-test && node scripts/run-python.mjs docs/public/kits/pcr_lint.py docs/public/kits && node scripts/run-python.mjs docs/public/kits/agent_release_gate.py --self-test && node scripts/run-python.mjs docs/public/kits/bcp_snapshot_gate.py --self-test",
     "check:links": "node scripts/run-python.mjs scripts/check-links.py --self-test && node scripts/run-python.mjs scripts/check-links.py",

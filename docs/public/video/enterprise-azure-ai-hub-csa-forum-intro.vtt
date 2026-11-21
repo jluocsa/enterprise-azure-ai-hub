@@ -1,0 +1,169 @@
+WEBVTT
+
+1
+00:00:00.800 --> 00:00:03.323
+In enterprise AI, anyone can ship a prototype.
+
+2
+00:00:03.323 --> 00:00:07.367
+Production cutover is where architectures break.
+
+3
+00:00:07.668 --> 00:00:11.299
+Silent cache misses that trigger a 2.56× PTU spike.
+
+4
+00:00:11.299 --> 00:00:16.108
+HTTP 429 gateway storms and stalled SSE streams.
+
+5
+00:00:16.108 --> 00:00:20.319
+Cold-cache failover surges across regional stamps.
+
+6
+00:00:20.620 --> 00:00:23.192
+And in-process agent tools with flaky CI evals.
+
+7
+00:00:23.192 --> 00:00:26.108
+Worse—when one specialist cracks the code,
+
+8
+00:00:26.108 --> 00:00:30.069
+that breakthrough stays locked inside a single-account slide deck.
+
+9
+00:00:30.659 --> 00:00:31.490
+Not anymore.
+
+10
+00:00:31.803 --> 00:00:36.672
+Welcome to the Enterprise Azure AI Solution Industrialization Hub, version 2.0.
+
+11
+00:00:36.672 --> 00:00:40.612
+Built by Cloud Solution Architects, for Cloud Solution
+
+12
+00:00:40.612 --> 00:00:45.395
+Architects—turning proven Customer-Zero wins into four full-stack playbooks,
+
+13
+00:00:45.708 --> 00:00:50.311
+an interactive 5-tool Decision Studio, and 52 executable release gates.
+
+14
+00:00:50.940 --> 00:00:54.650
+Four live playbooks interlock on one enterprise request path.
+
+15
+00:00:54.950 --> 00:01:00.891
+Playbook 01 masters GPT-5.6 and GPT-6 prefix caching, 15-RPM sharding,
+
+16
+00:01:00.891 --> 00:01:05.141
+and two-regime PTU math—saving 71% on peak-season TCO.
+
+17
+00:01:05.141 --> 00:01:13.712
+Playbook 02 fronts Foundry with APIM Retry-After spillover, unbuffered SSE streaming, and FinOps telemetry.
+
+18
+00:01:13.712 --> 00:01:22.042
+Playbook 03 governs Data Zone residency, cold-cache failover surges, and <15s Game-Day RTO.
+
+19
+00:01:22.355 --> 00:01:26.296
+And Playbook 04 isolates agent tools inside ACA Dynamic
+
+20
+00:01:26.296 --> 00:01:30.007
+Session microVMs with Foundry IQ RAG and deterministic evals.
+
+21
+00:01:30.624 --> 00:01:37.984
+Inside the browser-native Decision Studio, five interactive tools model every trade-off live—with zero external telemetry.
+
+22
+00:01:38.285 --> 00:01:40.690
+Size two-regime PTU baselines and cache shards.
+
+23
+00:01:40.690 --> 00:01:43.833
+Generate SKU-aware APIM spillover XML.
+
+24
+00:01:43.833 --> 00:01:48.627
+Simulate multi-region cold-cache failover surges.
+
+25
+00:01:48.928 --> 00:01:52.107
+And configure ACA microVM pools and deterministic contracts,
+
+26
+00:01:52.107 --> 00:01:55.663
+including strict client ethical-wall postures.
+
+27
+00:01:56.284 --> 00:01:57.437
+Zero slideware.
+
+28
+00:01:57.738 --> 00:02:02.631
+You ship five runnable MIT release gates: a zero-dependency Python AST prefix linter,
+
+29
+00:02:02.631 --> 00:02:06.818
+deterministic agent trace and cross-region snapshot parity CLIs,
+
+30
+00:02:07.202 --> 00:02:09.711
+production APIM spillover policy XML,
+
+31
+00:02:10.035 --> 00:02:12.568
+two live Application Insights KQL workbooks,
+
+32
+00:02:12.809 --> 00:02:14.842
+and print-ready executive white papers.
+
+33
+00:02:15.466 --> 00:02:22.176
+Every asset clears a 5-stage industrialization factory: Customer-Zero production telemetry,
+
+34
+00:02:22.176 --> 00:02:28.378
+automated CI sanitization, peer Microsoft Learn verification, and pre-publication IP protection.
+
+35
+00:02:28.378 --> 00:02:31.435
+Paired with a 30-minute triage and a bounded 3-week readiness sprint,
+
+36
+00:02:31.890 --> 00:02:34.780
+every engagement ships with signed cutover evidence.
+
+37
+00:02:35.398 --> 00:02:38.617
+Launch the Decision Studio on your next Foundry cutover.
+
+38
+00:02:38.930 --> 00:02:42.192
+Drop the five MIT release gates straight into CI and Azure Monitor.
+
+39
+00:02:42.192 --> 00:02:46.156
+And bring your toughest Customer-Zero breakthrough into the factory.
+
+40
+00:02:46.156 --> 00:02:47.443
+Solve once.
+
+41
+00:02:47.443 --> 00:02:48.789
+Govern cleanly.
+
+42
+00:02:48.789 --> 00:02:50.951
+Scale everywhere.
