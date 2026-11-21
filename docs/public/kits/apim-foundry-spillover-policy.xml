@@ -29,27 +29,23 @@
     <set-variable name="original-request-body" value="@(context.Request.Body.As&lt;string&gt;(preserveContent: true))" />
     <set-backend-service backend-id="foundry-ptu-primary" />
 
-    <!-- 5. SKU-Aware Guard: Strip Unsupported Breakpoint Fields When Targeting GPT-5.6 PTU-M -->
-    <choose>
-      <when condition="@(context.Request.Headers.GetValueOrDefault(&quot;x-target-regime&quot;, &quot;gpt-5.6-ptu&quot;) == &quot;gpt-5.6-ptu&quot;)">
-        <set-body>@{
-          var body = context.Request.Body.As&lt;JObject&gt;(preserveContent: true);
-          body.Remove("prompt_cache_options");
-          foreach (var field in new [] { "input", "messages" }) {
-            if (body[field] is JArray items) {
-              foreach (var msg in items.OfType&lt;JObject&gt;()) {
-                if (msg["content"] is JArray parts) {
-                  foreach (var part in parts.OfType&lt;JObject&gt;()) {
-                    part.Remove("prompt_cache_breakpoint");
-                  }
-                }
+    <!-- 5. Fixed GPT-5.6 PTU-M Primary: Caller Headers Must Not Disable Its Rewrite -->
+    <set-body>@{
+      var body = context.Request.Body.As&lt;JObject&gt;(preserveContent: true);
+      body.Remove("prompt_cache_options");
+      foreach (var field in new [] { "input", "messages" }) {
+        if (body[field] is JArray items) {
+          foreach (var msg in items.OfType&lt;JObject&gt;()) {
+            if (msg["content"] is JArray parts) {
+              foreach (var part in parts.OfType&lt;JObject&gt;()) {
+                part.Remove("prompt_cache_breakpoint");
               }
             }
           }
-          return body.ToString(Newtonsoft.Json.Formatting.None);
-        }</set-body>
-      </when>
-    </choose>
+        }
+      }
+      return body.ToString(Newtonsoft.Json.Formatting.None);
+    }</set-body>
   </inbound>
 
   <backend>
