@@ -47,6 +47,15 @@ def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return obj
 
 
+def is_finite_number(value: Any) -> bool:
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 def percentile(values: list[float], pct: float) -> float:
     if not values:
         return 0.0
@@ -86,12 +95,10 @@ def validate_record(
         failures.append(f"{prefix} cached_tokens must not exceed input_tokens.")
 
     duration = rec.get("duration_ms")
-    if (
-        type(duration) not in (int, float)
-        or duration < 0
-        or (isinstance(duration, float) and not math.isfinite(duration))
-    ):
-        failures.append(f"{prefix} duration_ms must be a finite number >= 0.")
+    if not is_finite_number(duration) or duration < 0:
+        failures.append(
+            f"{prefix} duration_ms must be a finite number >= 0 within the supported floating-point range."
+        )
 
     for field, required in (
         ("acl_trimmed", require_acl_trimming and bool(rec.get("retrieved_doc_ids"))),
@@ -202,12 +209,10 @@ def validate_contract(raw: Any) -> dict[str, Any]:
         )
 
     max_p95_ms = raw.get("max_p95_ms", 15000.0)
-    if (
-        type(max_p95_ms) not in (int, float)
-        or max_p95_ms <= 0
-        or (isinstance(max_p95_ms, float) and not math.isfinite(max_p95_ms))
-    ):
-        raise ValueError("max_p95_ms must be a finite number > 0.")
+    if not is_finite_number(max_p95_ms) or max_p95_ms <= 0:
+        raise ValueError(
+            "max_p95_ms must be a finite number > 0 within the supported floating-point range."
+        )
 
     min_cached = raw.get("min_pass2_cached_tokens", 1024)
     if type(min_cached) is not int or min_cached <= 0:
@@ -317,7 +322,7 @@ def run_self_test() -> int:
         ("pass_number", [0, -1, True, "2", 1.5]),
         ("input_tokens", [-1, True, "4200", 4200.5]),
         ("cached_tokens", [-1, False, "0", 0.5, 4201]),
-        ("duration_ms", [None, -1, True, "2100", math.nan, math.inf, -math.inf]),
+        ("duration_ms", [None, -1, True, "2100", math.nan, math.inf, -math.inf, 10**400, -(10**400)]),
         ("acl_trimmed", [None, "true", 1]),
         ("raw_prompt_logged", [None, "false", 0]),
         ("otel_capture_message_content", [None, "false", 0]),
@@ -334,6 +339,15 @@ def run_self_test() -> int:
     no_acl = {k: v for k, v in valid_records[0].items() if k != "acl_trimmed"}
     assert evaluate_trace([no_acl], require_acl_trimming=False) == []
     assert evaluate_trace([{**valid_records[0], "duration_ms": 0.5}]) == []
+    assert evaluate_trace(
+        [{**valid_records[0], "duration_ms": 10**300}],
+        **validate_contract({"max_p95_ms": 10**300}),
+    ) == []
+    large_latency_failures = evaluate_trace(
+        [{**valid_records[0], "duration_ms": 10**300}],
+        **validate_contract({"max_p95_ms": 10**299}),
+    )
+    assert len(large_latency_failures) == 1 and large_latency_failures[0].startswith("[ARG005]")
     assert evaluate_trace([])[0].startswith("[ARG001]")
 
     broken_records = [
@@ -398,7 +412,7 @@ def run_self_test() -> int:
     ):
         invalid_contracts.append(({field: "private-value"}, "unsupported top-level fields"))
     for field, values in (
-        ("max_p95_ms", [None, True, "15000", 0, -1, math.nan, math.inf, -math.inf]),
+        ("max_p95_ms", [None, True, "15000", 0, -1, math.nan, math.inf, -math.inf, 10**400, -(10**400)]),
         ("min_pass2_cached_tokens", [None, True, "1024", 0, -1, 1.5, 1024.0, math.nan, math.inf]),
         ("required_tools", [None, "retrieve", {}, [None], [1], [True], [[]], [""], [" "]]),
         ("forbidden_tools", [None, "raw_shell_root", {}, [None], [1], [True], [[]], [""], [" "]]),
@@ -459,6 +473,37 @@ def run_self_test() -> int:
 
         trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         contract_file = Path(directory) / "contract.json"
+        for output_flags in ([], ["--json"]):
+            trace.write_text("\n".join(json.dumps(rec) for rec in (
+                valid_records[0],
+                {**valid_records[1], "duration_ms": 10**400},
+                {**valid_records[0], "tools_called": ["raw_shell_root"]},
+            )), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == 1 and not result.stderr, result
+            assert "[ARG001] row-2: duration_ms" in result.stdout and "[ARG002]" in result.stdout, result
+            assert str(10**400) not in result.stdout and "Traceback" not in result.stdout, result
+            if output_flags:
+                output = json.loads(result.stdout)
+                assert output["passed"] is False and output["record_count"] == 3, output
+
+            contract_file.write_text(json.dumps({"max_p95_ms": 10**400}), encoding="utf-8")
+            for trace_path in (trace, Path(directory) / "missing.jsonl"):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace_path),
+                     "--contract", str(contract_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 2 and not result.stdout, result
+                assert "invalid acceptance contract" in result.stderr and "max_p95_ms" in result.stderr, result
+                assert "floating-point range" in result.stderr, result
+                assert str(10**400) not in result.stderr and "Traceback" not in result.stderr, result
+                assert "[ARG001]" not in result.stderr, result
+
+        trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         for opening, closing in (("[", "]"), ('{"private-field":', "}")):
             for depth, expected_code in ((16, 0), (sys.getrecursionlimit() * 2, 2)):
                 nested = opening * depth + '"private-value"' + closing * depth
@@ -645,7 +690,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
