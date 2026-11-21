@@ -10,6 +10,7 @@ import PtuCalculator from './PtuCalculator.vue'
 type TabId = 'ptu' | 'triage' | 'bcp' | 'apim' | 'agent-eval'
 
 const activeTab = ref<TabId>('ptu')
+const tabList = ref<HTMLElement | null>(null)
 const route = useRoute()
 
 const tabs: { id: TabId; badge: string; title: string; subtitle: string; playbookHref: string; playbookLabel: string }[] = [
@@ -62,6 +63,30 @@ function selectTab(id: TabId) {
   }
 }
 
+function onTabKeydown(event: KeyboardEvent, id: TabId) {
+  const index = tabs.findIndex(tab => tab.id === id)
+  let nextIndex: number
+  switch (event.key) {
+    case 'ArrowRight':
+      nextIndex = (index + 1) % tabs.length
+      break
+    case 'ArrowLeft':
+      nextIndex = (index - 1 + tabs.length) % tabs.length
+      break
+    case 'Home':
+      nextIndex = 0
+      break
+    case 'End':
+      nextIndex = tabs.length - 1
+      break
+    default:
+      return
+  }
+  event.preventDefault()
+  selectTab(tabs[nextIndex].id)
+  tabList.value?.querySelector<HTMLButtonElement>(`#${tabs[nextIndex].id}`)?.focus()
+}
+
 function syncFromHash() {
   if (typeof window === 'undefined') return
   const h = window.location.hash.replace('#', '') as TabId
@@ -107,7 +132,7 @@ watch(
           enforces published Microsoft Learn token and SKU rules, and exports clean Markdown or XML artifacts for review boards.
         </p>
 
-        <div class="st-tabs" role="tablist" aria-label="Decision Studio Tools">
+        <div ref="tabList" class="st-tabs" role="tablist" aria-label="Decision Studio Tools">
           <button
             v-for="t in tabs"
             :key="t.id"
@@ -115,8 +140,12 @@ watch(
             type="button"
             role="tab"
             :aria-selected="activeTab === t.id"
+            :aria-controls="`studio-panel-${t.id}`"
+            :tabindex="activeTab === t.id ? 0 : -1"
             :class="['st-tab', { 'is-active': activeTab === t.id }]"
             @click="selectTab(t.id)"
+            @focus="selectTab(t.id)"
+            @keydown="onTabKeydown($event, t.id)"
           >
             <span class="st-tab-badge">{{ t.badge }}</span>
             <strong class="st-tab-title">{{ t.title }}</strong>
@@ -138,19 +167,19 @@ watch(
           </a>
         </div>
 
-        <div v-show="activeTab === 'ptu'">
+        <div id="studio-panel-ptu" role="tabpanel" aria-labelledby="ptu" tabindex="0" v-show="activeTab === 'ptu'">
           <PtuCalculator />
         </div>
-        <div v-show="activeTab === 'triage'">
+        <div id="studio-panel-triage" role="tabpanel" aria-labelledby="triage" tabindex="0" v-show="activeTab === 'triage'">
           <IntakeScorecard />
         </div>
-        <div v-show="activeTab === 'bcp'">
+        <div id="studio-panel-bcp" role="tabpanel" aria-labelledby="bcp" tabindex="0" v-show="activeTab === 'bcp'">
           <BcpResidencyAdvisor />
         </div>
-        <div v-show="activeTab === 'apim'">
+        <div id="studio-panel-apim" role="tabpanel" aria-labelledby="apim" tabindex="0" v-show="activeTab === 'apim'">
           <ApimPolicyBuilder />
         </div>
-        <div v-show="activeTab === 'agent-eval'">
+        <div id="studio-panel-agent-eval" role="tabpanel" aria-labelledby="agent-eval" tabindex="0" v-show="activeTab === 'agent-eval'">
           <AgentEvalBuilder />
         </div>
       </div>
@@ -231,6 +260,10 @@ watch(
 .st-tab:hover {
   border-color: var(--vp-c-brand-1);
   transform: translateY(-1px);
+}
+.st-tab:focus-visible {
+  outline: 3px solid var(--vp-c-brand-1);
+  outline-offset: 3px;
 }
 .st-tab.is-active {
   border-color: var(--vp-c-brand-1);
