@@ -106,6 +106,8 @@ Zero-dependency Python 3 CLI (`ARG001–ARG007`) verifying offline `trace.jsonl`
 
 `ARG003` also rejects malformed `[cite:` markers (empty/invalid IDs, nested markers, or missing closing brackets) rather than silently ignoring them. See the [citation syntax contract](/playbooks/agentic-rag-evals/04-deterministic-eval-contracts#fail-closed-citation-syntax-arg003) for the accepted ID alphabet and semantic-review boundaries <span class="ev-badge ev-arch">[Arch]</span>.
 
+Trace and contract JSON also reject duplicate member names within any object, including nested metadata and escape-equivalent names, before a later value can overwrite an earlier one. Duplicates exit `2` with a sanitized stderr diagnostic and no stdout in either text or `--json` mode. See the [unambiguous-input contract](/playbooks/agentic-rag-evals/04-deterministic-eval-contracts#unambiguous-json-inputs); the kit's self-test exercises these CLI failures <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 agent_release_gate.py --self-test
 python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json
