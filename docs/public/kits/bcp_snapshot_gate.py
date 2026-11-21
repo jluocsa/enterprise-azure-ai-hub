@@ -4,6 +4,7 @@
 Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
 Every JSON object must have unique member names, including nested metadata.
+JSON parser nesting failures produce an input error, not a traceback.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
 LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
 --max-age-minutes (default: 15). SuccessfulCalls must be positive (HTTP 2xx).
@@ -31,6 +32,14 @@ def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
             raise ValueError("duplicate JSON object members are not allowed.")
         obj[key] = value
     return obj
+
+
+def load_json(path: Path) -> Any:
+    content = path.read_text(encoding="utf-8")
+    try:
+        return json.loads(content, object_pairs_hook=unique_json_object)
+    except RecursionError:
+        raise ValueError("JSON exceeds the parser nesting limit.") from None
 
 
 def identifier(row: dict[str, Any], field: str) -> str:
@@ -318,6 +327,39 @@ class SnapshotGateTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("PASSED", result.stdout)
 
+    def test_cli_handles_json_parser_nesting_in_both_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            fresh_rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time)
+                          for row in self.rows]
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            for opening, closing in (("[", "]"), ('{"private-field":', "}")):
+                for depth, code in ((16, 0), (sys.getrecursionlimit() * 2, 2)):
+                    nested = opening * depth + '"private-value"' + closing * depth
+                    for target, rows in ((manifest, self.manifest), (evidence, fresh_rows)):
+                        manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
+                        evidence.write_text(json.dumps(fresh_rows), encoding="utf-8")
+                        last_row = '{"metadata":' + nested + "," + json.dumps(rows[1])[1:]
+                        target.write_text(
+                            "[" + json.dumps(rows[0]) + "," + last_row + "]",
+                            encoding="utf-8",
+                        )
+                        result = subprocess.run(command, capture_output=True, text=True, check=False)
+                        with self.subTest(target=target.name, opening=opening, depth=depth):
+                            self.assertEqual(result.returncode, code, result.stderr)
+                            if code:
+                                self.assertEqual(result.stdout, "")
+                                self.assertEqual(
+                                    result.stderr.strip(),
+                                    "BCP snapshot gate input error: JSON exceeds the parser nesting limit.",
+                                )
+                            else:
+                                self.assertEqual(result.stderr, "")
+                                self.assertIn("PASSED", result.stdout)
+
     def test_cli_exit_codes_and_file_errors(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = Path(directory) / "expected.json"
@@ -411,12 +453,8 @@ def main() -> int:
     if args.evidence is None or args.expected is None:
         parser.error("evidence and --expected are required")
     try:
-        expected = validate_expected(json.loads(
-            args.expected.read_text(encoding="utf-8"), object_pairs_hook=unique_json_object,
-        ))
-        raw = json.loads(
-            args.evidence.read_text(encoding="utf-8"), object_pairs_hook=unique_json_object,
-        )
+        expected = validate_expected(load_json(args.expected))
+        raw = load_json(args.evidence)
         failures = evaluate_evidence(raw, expected, max_age_minutes=args.max_age_minutes)
     except (OSError, UnicodeError, ValueError) as error:
         print(f"BCP snapshot gate input error: {error}", file=sys.stderr)

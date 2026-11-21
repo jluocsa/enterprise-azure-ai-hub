@@ -102,6 +102,8 @@ This verifies the snapshot portion of `B2` and recent successful model/region ev
 
 Both the expected-stamp manifest and evidence export must use **unique member names within every JSON object**, including nested metadata. The companion rejects duplicates before evaluation: `"SuccessfulCalls": 0` followed by `"SuccessfulCalls": 8` must not conceal an error-only stamp, and duplicate snapshot pins must not silently redefine the approved inventory. Identical duplicate values and escape-equivalent names are also rejected; the same name in separate objects remains valid. Ambiguous JSON exits `2` with no stdout or traceback and a diagnostic that does not echo member names or values. This is a local input-integrity rule, not an Azure service requirement or evidence-authenticity check; offline CLI regressions cover both inputs <span class="ev-badge ev-arch">[Arch]</span>.
 
+JSON exceeding the Python parser's nesting limit in either input also exits `2` with a sanitized input-error diagnostic, no stdout, and no traceback. Both files must parse completely before evidence is evaluated; a valid stamp row followed by excessively nested metadata cannot produce a partial pass. The offline self-test covers deep arrays and objects in both inputs and preserves ordinary nested metadata. This handles parser recursion failures, not a fixed portable depth budget, file-size limit, memory-exhaustion guard, or evidence-authenticity check; it does not raise Python's recursion limit <span class="ev-badge ev-arch">[Arch]</span>.
+
 Companion download: <a :href="withBase('/kits/bcp_snapshot_gate.py')" download target="_blank" rel="noopener"><strong><code>Download bcp_snapshot_gate.py</code></strong></a>
 
 ---

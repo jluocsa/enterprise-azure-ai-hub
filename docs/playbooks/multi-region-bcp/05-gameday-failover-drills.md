@@ -42,6 +42,8 @@ Freshness must be checked **per stamp**: an active primary must not hide an old 
 
 Fresh traffic must also include **successful inference**, not just recent failures. The updated query exports `SuccessfulCalls` and `LastSuccessfulSeen` from instrumented model dependencies with HTTP `200–299`; the companion requires a positive successful-call count no greater than `TotalCalls` and applies the same freshness limit to the last successful call. A standby returning only errors, or recent failures after an old success, must block snapshot sign-off. Regenerate older exports rather than substituting `LastSeen` for `LastSuccessfulSeen` <span class="ev-badge ev-arch">[Arch]</span>. HTTP `2xx` alone does not establish completed streaming output, stateful continuity, or the full readiness standard; keep the live drill checks <span class="ev-badge ev-val">[Validate]</span>.
 
+An expected-stamp manifest or evidence export that exceeds the JSON parser's nesting limit must block sign-off as an input-integrity failure (`2`), not an ordinary snapshot mismatch (`1`). The companion emits a sanitized diagnostic without a traceback or partial success; ordinary nested metadata remains supported. See the [kit's parsing boundaries and offline regressions](/papers/engineering-kits#fail-closed-cross-region-snapshot-evidence). This is a local readiness policy, not an Azure nesting limit <span class="ev-badge ev-arch">[Arch]</span>.
+
 ---
 
 ## 2. The 12-Point Multi-Region BCP Readiness Standard (`B1–B12`) `[Agree]`
