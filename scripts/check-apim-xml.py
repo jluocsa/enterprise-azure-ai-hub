@@ -65,6 +65,11 @@ def validate_policy(text: str):
     root = ET.fromstring(text)
     if root.tag != "policies":
         raise ValueError("expected a <policies> document")
+    if [child.tag for child in root] != ["inbound", "backend", "outbound", "on-error"]:
+        raise ValueError(
+            "policy section contract: expected exactly one inbound, backend, outbound, "
+            "and on-error section in that order, with no other root elements"
+        )
     return root
 
 
@@ -178,6 +183,76 @@ def validate_sse(root):
 
 
 class ApimXmlTests(unittest.TestCase):
+    def test_rejects_ambiguous_or_incomplete_policy_sections(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for section in ("inbound", "backend", "outbound", "on-error"):
+            for mutation in ("missing", "duplicate"):
+                with self.subTest(section=section, mutation=mutation):
+                    root = deepcopy(source)
+                    if mutation == "missing":
+                        root.remove(root.find(section))
+                    else:
+                        root.append(deepcopy(root.find(section)))
+                    with self.assertRaisesRegex(ValueError, "policy section contract"):
+                        validate_policy(ET.tostring(root, encoding="unicode"))
+        for mutation in ("reordered", "root-policy", "unknown-section"):
+            with self.subTest(mutation=mutation):
+                root = deepcopy(source)
+                if mutation == "reordered":
+                    inbound = root.find("inbound")
+                    root.remove(inbound)
+                    root.append(inbound)
+                else:
+                    ET.SubElement(root, "set-body" if mutation == "root-policy" else "unexpected")
+                with self.assertRaisesRegex(ValueError, "policy section contract"):
+                    validate_policy(ET.tostring(root, encoding="unicode"))
+        validate_policy("<policies><inbound/><backend/><outbound/><on-error/></policies>")
+
+    def test_cli_blocks_shadow_sections_in_kit_and_rendered_studio(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        regressions = []
+        for section, tag, attributes in (
+            ("inbound", "set-header", {"name": "Authorization", "exists-action": "delete"}),
+            ("backend", None, {}),
+            ("outbound", "set-body", {}),
+            ("on-error", "set-body", {}),
+        ):
+            root = validate_policy(source)
+            shadow = ET.SubElement(root, section)
+            if tag is not None:
+                ET.SubElement(shadow, tag, attributes).text = "@(changedBody)"
+            # The previous first-section lookups accepted these hidden policies.
+            validate_ptu_rewrite(root)
+            validate_spillover(root)
+            validate_sse(root)
+            regressions.append(ET.tostring(root, encoding="unicode"))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for regression in regressions:
+                for target in (None, "kit", "studio"):
+                    kit.write_text(regression if target == "kit" else source, encoding="utf-8")
+                    rendered = regression if target == "studio" else source
+                    studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                      encoding="utf-8")
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with self.subTest(regression=regression, target=target), \
+                            patch.dict(globals(), ROOT=root, KIT=kit), \
+                            patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                            redirect_stdout(stdout), redirect_stderr(stderr):
+                        self.assertEqual(main(), 0 if target is None else 1)
+                    self.assertEqual("PASSED" in stdout.getvalue(), target is None)
+                    if target is None:
+                        self.assertEqual(stderr.getvalue(), "")
+                    else:
+                        self.assertIn("policy section contract", stderr.getvalue())
+                        self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                      stderr.getvalue())
+                        self.assertNotIn("changedBody", stderr.getvalue())
+
     def test_published_spillover_contract(self):
         root = validate_policy(KIT.read_text(encoding="utf-8"))
         validate_ptu_rewrite(root)
@@ -404,13 +479,16 @@ class ApimXmlTests(unittest.TestCase):
 
     def test_expression_encoding_round_trips(self):
         text = """<policies>
-          <set-variable value="@(context.Variables[&quot;key&quot;])" />
-          <set-body>@{ return body.As&lt;JObject&gt;(); }</set-body>
+          <inbound>
+            <set-variable value="@(context.Variables[&quot;key&quot;])" />
+            <set-body>@{ return body.As&lt;JObject&gt;(); }</set-body>
+          </inbound>
+          <backend /><outbound /><on-error />
         </policies>"""
         validate_policy(text)
         policy = ET.fromstring(text)
-        self.assertEqual(policy[0].get("value"), '@(context.Variables["key"])')
-        self.assertEqual(policy[1].text, "@{ return body.As<JObject>(); }")
+        self.assertEqual(policy[0][0].get("value"), '@(context.Variables["key"])')
+        self.assertEqual(policy[0][1].text, "@{ return body.As<JObject>(); }")
         # Rendered HTML adds a separate encoding layer around the copyable XML.
         from html import escape
         validate_studio(f'<pre class="apim-code"><code>{escape(text)}</code></pre>')
@@ -462,7 +540,7 @@ def main() -> int:
     if errors:
         print("APIM XML gate FAILED:\n" + "\n".join(errors), file=sys.stderr)
         return 1
-    print("APIM XML gate PASSED (kit + Studio default; XML, static two-API PTU rewrite, spillover body and SSE response contracts, not live APIM execution).")
+    print("APIM XML gate PASSED (kit + Studio default; XML sections, static two-API PTU rewrite, spillover body and SSE response contracts, not live APIM execution).")
     return 0
 
 
