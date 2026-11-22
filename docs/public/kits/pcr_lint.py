@@ -111,8 +111,11 @@ def scan_python_ast(path: Path, source: str) -> list[Finding]:
                 )
 
         # PCR003: json.dumps on schema / card / tool / context objects without sort_keys=True
-        if func_src == "json.dumps" and node.args:
-            arg0 = ast.unparse(node.args[0]) if hasattr(ast, "unparse") else ""
+        if func_src == "json.dumps":
+            object_node = node.args[0] if node.args else kw_names.get("obj")
+            if object_node is None:
+                continue
+            arg0 = ast.unparse(object_node) if hasattr(ast, "unparse") else ""
             if re.search(r"(tool|schema|card|context|ctx|rubric|taxonomy)", arg0, re.IGNORECASE):
                 sort_kw = kw_names.get("sort_keys")
                 is_sorted = isinstance(sort_kw, ast.Constant) and sort_kw.value is True
@@ -297,10 +300,57 @@ def run_self_test() -> int:
                 assert findings == [], (expression, findings)
             key_samples.append(sample)
 
+    serialization_samples: list[str] = []
+    unsorted_lines: list[int] = []
+    for object_arg in ("tool_schema", "obj=tool_schema", "obj=context_card"):
+        for sort_arg in ("", ", sort_keys=False", ", sort_keys=1",
+                         ", sort_keys=should_sort", ", sort_keys=True"):
+            sample = f"json.dumps({object_arg}{sort_arg})\n"
+            findings = scan_python_ast(Path("serialization.py"), sample)
+            if sort_arg == ", sort_keys=True":
+                assert findings == [], (sample, findings)
+            else:
+                assert len(findings) == 1 and findings[0].rule == "PCR003", (sample, findings)
+                assert findings[0].file == "serialization.py" and findings[0].line == 1, findings
+                unsorted_lines.append(len(serialization_samples) + 1)
+            serialization_samples.append(sample)
+    for sample in (
+        "json.dumps(obj=payload)\n", "json.dumps()\n", "json.dumps(**options)\n",
+        "other.dumps(obj=tool_schema)\n",
+    ):
+        assert scan_python_ast(Path("serialization.py"), sample) == [], sample
+        serialization_samples.append(sample)
+
     with TemporaryDirectory() as tmp:
         root = Path(tmp)
         clean = root / "clean.py"
         clean.write_text(clean_sample, encoding="utf-8")
+        serialization = root / "serialization.py"
+        serialization.write_text("".join(serialization_samples), encoding="utf-8")
+        for output_flags in ([], ["--json"]):
+            result = subprocess.run(
+                [sys.executable, str(SELF_PATH), str(clean), str(serialization), *output_flags],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            assert result.returncode == 1 and not result.stderr, result
+            assert "PASSED" not in result.stdout and "Traceback" not in result.stdout, result.stdout
+            if output_flags:
+                findings = json.loads(result.stdout)
+                assert [f["line"] for f in findings] == unsorted_lines, findings
+                assert all(f["rule"] == "PCR003" and f["file"] == serialization.as_posix()
+                           for f in findings), findings
+            else:
+                assert result.stdout.count("[PCR003]") == len(unsorted_lines), result.stdout
+        serialization.write_text(
+            "json.dumps(obj=tool_schema, sort_keys=True)\n"
+            "json.dumps(obj=context_card, sort_keys=True)\n", encoding="utf-8",
+        )
+        result = subprocess.run(
+            [sys.executable, str(SELF_PATH), str(serialization), "--json"],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+        assert result.returncode == 0 and not result.stderr, result
+        assert json.loads(result.stdout) == [], result.stdout
         keys = root / "keys.py"
         keys.write_text("".join(key_samples), encoding="utf-8")
         for output_flags in ([], ["--json"]):
@@ -412,7 +462,7 @@ def run_self_test() -> int:
             walk.side_effect = denied_walk
             assert scan_path(empty)[0].rule == "PCR000"
 
-    print("✅ pcr_lint.py self-test PASSED (PCR000 scan integrity/AST recursion + PCR001 constant keys/CLI + PCR001–PCR006 verified).")
+    print("✅ pcr_lint.py self-test PASSED (PCR000 scan integrity/AST recursion + PCR001 constant keys/CLI + PCR003 keyword serialization/CLI + PCR001–PCR006 verified).")
     return 0
 
 

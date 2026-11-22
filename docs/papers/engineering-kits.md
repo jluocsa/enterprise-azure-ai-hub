@@ -29,6 +29,8 @@ Deeply nested Python source that exceeds the recursion limit during AST parsing 
 
 `PCR001` also rejects blank (empty or whitespace-only) and non-string **Python AST constants**, such as `None`, booleans, numbers, and bytes, on both `responses.create` and `chat.completions.create`. This is a local deterministic-routing readiness policy applied to matching calls regardless of model, not an Azure API requirement. The scanner inspects constant nodes without evaluating source expressions: names, calls, containers, arithmetic, concatenation, and f-strings are not resolved or certified by this check; the existing high-cardinality name heuristic still applies. Retain runtime assertions for computed keys. The self-test covers accepted strings, rejected constants, unevaluated expressions, and text/JSON CLI failures <span class="ev-badge ev-arch">[Arch]</span>.
 
+`PCR003` applies the same object-name heuristic and literal `sort_keys=True` requirement to positional and explicit keyword serialization: `json.dumps(obj=tool_schema)` cannot bypass the check. Missing, false, numeric, and computed sorting flags produce findings for matching expressions; unrelated object names remain outside the heuristic. The self-test covers AST findings, text/JSON CLI failures, and corrected keyword calls. This local prefix-order policy does not evaluate expressions, resolve `**kwargs` or aliases, or certify full canonicalization <span class="ev-badge ev-arch">[Arch]</span>.
+
 Raw download: <a :href="withBase('/kits/pcr_lint.py')" download target="_blank" rel="noopener"><strong><code>Download pcr_lint.py</code></strong></a>
 
 <<< @/public/kits/pcr_lint.py{python}
