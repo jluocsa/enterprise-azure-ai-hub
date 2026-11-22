@@ -98,8 +98,12 @@ def validate_spillover(root):
 
     inbound = root.find("inbound")
     require(inbound is not None, "missing inbound policies")
-    snapshots = inbound.findall("set-variable[@name='original-request-body']")
-    require(len(snapshots) == 1, "capture exactly one original request body")
+    snapshots = root.findall(".//set-variable[@name='original-request-body']")
+    require(
+        len(snapshots) == 1,
+        "capture exactly one original request body; no visible set-variable may reassign its snapshot",
+    )
+    require(snapshots[0] in list(inbound), "snapshot capture must be unconditional in inbound")
     require(
         snapshots[0].get("value")
         == "@(context.Request.Body.As<string>(preserveContent: true))",
@@ -401,6 +405,69 @@ class ApimXmlTests(unittest.TestCase):
                     retry.set("condition", "@(context.Response.StatusCode == 429)")
                 with self.assertRaisesRegex(ValueError, "spillover body contract"):
                     validate_spillover(root)
+
+    def test_snapshot_reassignments_fail_closed_in_kit_and_rendered_studio(self):
+        from html import escape
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        snapshot = source.find("./inbound/set-variable[@name='original-request-body']")
+        fixtures = [("published", source, True)]
+        unrelated = deepcopy(source)
+        branch = ET.SubElement(ET.SubElement(unrelated.find("inbound"), "choose"),
+                               "when", condition="@(true)")
+        ET.SubElement(branch, "set-variable", name="other-request-body",
+                      value=snapshot.get("value"))
+        fixtures.append(("unrelated-variable", unrelated, True))
+        for section in ("inbound", "backend", "outbound", "on-error"):
+            for nested in (False, True):
+                root = deepcopy(source)
+                parent = root.find(section)
+                if nested:
+                    parent = ET.SubElement(ET.SubElement(parent, "choose"),
+                                           "when", condition="@(true)")
+                parent.append(deepcopy(snapshot))
+                fixtures.append((f"{section}-nested-{nested}", root, False))
+        conditional = deepcopy(source)
+        inbound = conditional.find("inbound")
+        capture = inbound.find("set-variable[@name='original-request-body']")
+        inbound.remove(capture)
+        branch = ET.SubElement(ET.SubElement(inbound, "choose"), "when", condition="@(true)")
+        branch.append(capture)
+        fixtures.append(("conditional-only-capture", conditional, False))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            original = ET.tostring(source, encoding="unicode")
+            for name, policy, valid in fixtures:
+                with self.subTest(fixture=name):
+                    if valid:
+                        validate_spillover(policy)
+                    else:
+                        with self.assertRaisesRegex(ValueError, "spillover body contract:.*snapshot"):
+                            validate_spillover(policy)
+                regression = ET.tostring(policy, encoding="unicode")
+                for target in ("kit", "studio"):
+                    kit.write_text(regression if target == "kit" else original, encoding="utf-8")
+                    rendered = regression if target == "studio" else original
+                    studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                      encoding="utf-8")
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with self.subTest(fixture=name, target=target), \
+                            patch.dict(globals(), ROOT=root, KIT=kit), \
+                            patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                            redirect_stdout(stdout), redirect_stderr(stderr):
+                        self.assertEqual(main(), 0 if valid else 1)
+                    if valid:
+                        self.assertIn("PASSED", stdout.getvalue())
+                        self.assertEqual(stderr.getvalue(), "")
+                    else:
+                        self.assertEqual(stdout.getvalue(), "")
+                        self.assertIn("spillover body contract", stderr.getvalue())
+                        self.assertIn("snapshot", stderr.getvalue())
+                        self.assertNotIn("Traceback", stderr.getvalue())
+                        self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                      stderr.getvalue())
 
     def test_expression_encoding_round_trips(self):
         text = """<policies>
