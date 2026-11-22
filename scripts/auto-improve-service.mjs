@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Cross-Platform Background Service & Watchdog Controller
- * Enterprise Azure AI Solution Industrialization Hub — Self-Improvement Agent
+ * Enterprise Azure AI Solution Industrialization Hub — Self-Recursive Agent
  *
  * Supports Windows (Task Scheduler + hidden wscript watchdog + detached daemon),
  * macOS (LaunchAgent KeepAlive), and Linux (systemd --user + detached daemon).
@@ -172,7 +172,7 @@ export function buildWindowsWatchdogVbs(nodeExe, serviceScriptPath) {
   const escapedNode = nodeExe.replace(/"/g, '""')
   const escapedScript = serviceScriptPath.replace(/"/g, '""')
   return [
-    "' Hidden Windows Task Scheduler launcher for Enterprise Azure AI Hub Self-Improvement Agent",
+    "' Hidden Windows Task Scheduler launcher for Enterprise Azure AI Hub Self-Recursive Agent",
     'Dim shell, cmd',
     'Set shell = CreateObject("WScript.Shell")',
     `cmd = """${escapedNode}"" ""${escapedScript}"" --ensure-running"`,
@@ -274,7 +274,7 @@ function installOsWatchdog(paths) {
   fs.mkdirSync(path.dirname(paths.linuxUnitPath), { recursive: true })
   const unitText = [
     '[Unit]',
-    'Description=Enterprise Azure AI Hub Continuous Self-Improvement Agent',
+    'Description=Enterprise Azure AI Hub Continuous Self-Recursive Agent',
     'After=network-online.target',
     '',
     '[Service]',

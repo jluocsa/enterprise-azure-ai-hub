@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Enterprise Azure AI Solution Industrialization Hub
- * Built-In Self-Improvement Dual-Agent Daemon (ImproverAgent + ARB ReviewerAgent)
+ * Built-In Self-Recursive Dual-Agent Daemon (ImproverAgent + ARB ReviewerAgent)
  *
  * Modes:
  *   node scripts/auto-improve-daemon.mjs --watch         # Continuous 24/7 self-driving loop (Windows/macOS/Linux)
@@ -773,7 +773,7 @@ export async function runImprovementCycle() {
   const ghToken = resolveGhToken()
   const brief = buildSelfImprovementBrief()
 
-  log(`Phase B: Starting self-improvement cycle on branch ${branchName}...`)
+  log(`Phase B: Starting self-recursive cycle on branch ${branchName}...`)
 
   let createdPrNumber = null
 
@@ -784,9 +784,9 @@ export async function runImprovementCycle() {
       runVerifySuite(wtDir)
 
       const prompt = [
-        `Execute one complete governed self-improvement cycle inside this worktree (branch: ${branchName}).`,
+        `Execute one complete governed self-recursive cycle inside this worktree (branch: ${branchName}).`,
         ``,
-        `=== SELF-IMPROVEMENT MEMORY & PRIORITY BRIEF ===`,
+        `=== SELF-RECURSIVE MEMORY & PRIORITY BRIEF ===`,
         `Recently merged PRs (do NOT duplicate these):`,
         ...(brief.mergedSummary.length ? brief.mergedSummary.map(s => `  - ${s}`) : ['  - (none)']),
         ``,
@@ -1089,7 +1089,7 @@ async function main() {
   }
 
   if (mode === '--watch') {
-    log(`Starting continuous self-improvement daemon (interval=${INTERVAL_MINUTES}m, platform=${process.platform}, repo=${REPO_SLUG})...`)
+    log(`Starting continuous self-recursive daemon (interval=${INTERVAL_MINUTES}m, platform=${process.platform}, repo=${REPO_SLUG})...`)
     let consecutiveFailures = 0
     while (true) {
       const { pausePath, statePath } = pathsConfig()

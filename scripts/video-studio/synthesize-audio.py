@@ -170,7 +170,7 @@ SCENES = [
         "chapter": "09 · 5-Stage Factory, 3-Wk Scope & Autonomous Loop",
         "shortLabel": "09 · Factory & Auto-Loop",
         "kicker": "GOVERNED OPERATING MODEL, 3-WEEK SPRINT & 24/7 DUAL-AGENT LOOP",
-        "title": "5-Stage Factory, 3-Week Delivery & Continuous Self-Improvement",
+        "title": "5-Stage Factory, 3-Week Delivery & Continuous Self-Recursive Loop",
         "narration": (
             "The three Operating Model subpages govern how field wins scale: a five-stage Customer-Zero factory "
             "with automated sanitization, four-tier Microsoft Learn evidence tags, tri-path IP routing, "
