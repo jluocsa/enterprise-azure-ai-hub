@@ -56,7 +56,7 @@ enterprise-azure-ai-hub/
 │     ├─ kits/                           # 5 runnable Python, APIM XML & KQL release-gate kits
 │     └─ video/                          # 1080p CSA Forum studio intro MP4, WebM, poster PNG & WebVTT
 ├─ scripts/
-│  ├─ auto-improve-daemon.mjs            # Continuous self-improvement dual-agent engine & memory ledger
+│  ├─ auto-improve-daemon.mjs            # Continuous self-recursive dual-agent engine & memory ledger
 │  ├─ auto-improve-service.mjs           # Cross-platform background service & OS watchdog (Win/macOS/Linux)
 │  ├─ build-intro-video.mjs              # Deterministic 1080p studio video, neural VO, ambient score & VTT builder
 │  ├─ check-links.py                     # Deterministic HTML route, download & anchor integrity gate
@@ -82,9 +82,9 @@ npm run docs:dev          # Launch local VitePress dev server with hot reload
 npm run deploy:pages      # Run full verification and publish static site to origin/gh-pages
 ```
 
-## Built-In Continuous Self-Improvement Agent (Cross-Platform Service + GitHub Actions)
+## Built-In Continuous Self-Recursive Agent (Cross-Platform Service + GitHub Actions)
 
-The Hub includes a **closed-loop dual-agent self-improvement system** (`scripts/auto-improve-daemon.mjs` + `scripts/auto-improve-service.mjs`) that can run **24/7 continuously in the background** on Windows (hidden Task Scheduler watchdog + detached daemon), macOS (`LaunchAgent`), Linux (`systemd --user`), or GitHub Actions (`.github/workflows/autonomous-improvement-loop.yml`):
+The Hub includes a **closed-loop dual-agent self-recursive system** (`scripts/auto-improve-daemon.mjs` + `scripts/auto-improve-service.mjs`) that can run **24/7 continuously in the background** on Windows (hidden Task Scheduler watchdog + detached daemon), macOS (`LaunchAgent`), Linux (`systemd --user`), or GitHub Actions (`.github/workflows/autonomous-improvement-loop.yml`):
 
 1. **Closed-Loop Memory & Track Balancer:** Synthesizes recently merged PRs, queued `next_backlog` items from prior cycles, past ARB rejection lessons, and least-recently-improved track rankings across all 6 Hub tracks.
 2. **Author Agent (`hub-improver`):** Works inside an isolated Git worktree (`improve/auto-YYYYMMDD-HHMMSS`), enforces hard `--deny-tool` boundaries on governance files, verifies `npm run verify`, and opens a Draft PR.

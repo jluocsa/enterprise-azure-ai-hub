@@ -21,8 +21,8 @@ You are invoked inside an isolated Git worktree already checked out to a dedicat
 
 ## Execution Steps
 
-1. **Baseline Check & Self-Improvement Memory Scan:**
-   - Review the **Self-Improvement Memory & Priority Brief** provided in your prompt (recently merged PRs, under-served priority tracks, queued `next_backlog` candidates from prior cycles, and any past ARB rejection guardrails).
+1. **Baseline Check & Self-Recursive Memory Scan:**
+   - Review the **Self-Recursive Memory & Priority Brief** provided in your prompt (recently merged PRs, under-served priority tracks, queued `next_backlog` candidates from prior cycles, and any past ARB rejection guardrails).
    - Run `git --no-pager log -n 8 --oneline` and `npm run verify` before making edits to confirm a clean baseline.
 2. **Observe & Select:**
    - Inspect Playbooks 01–04 (`docs/playbooks/`), Decision Studio (`docs/.vitepress/theme/components/`), MIT Kits (`docs/public/kits/`), White Papers (`docs/papers/`), and Operating Model (`docs/operating-model/`).
