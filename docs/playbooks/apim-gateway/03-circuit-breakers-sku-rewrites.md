@@ -109,4 +109,10 @@ The standalone kit assumes that `foundry-ptu-primary` is a **GPT-5.6 PTU-M** dep
 
 Before release, probe both API payload shapes with `429`, `503`, an already-open PTU breaker, and successful `200` streaming: confirm Standard receives the original cache fields, PTU receives the stripped body with the same cache key and content, and no retry occurs after stream headers. Include string content, multimodal blocks, and absent, GPT-6, or arbitrary `x-target-regime` header values; the header must not alter the fixed GPT-5.6 primary's rewrite. Transport/on-error failures are outside this response-based retry contract <span class="ev-badge ev-val">[Validate]</span>.
 
+### Unambiguous Policy Sections
+
+Microsoft Learn describes policy configuration as `inbound`, `backend`, `outbound`, and `on-error` sections ([policy configuration reference](https://learn.microsoft.com/en-us/azure/api-management/api-management-howto-policies#understanding-policy-configuration)) <span class="ev-badge ev-m">[M]</span>. The published kit and Studio default use all four sections in that order. Their offline gate now requires exactly that root structure before checking any body, routing, or streaming policies: a duplicate section must not hide policies from first-section XML lookups. Missing, duplicate, reordered, or unexpected root elements exit `1` with a section-contract diagnostic and no pass message. Mutation regressions cover every section, including duplicate sections containing body replacements or authorization-header overrides, in both kit and rendered-Studio CLI inputs <span class="ev-badge ev-arch">[Arch]</span>.
+
+This is a local complete-document contract for these published artifacts, not a full APIM schema validator or a claim that every policy scope must contain all four sections. XML comments and formatting remain allowed, and existing valid generated policies are unchanged. Inherited policies, individual policy attributes, C# expressions, and live deployment still require effective-policy review and the probes above <span class="ev-badge ev-arch">[Arch]</span>.
+
 <ApimPolicyBuilder />
