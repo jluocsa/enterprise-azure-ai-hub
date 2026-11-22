@@ -79,4 +79,6 @@ When Primary Region A suffers an outage and APIM switches 100% of live traffic t
 
 ## 3. Interactive Multi-Region BCP & Surge Calculator
 
+The advisor blocks metrics, recommendations, and Markdown export for blank, non-finite, or out-of-range numeric inputs instead of silently clamping them. Primary capacity must be a safe whole number of at least `15` PTUs in `5`-PTU steps; cached share accepts `0–95%`, including fractional percentages. Surge capacity and combined reservations must also remain safe integers. These are **local estimator guardrails**, not a universal Azure SKU availability or scale-increment guarantee. Field-linked errors clear after correction, and valid inputs preserve the existing posture math. Offline interaction regressions run in `npm run verify`; they do not certify quota, throughput, RTO, or live failover readiness <span class="ev-badge ev-arch">[Arch]</span>.
+
 <BcpResidencyAdvisor />

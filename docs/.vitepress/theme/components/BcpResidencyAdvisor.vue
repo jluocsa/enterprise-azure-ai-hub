@@ -3,17 +3,46 @@ import { computed, ref } from 'vue'
 
 const residencyTier = ref<'global' | 'datazone' | 'regional'>('datazone')
 const drPosture = ref<'active-passive-payg' | 'active-passive-minptu' | 'active-active'>('active-passive-payg')
-const steadyPtu = ref(170)
-const steadyHitPct = ref(80)
+const steadyPtu = ref<number | string>(170)
+const steadyHitPct = ref<number | string>(80)
 const statefulDeps = ref<'cosmos-aisearch' | 'cosmos-only' | 'stateless'>('cosmos-aisearch')
 const copied = ref(false)
 
-const result = computed(() => {
-  const basePtu = Math.max(15, steadyPtu.value)
-  const hit = Math.min(95, Math.max(0, steadyHitPct.value)) / 100
+const validatedInputs = computed(() => {
+  const errors: Record<string, string> = {}
+  const basePtu = steadyPtu.value
+  const hitPct = steadyHitPct.value
+  if (typeof basePtu !== 'number' || !Number.isSafeInteger(basePtu) || basePtu < 15 || basePtu % 5 !== 0) {
+    errors.steadyPtu = 'Primary Steady Allocation: enter a safe whole number of at least 15 PTUs in 5-PTU steps.'
+  }
+  if (typeof hitPct !== 'number' || !Number.isFinite(hitPct) || hitPct < 0 || hitPct > 95) {
+    errors.steadyHitPct = 'Primary Steady Cached Share: enter a finite number from 0 to 95%.'
+  }
+  if (Object.keys(errors).length || typeof basePtu !== 'number' || typeof hitPct !== 'number') {
+    return { errors, values: null }
+  }
+  const hit = hitPct / 100
   // When regional failover occurs, secondary region KV cache starts 0% warm -> temporary cold-cache surge factor
   const coldSurgeFactor = hit > 0 ? Math.min(3.2, 1 / Math.max(0.32, 1 - hit * 0.72)) : 1.0
   const coldSurgePtuEquiv = Math.ceil((basePtu * coldSurgeFactor) / 5) * 5
+  const secondaryPtu = drPosture.value === 'active-active'
+    ? basePtu
+    : drPosture.value === 'active-passive-minptu'
+      ? residencyTier.value === 'regional' ? 25 : 15
+      : 0
+  const totalPtu = basePtu + secondaryPtu
+  if (!Number.isSafeInteger(coldSurgePtuEquiv) || !Number.isSafeInteger(totalPtu)) {
+    errors.steadyPtu = 'Primary Steady Allocation: reduce capacity so surge and reserved totals remain safe whole numbers.'
+    return { errors, values: null }
+  }
+  return { errors, values: { basePtu, hitPct, coldSurgeFactor, coldSurgePtuEquiv, secondaryPtu, totalPtu } }
+})
+const inputErrors = computed(() => validatedInputs.value.errors)
+
+const result = computed(() => {
+  const values = validatedInputs.value.values
+  if (!values) return null
+  const { basePtu, coldSurgeFactor, coldSurgePtuEquiv, secondaryPtu, totalPtu } = values
 
   let skuGuidance = ''
   let residencyNote = ''
@@ -28,15 +57,12 @@ const result = computed(() => {
     residencyNote = 'Single-region processing boundary (min 15–25 PTU depending on model); verify paired-region model snapshot parity before cutover [M].'
   }
 
-  let secondaryPtu = 0
   let rtoEstimate = '< 15 sec (APIM Circuit Breaker)'
   let tcoMultiplier = '1.00× Base PTU (+ burst PAYG only during drills/outages)'
   if (drPosture.value === 'active-active') {
-    secondaryPtu = basePtu
     rtoEstimate = '~0 sec (Weighted Active-Active)'
     tcoMultiplier = '2.00× Reserved PTU Commitment'
   } else if (drPosture.value === 'active-passive-minptu') {
-    secondaryPtu = residencyTier.value === 'regional' ? 25 : 15
     rtoEstimate = '< 10 sec (Warm PTU Anchor + PAYG Burst)'
     tcoMultiplier = `${((basePtu + secondaryPtu) / basePtu).toFixed(2)}× Reserved PTU Commitment`
   }
@@ -56,6 +82,7 @@ const result = computed(() => {
     coldSurgeFactor: coldSurgeFactor.toFixed(2),
     coldSurgePtuEquiv,
     secondaryPtu,
+    totalPtu,
     rtoEstimate,
     tcoMultiplier,
     stateGuidance,
@@ -63,14 +90,17 @@ const result = computed(() => {
 })
 
 async function copyBcpPlan() {
+  const plan = result.value
+  const values = validatedInputs.value.values
+  if (!plan || !values) return
   const md = [
     `### Multi-Region Foundry BCP & Residency Plan`,
-    `- **Recommended Deployment SKU:** ${result.value.skuGuidance}`,
-    `- **Boundary Rule:** ${result.value.residencyNote}`,
-    `- **DR Capacity Posture:** Primary \`${steadyPtu.value} PTUs\` · Secondary Reserved \`${result.value.secondaryPtu} PTUs\` (${result.value.tcoMultiplier})`,
-    `- **Target Cutover RTO:** ${result.value.rtoEstimate}`,
-    `- **Cold-Cache Failover Surge (First 5–15 Min):** \`${result.value.coldSurgeFactor}×\` (~${result.value.coldSurgePtuEquiv} PTU-equiv TPM while secondary KV prefix cache warms from 0% to ${steadyHitPct.value}% — absorb via Secondary Standard PAYG overflow)`,
-    `- **Stateful Stamp Sync:** ${result.value.stateGuidance}`,
+    `- **Recommended Deployment SKU:** ${plan.skuGuidance}`,
+    `- **Boundary Rule:** ${plan.residencyNote}`,
+    `- **DR Capacity Posture:** Primary \`${values.basePtu} PTUs\` · Secondary Reserved \`${plan.secondaryPtu} PTUs\` (${plan.tcoMultiplier})`,
+    `- **Target Cutover RTO:** ${plan.rtoEstimate}`,
+    `- **Cold-Cache Failover Surge (First 5–15 Min):** \`${plan.coldSurgeFactor}×\` (~${plan.coldSurgePtuEquiv} PTU-equiv TPM while secondary KV prefix cache warms from 0% to ${values.hitPct}% — absorb via Secondary Standard PAYG overflow)`,
+    `- **Stateful Stamp Sync:** ${plan.stateGuidance}`,
   ].join('\n')
   try {
     await navigator.clipboard.writeText(md)
@@ -89,7 +119,7 @@ async function copyBcpPlan() {
         <span class="bcp-kicker">INTERACTIVE RESILIENCY WORKBENCH &middot; PLAYBOOK 03</span>
         <strong class="bcp-title">Multi-Region Data Residency &amp; Cold-Cache Failover Surge Advisor</strong>
       </div>
-      <button type="button" class="bcp-copy-btn no-print" @click="copyBcpPlan">
+      <button type="button" class="bcp-copy-btn no-print" :disabled="!result" @click="copyBcpPlan">
         {{ copied ? '✓ Copied BCP Summary' : 'Copy BCP Plan' }}
       </button>
     </div>
@@ -115,12 +145,12 @@ async function copyBcpPlan() {
 
       <label>
         <span>3. Primary Steady Allocation (PTUs)</span>
-        <input v-model.number="steadyPtu" type="number" min="15" step="5" />
+        <input v-model.number="steadyPtu" type="number" min="15" step="5" :aria-invalid="Boolean(inputErrors.steadyPtu)" :aria-describedby="inputErrors.steadyPtu ? 'bcp-input-errors' : undefined" />
       </label>
 
       <label>
         <span>4. Primary Steady Cached Share (%)</span>
-        <input v-model.number="steadyHitPct" type="number" min="0" max="95" step="5" />
+        <input v-model.number="steadyHitPct" type="number" min="0" max="95" step="5" :aria-invalid="Boolean(inputErrors.steadyHitPct)" :aria-describedby="inputErrors.steadyHitPct ? 'bcp-input-errors' : undefined" />
       </label>
 
       <label class="bcp-span-2">
@@ -133,7 +163,14 @@ async function copyBcpPlan() {
       </label>
     </div>
 
-    <div class="bcp-metrics">
+    <div v-if="!result" id="bcp-input-errors" class="bcp-input-errors" role="alert">
+      <strong>Plan unavailable. Correct the input values before calculating or exporting.</strong>
+      <ul>
+        <li v-for="(message, key) in inputErrors" :key="key">{{ message }}</li>
+      </ul>
+    </div>
+
+    <div v-if="result" class="bcp-metrics">
       <div class="bcp-metric highlight">
         <span class="k">Cold-Cache Failover Surge (First 5–15m)</span>
         <div class="v">{{ result.coldSurgeFactor }}&times; TPM</div>
@@ -146,12 +183,12 @@ async function copyBcpPlan() {
       </div>
       <div class="bcp-metric teal">
         <span class="k">Reserved PTU Footprint</span>
-        <div class="v">{{ steadyPtu + result.secondaryPtu }} PTUs</div>
+        <div class="v">{{ result.totalPtu }} PTUs</div>
         <span class="sub">{{ result.tcoMultiplier }}</span>
       </div>
     </div>
 
-    <div class="bcp-summary">
+    <div v-if="result" class="bcp-summary">
       <p><strong>Recommended SKU Topology:</strong> {{ result.skuGuidance }}</p>
       <p><strong>Residency Guarantee:</strong> {{ result.residencyNote }}</p>
       <p><strong>Stateful Stamp Requirement:</strong> {{ result.stateGuidance }}</p>
@@ -204,6 +241,18 @@ async function copyBcpPlan() {
 .bcp-copy-btn:hover {
   background: var(--vp-c-brand-1);
   color: #fff;
+}
+.bcp-copy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.bcp-input-errors {
+  margin-bottom: 16px;
+  color: var(--vp-c-text-1);
+  border-left: 3px solid #d97706;
+  padding: 10px 14px;
+  background: var(--ms-surface-card);
+  font-size: 0.8rem;
 }
 .bcp-inputs {
   display: grid;
