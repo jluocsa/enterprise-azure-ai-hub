@@ -5,14 +5,31 @@ const newSessionsPerMin = ref(8)
 const avgSessionActiveSec = ref(120)
 const cooldownSec = ref(300)
 const readyWarmPct = ref(15)
-const maxP95Ms = ref(15000)
-const minCachedTokens = ref(1024)
+const maxP95Ms = ref<number | string>(15000)
+const minCachedTokens = ref<number | string>(1024)
 const requireFoundryIq = ref(true)
 const requireAclTrimming = ref(true)
 const forbidRawPromptLogging = ref(true)
 const simScenario = ref<'clean' | 'hallucinated-cite' | 'untrimmed-acl' | 'raw-prompt-leak' | 'cache-miss'>('clean')
 const copiedContract = ref(false)
 const copiedCli = ref(false)
+
+const validatedContract = computed(() => {
+  const errors: Record<string, string> = {}
+  const latency = maxP95Ms.value
+  const cachedTokens = minCachedTokens.value
+  if (typeof latency !== 'number' || !Number.isFinite(latency) || latency <= 0) {
+    errors.maxP95Ms = 'Max Turn Latency Budget: enter a finite number greater than zero.'
+  }
+  if (typeof cachedTokens !== 'number' || !Number.isSafeInteger(cachedTokens) || cachedTokens <= 0) {
+    errors.minCachedTokens = 'Min Pass-2 Cached Tokens: enter a positive safe whole number.'
+  }
+  if (Object.keys(errors).length || typeof latency !== 'number' || typeof cachedTokens !== 'number') {
+    return { errors, values: null }
+  }
+  return { errors, values: { latency, cachedTokens } }
+})
+const contractErrors = computed(() => validatedContract.value.errors)
 
 const poolCalc = computed(() => {
   const ratePerSec = Math.max(0.01, newSessionsPerMin.value) / 60
@@ -35,11 +52,13 @@ const poolCalc = computed(() => {
 })
 
 const contractJson = computed(() => {
+  const values = validatedContract.value.values
+  if (!values) return null
   const obj = {
     contract_version: '2.0',
     track: 'Playbook 04 · Sandboxed Agentic Harness & 7-Layer Evals',
-    max_p95_ms: maxP95Ms.value,
-    min_pass2_cached_tokens: minCachedTokens.value,
+    max_p95_ms: values.latency,
+    min_pass2_cached_tokens: values.cachedTokens,
     required_tools: requireFoundryIq.value ? ['knowledge_base_retrieve'] : [],
     forbidden_tools: ['raw_shell_root', 'unguarded_http_post', 'drop_container'],
     require_acl_trimming: requireAclTrimming.value,
@@ -49,6 +68,7 @@ const contractJson = computed(() => {
 })
 
 const deployCliSnippet = computed(() => {
+  if (!validatedContract.value.values) return null
   return [
     `SHA=$(git rev-parse --short HEAD)`,
     `az containerapp sessionpool update \\`,
@@ -60,6 +80,10 @@ const deployCliSnippet = computed(() => {
 })
 
 const simulatedEval = computed(() => {
+  const values = validatedContract.value.values
+  if (!values) {
+    return { passed: false, exitCode: 2, findings: Object.values(contractErrors.value) }
+  }
   const findings: string[] = []
   if (simScenario.value === 'hallucinated-cite') {
     findings.push(
@@ -80,20 +104,23 @@ const simulatedEval = computed(() => {
       )
     }
   }
-  if (simScenario.value === 'cache-miss') {
+  if (simScenario.value === 'cache-miss' && values.cachedTokens <= 4800) {
     findings.push(
-      `[ARG004] case-008: pass 2 had 4800 input tokens but only 0 cached_tokens (<${minCachedTokens.value}).`
+      `[ARG004] case-008: pass 2 had 4800 input tokens but only 0 cached_tokens (<${values.cachedTokens}).`
     )
   }
   return {
     passed: findings.length === 0,
+    exitCode: findings.length === 0 ? 0 : 1,
     findings,
   }
 })
 
 async function copyContract() {
+  const json = contractJson.value
+  if (json === null) return
   try {
-    await navigator.clipboard.writeText(contractJson.value)
+    await navigator.clipboard.writeText(json)
     copiedContract.value = true
     setTimeout(() => {
       copiedContract.value = false
@@ -102,8 +129,10 @@ async function copyContract() {
 }
 
 async function copyCli() {
+  const cli = deployCliSnippet.value
+  if (cli === null) return
   try {
-    await navigator.clipboard.writeText(deployCliSnippet.value)
+    await navigator.clipboard.writeText(cli)
     copiedCli.value = true
     setTimeout(() => {
       copiedCli.value = false
@@ -122,10 +151,10 @@ async function copyCli() {
       <div class="aeb-head-btns no-print">
         <span class="ev-badge ev-m">[M] ACA Sessions</span>
         <span class="ev-badge ev-arch">[Arch] ARG001–007</span>
-        <button type="button" class="aeb-btn" @click="copyContract">
+        <button type="button" class="aeb-btn" :disabled="!validatedContract.values" @click="copyContract">
           {{ copiedContract ? '✓ Copied Contract JSON' : 'Copy Contract JSON' }}
         </button>
-        <button type="button" class="aeb-btn" @click="copyCli">
+        <button type="button" class="aeb-btn" :disabled="!validatedContract.values" @click="copyCli">
           {{ copiedCli ? '✓ Copied CLI Gate' : 'Copy ACA + Gate CLI' }}
         </button>
       </div>
@@ -150,12 +179,23 @@ async function copyCli() {
       </label>
       <label>
         <span>5. Max Turn Latency Budget p95 (ms · ARG005)</span>
-        <input v-model.number="maxP95Ms" type="number" min="2000" step="1000" />
+        <input v-model.number="maxP95Ms" type="number" min="0" step="any"
+          :aria-invalid="!!contractErrors.maxP95Ms"
+          :aria-describedby="contractErrors.maxP95Ms ? 'aeb-contract-errors' : undefined" />
       </label>
       <label>
         <span>6. Min Pass-2 Cached Tokens (ARG004)</span>
-        <input v-model.number="minCachedTokens" type="number" min="1024" step="512" />
+        <input v-model.number="minCachedTokens" type="number" min="1" :max="Number.MAX_SAFE_INTEGER" step="1"
+          :aria-invalid="!!contractErrors.minCachedTokens"
+          :aria-describedby="contractErrors.minCachedTokens ? 'aeb-contract-errors' : undefined" />
       </label>
+    </div>
+
+    <div v-if="!validatedContract.values" id="aeb-contract-errors" class="aeb-alert" role="alert">
+      <strong>Invalid acceptance configuration: contract and CLI exports are blocked.</strong>
+      <ul>
+        <li v-for="(error, field) in contractErrors" :key="field">{{ error }}</li>
+      </ul>
     </div>
 
     <div class="aeb-toggles no-print">
@@ -188,7 +228,7 @@ async function copyCli() {
       </div>
       <div :class="['aeb-metric', simulatedEval.passed ? 'ok' : 'fail']">
         <span class="k">Live Contract Gate Status</span>
-        <div class="v">{{ simulatedEval.passed ? 'PASS (Exit 0)' : 'BLOCKED (Exit 1)' }}</div>
+        <div class="v">{{ simulatedEval.passed ? 'PASS (Exit 0)' : `BLOCKED (Exit ${simulatedEval.exitCode})` }}</div>
         <span class="sub">Deterministic PR blocker (<code>ARG001–ARG007</code>); LLM judges advise separately</span>
       </div>
     </div>
@@ -232,14 +272,14 @@ async function copyCli() {
       </button>
     </div>
 
-    <div v-if="!simulatedEval.passed" class="aeb-alert">
+    <div v-if="validatedContract.values && !simulatedEval.passed" class="aeb-alert">
       <strong>CI Merge Blocked by Deterministic Release Gate:</strong>
       <ul>
         <li v-for="f in simulatedEval.findings" :key="f"><code>{{ f }}</code></li>
       </ul>
     </div>
 
-    <div class="aeb-code-grid">
+    <div v-if="validatedContract.values" class="aeb-code-grid">
       <div>
         <span class="aeb-code-lbl">Generated <code>agent-release-contract.json</code></span>
         <pre class="aeb-code"><code>{{ contractJson }}</code></pre>
@@ -303,6 +343,10 @@ async function copyCli() {
 .aeb-btn:hover {
   background: var(--vp-c-brand-1);
   color: #fff;
+}
+.aeb-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .aeb-inputs {
   display: grid;
