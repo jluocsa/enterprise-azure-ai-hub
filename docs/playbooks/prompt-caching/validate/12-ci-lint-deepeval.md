@@ -81,6 +81,8 @@ Python AST recursion failures also block the scan with a file-level `PCR000` at 
 
 The `PCR001` constant check is a local routing readiness policy applied to matching Python calls regardless of model, not an Azure API requirement. It inspects only AST constants without evaluating source expressions; computed keys still need runtime assertions, and non-Python key validation is outside this check's scope <span class="ev-badge ev-arch">[Arch]</span>.
 
+`PCR003` checks both positional objects (`json.dumps(tool_schema)`) and explicit keyword objects (`json.dumps(obj=tool_schema)`). When the existing object-expression name heuristic matches tool/schema/card/context/ctx/rubric/taxonomy, only literal `sort_keys=True` satisfies this local prefix-order readiness rule; missing, false, numeric, or computed values produce a finding. The scanner does not evaluate object expressions, resolve `**kwargs`, inspect serializer aliases, or certify full JSON canonicalization. Offline AST and text/JSON CLI regressions cover keyword-form failures, exact finding locations, and recovery after adding `sort_keys=True` <span class="ev-badge ev-arch">[Arch]</span>.
+
 ## 2. Layer 2: Unified DeepEval Quality + 2-Pass Cache Contract Test
 
 Illustrative CI pattern normalizing usage fields across both the **Responses API** (`input_tokens` / `input_tokens_details`) and **Chat Completions API** (`prompt_tokens` / `prompt_tokens_details`):
