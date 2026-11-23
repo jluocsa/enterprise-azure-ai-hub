@@ -250,6 +250,11 @@ def validate_contract(raw: Any) -> dict[str, Any]:
             if any(tool != tool.strip() for tool in tools):
                 raise ValueError(f"{field} names must not have leading or trailing whitespace.")
 
+    required_tools = set(raw.get("required_tools", []))
+    forbidden_tools = set(raw.get("forbidden_tools", DEFAULT_FORBIDDEN_TOOLS))
+    if required_tools & forbidden_tools:
+        raise ValueError("required_tools and forbidden_tools must not overlap.")
+
     for field in ("require_acl_trimming", "forbid_raw_prompt_logging", "require_citations"):
         if field in raw and type(raw[field]) is not bool:
             raise ValueError(f"{field} must be an explicit boolean.")
@@ -277,8 +282,8 @@ def validate_contract(raw: Any) -> dict[str, Any]:
     return {
         "max_p95_ms": max_p95_ms,
         "min_pass2_cached_tokens": min_cached,
-        "forbidden_tools": set(raw.get("forbidden_tools", list(DEFAULT_FORBIDDEN_TOOLS))),
-        "required_tools": set(raw.get("required_tools", [])),
+        "forbidden_tools": forbidden_tools,
+        "required_tools": required_tools,
         "require_acl_trimming": raw.get("require_acl_trimming", True),
         "forbid_raw_prompt_logging": raw.get("forbid_raw_prompt_logging", True),
         "expected_case_passes": expected_case_passes,
@@ -531,6 +536,23 @@ def run_self_test() -> int:
         [{**valid_records[0], "tools_called": []}],
         **validate_contract({"required_tools": [], "forbidden_tools": []}),
     ) == []
+    assert evaluate_trace(
+        [{**valid_records[0], "tools_called": ["raw_shell_root"]}],
+        **validate_contract({"required_tools": ["raw_shell_root"], "forbidden_tools": []}),
+    ) == []
+    conflicting_contracts = [
+        {"required_tools": ["private-tool"], "forbidden_tools": ["private-tool"]},
+        {"required_tools": ["knowledge_base_retrieve", "private-tool"],
+         "forbidden_tools": ["other-tool", "private-tool"]},
+        *[{"required_tools": [tool]} for tool in sorted(DEFAULT_FORBIDDEN_TOOLS)],
+    ]
+    for contract in conflicting_contracts:
+        try:
+            validate_contract(contract)
+        except ValueError as exc:
+            assert str(exc) == "required_tools and forbidden_tools must not overlap.", exc
+        else:
+            raise AssertionError("Expected contradictory tool policies to be rejected.")
     assert validate_contract({
         "contract_version": "2.0", "track": "Playbook 04",
         "metadata": {"first": {"label": "a"}, "second": {"label": "b"}},
@@ -585,6 +607,26 @@ def run_self_test() -> int:
 
     with tempfile.TemporaryDirectory() as directory:
         trace = Path(directory) / "trace.jsonl"
+        conflict_file = Path(directory) / "conflicting-contract.json"
+        trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
+        for contract in conflicting_contracts:
+            conflict_file.write_text(json.dumps(contract), encoding="utf-8")
+            for trace_path in (trace, Path(directory) / "missing.jsonl"):
+                for output_flags in ([], ["--json"]):
+                    result = subprocess.run(
+                        [sys.executable, str(Path(__file__).resolve()), str(trace_path),
+                         "--contract", str(conflict_file), *output_flags],
+                        capture_output=True, text=True, check=False,
+                    )
+                    assert result.returncode == 2 and not result.stdout, result
+                    assert "invalid acceptance contract" in result.stderr, result
+                    assert "required_tools and forbidden_tools must not overlap" in result.stderr, result
+                    assert "Traceback" not in result.stderr and "[ARG001]" not in result.stderr, result
+                    assert all(
+                        tool not in result.stderr
+                        for field in ("required_tools", "forbidden_tools")
+                        for tool in contract.get(field, [])
+                    ), result
         citation_file = Path(directory) / "citation-contract.json"
         for contract, answer, expected_code, finding in (
             ({"require_citations": True}, "Private uncited answer.", 1, "at least one inline citation"),
@@ -993,7 +1035,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
