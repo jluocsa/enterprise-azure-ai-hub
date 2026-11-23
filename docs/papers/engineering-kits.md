@@ -134,6 +134,8 @@ An optional `expected_case_passes` acceptance-contract inventory enforces an exa
 
 Unknown top-level acceptance-contract fields also exit `2` before reading evidence, preventing misspelled tool or latency controls from silently using defaults. Only the documented enforcement fields plus `contract_version`, `track`, and `metadata` are accepted; place custom annotations inside `metadata`. Diagnostics never echo unknown names or values. See the [acceptance-configuration contract](/playbooks/agentic-rag-evals/04-deterministic-eval-contracts#fail-closed-acceptance-configuration) for compatibility and enforcement boundaries; deterministic regressions cover text/JSON failures, validation precedence, and preserved metadata/defaults <span class="ev-badge ev-arch">[Arch]</span>.
 
+Contradictory tool policies also exit `2` before evidence is read: effective `required_tools` and `forbidden_tools` must not overlap, including the default denylist when omitted. Diagnostics identify the two fields without echoing tool names; explicit empty denylists and exact case-sensitive matching remain supported. The same [acceptance-configuration contract](/playbooks/agentic-rag-evals/04-deterministic-eval-contracts#fail-closed-acceptance-configuration) describes this local consistency rule and its offline text/JSON regressions <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 agent_release_gate.py --self-test
 python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json
