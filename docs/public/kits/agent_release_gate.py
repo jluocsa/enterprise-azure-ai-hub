@@ -81,6 +81,8 @@ def validate_record(
         value = rec.get(field)
         if not isinstance(value, list) or any(not isinstance(x, str) or not x.strip() for x in value):
             failures.append(f"{prefix} {field} must be an array of non-empty strings.")
+        elif field == "tools_called" and any(tool != tool.strip() for tool in value):
+            failures.append(f"{prefix} tools_called names must not have leading or trailing whitespace.")
 
     for field in ("pass_number", "input_tokens", "cached_tokens"):
         value = rec.get(field)
@@ -242,6 +244,8 @@ def validate_contract(raw: Any) -> dict[str, Any]:
                 not isinstance(tool, str) or not tool.strip() for tool in tools
             ):
                 raise ValueError(f"{field} must be an array of non-empty strings.")
+            if any(tool != tool.strip() for tool in tools):
+                raise ValueError(f"{field} names must not have leading or trailing whitespace.")
 
     for field in ("require_acl_trimming", "forbid_raw_prompt_logging"):
         if field in raw and type(raw[field]) is not bool:
@@ -486,6 +490,27 @@ def run_self_test() -> int:
     defaults = validate_contract({})
     assert evaluate_trace(valid_records, **defaults) == []
     assert defaults["forbidden_tools"] == DEFAULT_FORBIDDEN_TOOLS
+    for padding in (" ", "\t", "\n", "\u00a0"):
+        for tool in (padding + "raw_shell_root", "raw_shell_root" + padding):
+            errs = evaluate_trace([{**valid_records[0], "tools_called": [tool]}])
+            assert len(errs) == 1 and errs[0].startswith("[ARG001]"), errs
+            assert "tools_called" in errs[0] and tool not in errs[0], errs
+            for field in ("required_tools", "forbidden_tools"):
+                try:
+                    validate_contract({field: [tool]})
+                except ValueError as exc:
+                    assert field in str(exc) and tool not in str(exc), exc
+                else:
+                    raise AssertionError(f"Expected padded {field} to be rejected.")
+    exact_tool = "namespace.Tool-v2"
+    assert evaluate_trace(
+        [{**valid_records[0], "tools_called": [exact_tool]}],
+        **validate_contract({"required_tools": [exact_tool], "forbidden_tools": [exact_tool.lower()]}),
+    ) == []
+    assert evaluate_trace(
+        [{**valid_records[0], "tools_called": []}],
+        **validate_contract({"required_tools": [], "forbidden_tools": []}),
+    ) == []
     assert validate_contract({
         "contract_version": "2.0", "track": "Playbook 04",
         "metadata": {"first": {"label": "a"}, "second": {"label": "b"}},
@@ -650,6 +675,45 @@ def run_self_test() -> int:
 
         trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         contract_file = Path(directory) / "contract.json"
+        for output_flags in ([], ["--json"]):
+            trace.write_text(json.dumps({
+                **valid_records[0], "tools_called": ["raw_shell_root "],
+            }, sort_keys=True), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == 1 and not result.stderr, result
+            assert "[ARG001]" in result.stdout and "tools_called" in result.stdout, result
+            assert "raw_shell_root" not in result.stdout and "Traceback" not in result.stdout, result
+            if output_flags:
+                output = json.loads(result.stdout)
+                assert output["passed"] is False and output["record_count"] == 1, output
+
+            trace.write_text(json.dumps({
+                **valid_records[0], "tools_called": ["raw_shell_root"],
+            }, sort_keys=True), encoding="utf-8")
+            for field in ("required_tools", "forbidden_tools"):
+                contract_file.write_text(json.dumps({field: ["raw_shell_root "]}), encoding="utf-8")
+                for trace_path in (trace, Path(directory) / "missing.jsonl"):
+                    result = subprocess.run(
+                        [sys.executable, str(Path(__file__).resolve()), str(trace_path),
+                         "--contract", str(contract_file), *output_flags],
+                        capture_output=True, text=True, check=False,
+                    )
+                    assert result.returncode == 2 and not result.stdout, result
+                    assert "invalid acceptance contract" in result.stderr and field in result.stderr, result
+                    assert "[ARG001]" not in result.stderr and "raw_shell_root" not in result.stderr, result
+                    assert "Traceback" not in result.stderr, result
+
+            contract_file.write_text('{"forbidden_tools":["raw_shell_root"]}', encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace),
+                 "--contract", str(contract_file), *output_flags],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == 1 and "[ARG002]" in result.stdout and not result.stderr, result
+
         for output_flags in ([], ["--json"]):
             trace.write_text("\n".join(json.dumps(rec) for rec in (
                 valid_records[0],
@@ -867,7 +931,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
