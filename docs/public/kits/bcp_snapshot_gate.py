@@ -4,6 +4,7 @@
 Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
 Every JSON object must have unique member names, including nested metadata.
+Region identity is case-insensitive; model and snapshot identities remain exact.
 JSON parser nesting failures produce an input error, not a traceback.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
 LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
@@ -47,6 +48,8 @@ def identifier(row: dict[str, Any], field: str) -> str:
     value = row.get(field)
     if not isinstance(value, str) or not value.strip() or value != value.strip():
         raise ValueError(f"{field} must be a non-empty string without surrounding whitespace")
+    if field == "stampRegion":
+        value = value.lower()
     if value in ("unknown-region", "unreported"):
         raise ValueError(f"{field} must be reported explicitly")
     return value
@@ -186,6 +189,89 @@ class SnapshotGateTests(unittest.TestCase):
         for rows in (self.rows[:1], [], None, {}, [None]):
             with self.subTest(rows=rows):
                 self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
+
+    def test_region_identity_is_case_insensitive_in_both_inputs(self):
+        manifest = [dict(row, stampRegion=row["stampRegion"].upper()) for row in self.manifest]
+        self.assertEqual(validate_expected(manifest), self.expected)
+        rows = [dict(row, stampRegion=row["stampRegion"].upper()) for row in self.rows]
+        self.assertEqual(evaluate_evidence(rows, self.expected, now=self.now), [])
+        for manifest in (
+            [self.manifest[0], dict(self.manifest[0], stampRegion="EASTUS")],
+            self.manifest + [dict(self.manifest[0], stampRegion="EastUS")],
+            [dict(row, stampRegion="UNKNOWN-REGION") for row in self.manifest],
+        ):
+            with self.subTest(manifest=manifest), self.assertRaises(ValueError):
+                validate_expected(manifest)
+        for rows in (
+            [self.rows[0], dict(self.rows[0], stampRegion="EASTUS")],
+            self.rows + [dict(self.rows[0], stampRegion="EastUS")],
+        ):
+            with self.subTest(rows=rows):
+                failures = evaluate_evidence(rows, self.expected, now=self.now)
+                self.assertTrue(any("duplicate model/region" in failure for failure in failures))
+        failures = evaluate_evidence(
+            [self.rows[0], dict(self.rows[0], stampRegion="EASTUS")],
+            self.expected, now=self.now,
+        )
+        self.assertTrue(any("missing stamp evidence" in failure for failure in failures))
+        rows = [self.rows[0], dict(self.rows[1], stampRegion="UNKNOWN-REGION")]
+        self.assertTrue(any("must be reported explicitly" in failure for failure in
+                            evaluate_evidence(rows, self.expected, now=self.now)))
+
+    def test_region_normalization_preserves_exact_model_and_snapshot_identity(self):
+        manifest = self.manifest + [
+            dict(row, reqModel="MODEL-A", expectedSnapshot="SNAPSHOT-A")
+            for row in self.manifest
+        ]
+        rows = self.rows + [
+            dict(row, reqModel="MODEL-A", SnapshotsObserved=["SNAPSHOT-A"],
+                 stampRegion=row["stampRegion"].upper())
+            for row in self.rows
+        ]
+        self.assertEqual(evaluate_evidence(rows, validate_expected(manifest), now=self.now), [])
+        for field, value in (("reqModel", "MODEL-A"), ("SnapshotsObserved", ["SNAPSHOT-A"])):
+            rows = deepcopy(self.rows)
+            rows[1][field] = value
+            with self.subTest(field=field):
+                self.assertTrue(evaluate_evidence(rows, self.expected, now=self.now))
+
+    def test_cli_region_aliases_cannot_certify_a_missing_secondary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time)
+                    for row in self.rows]
+            alias_manifest = dict(self.manifest[0], stampRegion="EASTUS")
+            alias_evidence = dict(rows[0], stampRegion="EASTUS")
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            for expected_rows, evidence_rows, code, diagnostics in (
+                ([self.manifest[0], alias_manifest], [rows[0], alias_evidence], 2,
+                 ["duplicate model/region"]),
+                (self.manifest + [alias_manifest], rows, 2, ["duplicate model/region"]),
+                (self.manifest, [rows[0], alias_evidence], 1,
+                 ["duplicate model/region", "missing stamp evidence"]),
+                (self.manifest, rows + [alias_evidence], 1, ["duplicate model/region"]),
+                ([dict(row, stampRegion=row["stampRegion"].upper()) for row in self.manifest],
+                 rows, 0, []),
+                (self.manifest,
+                 [dict(row, stampRegion=row["stampRegion"].upper()) for row in rows], 0, []),
+            ):
+                manifest.write_text(json.dumps(expected_rows), encoding="utf-8")
+                evidence.write_text(json.dumps(evidence_rows), encoding="utf-8")
+                result = subprocess.run(command, capture_output=True, text=True, check=False)
+                with self.subTest(code=code, expected=expected_rows, evidence=evidence_rows):
+                    self.assertEqual(result.returncode, code, result.stderr)
+                    self.assertNotIn("Traceback", result.stderr)
+                    if code:
+                        self.assertEqual(result.stdout, "")
+                        for diagnostic in diagnostics:
+                            self.assertIn(diagnostic, result.stderr)
+                        self.assertNotIn("EASTUS", result.stderr)
+                    else:
+                        self.assertEqual(result.stderr, "")
+                        self.assertIn("PASSED", result.stdout)
 
     def test_missing_or_malformed_telemetry(self):
         for field, values in {
