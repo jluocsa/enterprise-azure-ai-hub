@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-const newSessionsPerMin = ref(8)
-const avgSessionActiveSec = ref(120)
-const cooldownSec = ref(300)
-const readyWarmPct = ref(15)
+const newSessionsPerMin = ref<number | string>(8)
+const avgSessionActiveSec = ref<number | string>(120)
+const cooldownSec = ref<number | string>(300)
+const readyWarmPct = ref<number | string>(15)
 const maxP95Ms = ref<number | string>(15000)
 const minCachedTokens = ref<number | string>(1024)
 const requireFoundryIq = ref(true)
@@ -31,25 +31,51 @@ const validatedContract = computed(() => {
 })
 const contractErrors = computed(() => validatedContract.value.errors)
 
-const poolCalc = computed(() => {
-  const ratePerSec = Math.max(0.01, newSessionsPerMin.value) / 60
-  const activeHold = Math.max(10, avgSessionActiveSec.value)
-  const coolHold = Math.max(60, cooldownSec.value)
+const validatedPool = computed(() => {
+  const errors: Record<string, string> = {}
+  const rate = newSessionsPerMin.value
+  const activeHold = avgSessionActiveSec.value
+  const coolHold = cooldownSec.value
+  const warmPct = readyWarmPct.value
+  if (typeof rate !== 'number' || !Number.isFinite(rate) || rate < 1 || rate > Number.MAX_SAFE_INTEGER) {
+    errors.newSessionsPerMin = 'New Agent Sessions / Min: enter a finite number from 1 to the safe numeric limit.'
+  }
+  if (typeof activeHold !== 'number' || !Number.isFinite(activeHold) || activeHold < 15 || activeHold > Number.MAX_SAFE_INTEGER) {
+    errors.avgSessionActiveSec = 'Avg Active Session Hold: enter a finite number of at least 15 seconds within the safe numeric limit.'
+  }
+  if (typeof coolHold !== 'number' || !Number.isInteger(coolHold) || coolHold < 60 || coolHold > 3600) {
+    errors.cooldownSec = 'ACA Cooldown Period: enter a whole number from 60 to 3600 seconds.'
+  }
+  if (typeof warmPct !== 'number' || !Number.isFinite(warmPct) || warmPct < 0 || warmPct > 50) {
+    errors.readyWarmPct = 'Pre-Warmed Ready Buffer: enter a finite percentage from 0 to 50.'
+  }
+  if (Object.keys(errors).length || typeof rate !== 'number' || typeof activeHold !== 'number' ||
+      typeof coolHold !== 'number' || typeof warmPct !== 'number') {
+    return { errors, values: null }
+  }
+  const ratePerSec = rate / 60
+  const totalHold = activeHold + coolHold
+  const allocated = ratePerSec * totalHold
   // Little's Law: concurrent allocated microVMs = arrival_rate * (active_duration + cooldown_period)
-  const steadyAllocated = Math.ceil(ratePerSec * (activeHold + coolHold))
+  const steadyAllocated = Math.ceil(allocated)
   const burstHeadroom = Math.ceil(steadyAllocated * 1.25)
   const recommendedMax = Math.max(5, Math.ceil(burstHeadroom / 5) * 5)
   const activeOnly = Math.max(1, Math.ceil(ratePerSec * activeHold))
+  const warmAllocation = recommendedMax * warmPct
   const recommendedReady =
-    readyWarmPct.value <= 0 ? 0 : Math.max(1, Math.round((recommendedMax * readyWarmPct.value) / 100))
+    warmPct === 0 ? 0 : Math.max(1, Math.round(warmAllocation / 100))
 
-  return {
-    activeOnly,
-    steadyAllocated,
-    recommendedMax,
-    recommendedReady,
+  if (totalHold > Number.MAX_SAFE_INTEGER || allocated > Number.MAX_SAFE_INTEGER || warmAllocation > Number.MAX_SAFE_INTEGER ||
+      ![steadyAllocated, burstHeadroom, recommendedMax, activeOnly, recommendedReady].every(Number.isSafeInteger)) {
+    const message = 'Session pool sizing: reduce arrival rate or active hold so totals and session counts remain within the safe numeric limit.'
+    errors.newSessionsPerMin = message
+    errors.avgSessionActiveSec = message
+    return { errors, values: null }
   }
+  return { errors, values: { activeOnly, steadyAllocated, recommendedMax, recommendedReady, coolHold } }
 })
+const poolErrors = computed(() => validatedPool.value.errors)
+const poolCalc = computed(() => validatedPool.value.values)
 
 const contractJson = computed(() => {
   const values = validatedContract.value.values
@@ -68,13 +94,14 @@ const contractJson = computed(() => {
 })
 
 const deployCliSnippet = computed(() => {
-  if (!validatedContract.value.values) return null
+  const pool = poolCalc.value
+  if (!validatedContract.value.values || !pool) return null
   return [
     `SHA=$(git rev-parse --short HEAD)`,
     `az containerapp sessionpool update \\`,
     `  --name enterprise-agent-sessions --resource-group foundry-prod-rg \\`,
     `  --image enterpriseacr.azurecr.io/agent-session:$SHA \\`,
-    `  --cooldown-period ${cooldownSec.value} --max-sessions ${poolCalc.value.recommendedMax} --ready-sessions ${poolCalc.value.recommendedReady}`,
+    `  --cooldown-period ${pool.coolHold} --max-sessions ${pool.recommendedMax} --ready-sessions ${pool.recommendedReady}`,
     `python3 docs/public/kits/agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json`,
   ].join('\n')
 })
@@ -154,7 +181,7 @@ async function copyCli() {
         <button type="button" class="aeb-btn" :disabled="!validatedContract.values" @click="copyContract">
           {{ copiedContract ? '✓ Copied Contract JSON' : 'Copy Contract JSON' }}
         </button>
-        <button type="button" class="aeb-btn" :disabled="!validatedContract.values" @click="copyCli">
+        <button type="button" class="aeb-btn" :disabled="!deployCliSnippet" @click="copyCli">
           {{ copiedCli ? '✓ Copied CLI Gate' : 'Copy ACA + Gate CLI' }}
         </button>
       </div>
@@ -163,19 +190,27 @@ async function copyCli() {
     <div class="aeb-inputs">
       <label>
         <span>1. New Agent Sessions / Min (Peak)</span>
-        <input v-model.number="newSessionsPerMin" type="number" min="1" step="2" />
+        <input v-model.number="newSessionsPerMin" type="number" min="1" :max="Number.MAX_SAFE_INTEGER" step="any"
+          :aria-invalid="!!poolErrors.newSessionsPerMin"
+          :aria-describedby="poolErrors.newSessionsPerMin ? 'aeb-pool-errors' : undefined" />
       </label>
       <label>
         <span>2. Avg Active Session Hold (Sec)</span>
-        <input v-model.number="avgSessionActiveSec" type="number" min="15" step="15" />
+        <input v-model.number="avgSessionActiveSec" type="number" min="15" :max="Number.MAX_SAFE_INTEGER" step="any"
+          :aria-invalid="!!poolErrors.avgSessionActiveSec"
+          :aria-describedby="poolErrors.avgSessionActiveSec ? 'aeb-pool-errors' : undefined" />
       </label>
       <label>
         <span>3. ACA Cooldown Period (Sec · Default 300)</span>
-        <input v-model.number="cooldownSec" type="number" min="60" max="3600" step="60" />
+        <input v-model.number="cooldownSec" type="number" min="60" max="3600" step="1"
+          :aria-invalid="!!poolErrors.cooldownSec"
+          :aria-describedby="poolErrors.cooldownSec ? 'aeb-pool-errors' : undefined" />
       </label>
       <label>
         <span>4. Pre-Warmed Ready Buffer (%)</span>
-        <input v-model.number="readyWarmPct" type="number" min="0" max="50" step="5" />
+        <input v-model.number="readyWarmPct" type="number" min="0" max="50" step="any"
+          :aria-invalid="!!poolErrors.readyWarmPct"
+          :aria-describedby="poolErrors.readyWarmPct ? 'aeb-pool-errors' : undefined" />
       </label>
       <label>
         <span>5. Max Turn Latency Budget p95 (ms · ARG005)</span>
@@ -189,6 +224,13 @@ async function copyCli() {
           :aria-invalid="!!contractErrors.minCachedTokens"
           :aria-describedby="contractErrors.minCachedTokens ? 'aeb-contract-errors' : undefined" />
       </label>
+    </div>
+
+    <div v-if="!poolCalc" id="aeb-pool-errors" class="aeb-alert" role="alert">
+      <strong>Invalid session pool sizing: capacity estimates and ACA + Gate CLI export are blocked. Contract-only exports and trace simulation are independent.</strong>
+      <ul>
+        <li v-for="(error, field) in poolErrors" :key="field">{{ error }}</li>
+      </ul>
     </div>
 
     <div v-if="!validatedContract.values" id="aeb-contract-errors" class="aeb-alert" role="alert">
@@ -214,14 +256,14 @@ async function copyCli() {
     </div>
 
     <div class="aeb-metrics">
-      <div class="aeb-metric highlight">
+      <div v-if="poolCalc" class="aeb-metric highlight">
         <span class="k">Recommended ACA <code>--max-sessions</code></span>
         <div class="v">{{ poolCalc.recommendedMax }} microVMs</div>
         <span class="sub">
           {{ poolCalc.activeOnly }} active + {{ poolCalc.steadyAllocated - poolCalc.activeOnly }} in {{ cooldownSec }}s cooldown (+25% burst)
         </span>
       </div>
-      <div class="aeb-metric teal">
+      <div v-if="poolCalc" class="aeb-metric teal">
         <span class="k">Recommended <code>--ready-sessions</code></span>
         <div class="v">{{ poolCalc.recommendedReady }} warm</div>
         <span class="sub">Zero cold-boot wait on initial burst; set <code>0</code> for strict idle cost floor</span>
@@ -284,7 +326,7 @@ async function copyCli() {
         <span class="aeb-code-lbl">Generated <code>agent-release-contract.json</code></span>
         <pre class="aeb-code"><code>{{ contractJson }}</code></pre>
       </div>
-      <div>
+      <div v-if="deployCliSnippet">
         <span class="aeb-code-lbl">Immutable Git-SHA Pool Update &amp; CI Gate Command</span>
         <pre class="aeb-code"><code>{{ deployCliSnippet }}</code></pre>
       </div>

@@ -210,3 +210,95 @@ test('cache-miss simulation follows ARG004 eligibility and invalid configuration
     assert.match(builder.text(), /\[ARG003\]/)
   } finally { builder.close() }
 })
+
+test('invalid pool inputs hide capacity and block direct CLI copy without blocking independent contracts', async () => {
+  const builder = mountBuilder()
+  try {
+    for (const [label, invalid, restored] of [
+      ['New Agent Sessions', ['', ' ', '8', true, null, NaN, Infinity, -Infinity, -1, 0, 0.99, Number.MAX_SAFE_INTEGER + 1, 1e308], 8],
+      ['Avg Active Session', ['', ' ', '120', false, null, NaN, Infinity, -Infinity, -1, 0, 14.99, Number.MAX_SAFE_INTEGER + 1, 1e308], 120],
+      ['ACA Cooldown', ['', ' ', '300', true, null, NaN, Infinity, -Infinity, -1, 0, 59, 60.5, 3601, 1e308], 300],
+      ['Pre-Warmed Ready', ['', ' ', '15', false, null, NaN, Infinity, -Infinity, -1, 50.01, 1e308], 15],
+    ]) {
+      for (const value of invalid) {
+        await builder.set(label, value)
+        assert.ok(builder.all().some(el => el.props.role === 'alert' && el.props.id === 'aeb-pool-errors'))
+        assert.equal(builder.field(label).props['aria-invalid'], true)
+        assert.equal(builder.field(label).props['aria-describedby'], 'aeb-pool-errors')
+        assert.ok(!builder.all().some(el => ['aeb-metric highlight', 'aeb-metric teal'].includes(el.props.class)))
+        assert.ok(!builder.text().includes('az containerapp sessionpool update'))
+        assert.match(builder.text(), /PASS \(Exit 0\)/)
+        assert.equal(builder.buttons()[0].props.disabled, false)
+        assert.equal(builder.buttons()[1].props.disabled, true)
+        const before = builder.copied.length
+        await builder.buttons()[1].props.onClick()
+        assert.equal(builder.copied.length, before)
+        await builder.buttons()[0].props.onClick()
+        assert.equal(JSON.parse(builder.copied.at(-1)).max_p95_ms, 15000)
+        await builder.set(label, restored)
+        assert.equal(builder.field(label).props['aria-invalid'], false)
+        assert.equal(builder.field(label).props['aria-describedby'], undefined)
+        assert.ok(!builder.all().some(el => el.props.id === 'aeb-pool-errors'))
+        assert.ok(builder.buttons().every(button => button.props.disabled === false))
+        assert.match(builder.text(), /--cooldown-period 300 --max-sessions 70 --ready-sessions 11/)
+      }
+    }
+    await builder.set('ACA Cooldown', '')
+    await builder.scenario('Unresolved Citation')
+    assert.match(builder.text(), /BLOCKED \(Exit 1\)/)
+    await builder.set('Max Turn Latency', '')
+    assert.match(builder.text(), /BLOCKED \(Exit 2\)/)
+    assert.ok(builder.buttons().every(button => button.props.disabled === true))
+    const before = builder.copied.length
+    for (const button of builder.buttons()) await button.props.onClick()
+    assert.equal(builder.copied.length, before)
+  } finally { builder.close() }
+})
+
+test('pool sizing preserves boundary and fractional measurements and rejects unsafe derived counts', async () => {
+  const builder = mountBuilder()
+  try {
+    for (const [rate, active, cooldown, warm, max, ready] of [
+      [8, 120, 300, 15, 70, 11],
+      [1, 15, 60, 0, 5, 0],
+      [1, 15, 3600, 50, 80, 40],
+      [1.5, 15.5, 60, 12.5, 5, 1],
+      [60, 60, 60, 50, 150, 75],
+      [60, 60, 60, 41, 150, 62],
+    ]) {
+      await builder.set('New Agent Sessions', rate)
+      await builder.set('Avg Active Session', active)
+      await builder.set('ACA Cooldown', cooldown)
+      await builder.set('Pre-Warmed Ready', warm)
+      assert.ok(!builder.all().some(el => el.props.id === 'aeb-pool-errors'))
+      assert.ok(builder.all().some(el => el.props.class === 'aeb-metric highlight'))
+      assert.ok(builder.all().some(el => el.props.class === 'aeb-metric teal'))
+      await builder.buttons()[1].props.onClick()
+      assert.ok(builder.copied.at(-1).includes(`--cooldown-period ${cooldown} --max-sessions ${max} --ready-sessions ${ready}`))
+      assert.ok(!/NaN|Infinity|null|undefined/.test(builder.copied.at(-1)))
+    }
+    for (const [rate, hold] of [
+      [Number.MAX_SAFE_INTEGER, 15],
+      [1e10, 1e10],
+      [60, 8e15],
+      [1, Number.MAX_SAFE_INTEGER],
+      [1e15, 15],
+    ]) {
+      await builder.set('New Agent Sessions', rate)
+      await builder.set('Avg Active Session', hold)
+      assert.ok(builder.all().some(el => el.props.id === 'aeb-pool-errors'))
+      for (const label of ['New Agent Sessions', 'Avg Active Session']) {
+        assert.equal(builder.field(label).props['aria-invalid'], true)
+        assert.equal(builder.field(label).props['aria-describedby'], 'aeb-pool-errors')
+      }
+      assert.ok(!builder.all().some(el => ['aeb-metric highlight', 'aeb-metric teal'].includes(el.props.class)))
+      const before = builder.copied.length
+      await builder.buttons()[1].props.onClick()
+      assert.equal(builder.copied.length, before)
+      await builder.set('New Agent Sessions', 8)
+      await builder.set('Avg Active Session', 120)
+      assert.ok(!builder.all().some(el => el.props.id === 'aeb-pool-errors'))
+      assert.equal(builder.buttons()[1].props.disabled, false)
+    }
+  } finally { builder.close() }
+})

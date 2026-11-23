@@ -33,6 +33,12 @@ description: Reference design for isolating enterprise agent execution using a s
 
 ---
 
+### Fail-Closed Studio Session-Pool Sizing
+
+The [session-pool sizer](/studio/#agent-eval) rejects invalid inputs instead of silently clamping them or exporting an ACA command with non-finite or imprecise session counts. Arrival rate must be finite and at least `1` session/minute; average active hold must be finite and at least `15` seconds. Both must stay within JavaScript's safe numeric range. Cooldown must be a whole number from `60` to `3600` seconds, and the ready buffer a finite percentage from `0` to `50`. These are **local calculator bounds**, not a complete statement of Azure service limits; fractional measured arrival rates and active durations remain supported <span class="ev-badge ev-arch">[Arch]</span>.
+
+The existing Little's Law estimate, `25%` burst allowance, five-session rounding, and default `70` maximum / `11` ready sessions are unchanged. Unsafe intermediate sizing arithmetic or derived session counts hide capacity estimates and block both displayed and directly invoked ACA + Gate CLI exports, with linked field errors. A zero ready buffer remains valid. Contract JSON exports and the trace simulation remain independent of pool sizing; a simulated trace `PASS` does not certify deployment readiness. Offline interaction regressions run in `npm run verify`. Before deployment, separately validate regional availability, service quotas, image configuration, and measured cold-start behavior; this estimator does not query Azure or guarantee zero cold starts <span class="ev-badge ev-arch">[Arch]</span>.
+
 ## 2. Document Upload & Layout-Faithful Conversion Flow
 
 ```text
