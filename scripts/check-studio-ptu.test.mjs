@@ -173,6 +173,59 @@ test('short-context boundaries remain usable and default sizing/export are prese
   } finally { calculator.close() }
 })
 
+test('finite oversized workloads block unsafe estimates across models and recover with safe fractional inputs', async () => {
+  const calculator = mountCalculator()
+  try {
+    for (const model of calculator.field('Target Foundry Model').options) {
+      await calculator.set('Target Foundry Model', model.props.value)
+      for (const [label, value, restored] of [
+        ['Steady Peak RPM', Number.MAX_SAFE_INTEGER + 1, 100],
+        ['Avg Output Tokens', Number.MAX_SAFE_INTEGER + 1, 500],
+        ['Steady Peak RPM', 1e20, 100],
+        ['Avg Output Tokens', 1e20, 500],
+      ]) {
+        await calculator.set(label, value)
+        assertBlocked(calculator, label)
+        assert.match(calculator.text(), /safe integer precision/)
+        await calculator.copyButton().props.onClick()
+        assert.deepEqual(calculator.copied, [])
+        await calculator.set(label, restored)
+        assert.equal(calculator.copyButton().props.disabled, false)
+      }
+    }
+    await calculator.set('Steady Peak RPM', 100.5)
+    await calculator.set('Avg Input Tokens', 10000.5)
+    await calculator.set('Avg Output Tokens', 500.5)
+    await calculator.copyButton().props.onClick()
+    assert.match(calculator.copied[0], /100\.5 Peak RPM/)
+    assert.match(calculator.copied[0], /10,000\.5 Input Tok/)
+    assert.ok(!/NaN|Infinity/.test(calculator.copied[0]))
+  } finally { calculator.close() }
+})
+
+test('combined workload and seasonal arithmetic obey the safe precision budget', async () => {
+  const calculator = mountCalculator()
+  try {
+    await calculator.set('Steady Peak RPM', 1e10)
+    await calculator.set('Seasonal Cliff Surge', 1)
+    assert.equal(calculator.copyButton().props.disabled, false)
+    await calculator.set('Seasonal Cliff Surge', 10)
+    assertBlocked(calculator, 'Steady Peak RPM')
+    assert.equal(calculator.field('Avg Output Tokens').props['aria-invalid'], true)
+    await calculator.copyButton().props.onClick()
+    assert.deepEqual(calculator.copied, [])
+    await calculator.set('Seasonal Cliff Surge', 1)
+    assert.equal(calculator.copyButton().props.disabled, false)
+    await calculator.copyButton().props.onClick()
+    const allocation = calculator.copied[0].match(/\*\*(\d+) PTUs\*\*/)
+    assert.ok(allocation)
+    assert.ok(Number.isSafeInteger(Number(allocation[1])))
+    await calculator.preset('Document Review Agent (Default)')
+    assert.match(calculator.text(), /170 PTUs/)
+    assert.ok(!calculator.all().some(el => el.props.role === 'alert'))
+  } finally { calculator.close() }
+})
+
 test('read/write inputs validate only in the applicable regime and presets recover invalid state', async () => {
   const calculator = mountCalculator()
   try {
