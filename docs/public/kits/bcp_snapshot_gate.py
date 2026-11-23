@@ -10,6 +10,7 @@ Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/c
 LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
 --max-age-minutes (default: 15). SuccessfulCalls must be positive (HTTP 2xx).
 LastSuccessfulSeen must not be later than LastSeen for the same stamp.
+When all calls succeeded, LastSuccessfulSeen must equal LastSeen.
 This checks B2 snapshot parity and B11 coverage, not the entire BCP readiness standard.
 """
 
@@ -136,6 +137,16 @@ def evaluate_evidence(
             and fresh_timestamps["LastSuccessfulSeen"] > fresh_timestamps["LastSeen"]
         ):
             failures.append(f"{prefix} LastSuccessfulSeen must not exceed LastSeen")
+        elif (
+            len(fresh_timestamps) == 2
+            and type(row.get("TotalCalls")) is int
+            and type(row.get("SuccessfulCalls")) is int
+            and row["SuccessfulCalls"] == row["TotalCalls"] > 0
+            and fresh_timestamps["LastSuccessfulSeen"] != fresh_timestamps["LastSeen"]
+        ):
+            failures.append(
+                f"{prefix} LastSuccessfulSeen must equal LastSeen when all calls succeeded"
+            )
         snapshots = row.get("SnapshotsObserved")
         if (
             not isinstance(snapshots, list)
@@ -391,6 +402,68 @@ class SnapshotGateTests(unittest.TestCase):
                     self.assertNotIn(total_time, result.stderr)
                     self.assertNotIn(success_time, result.stderr)
             rows[1]["LastSeen"] = success_time
+            evidence.write_text(json.dumps(rows), encoding="utf-8")
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stderr, "")
+            self.assertIn("PASSED", result.stdout)
+
+    def test_all_successful_calls_require_equal_timestamp_instants(self):
+        for total_calls, successful_calls, last_success, valid in (
+            (10, 10, "2026-11-20T11:58:59.999999Z", False),
+            (1, 1, "2026-11-20T11:58:00Z", False),
+            (10, 10, "2026-11-20T11:59:00Z", True),
+            (1, 1, "2026-11-20T06:59:00-05:00", True),
+            (10, 10, "2026-11-20T13:59:00+02:00", True),
+            (10, 8, "2026-11-20T11:58:00Z", True),
+            (10, 8, "2026-11-20T11:59:00Z", True),
+        ):
+            for index in (0, 1):
+                rows = deepcopy(self.rows)
+                rows[index].update(
+                    TotalCalls=total_calls, SuccessfulCalls=successful_calls,
+                    LastSeen="2026-11-20T11:59:00Z", LastSuccessfulSeen=last_success,
+                )
+                with self.subTest(total=total_calls, successes=successful_calls,
+                                  last_success=last_success, index=index):
+                    self.assertEqual(
+                        evaluate_evidence(rows, self.expected, now=self.now),
+                        [] if valid else [
+                            f"evidence row-{index + 1}: LastSuccessfulSeen must equal LastSeen "
+                            "when all calls succeeded",
+                        ],
+                    )
+
+    def test_cli_rejects_all_success_timestamp_mismatch_and_recovers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
+            now = datetime.now(timezone.utc)
+            last_seen = now - timedelta(minutes=1)
+            last_success = last_seen - timedelta(microseconds=1)
+            rows = [
+                dict(row, SuccessfulCalls=row["TotalCalls"],
+                     LastSeen=last_seen.isoformat(), LastSuccessfulSeen=last_seen.isoformat())
+                for row in self.rows
+            ]
+            rows[1]["LastSuccessfulSeen"] = last_success.isoformat()
+            evidence.write_text(json.dumps(rows), encoding="utf-8")
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            for flags in ([], ["--max-age-minutes", "60"]):
+                result = subprocess.run(command + flags, capture_output=True, text=True, check=False)
+                with self.subTest(flags=flags):
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertEqual(result.stdout, "")
+                    self.assertEqual(
+                        result.stderr.strip(),
+                        "BCP snapshot gate FAILED:\nevidence row-2: LastSuccessfulSeen must equal "
+                        "LastSeen when all calls succeeded",
+                    )
+            rows[1]["LastSuccessfulSeen"] = last_seen.astimezone(
+                timezone(timedelta(hours=2))
+            ).isoformat()
             evidence.write_text(json.dumps(rows), encoding="utf-8")
             result = subprocess.run(command, capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr)
