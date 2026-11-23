@@ -5,7 +5,7 @@ Artifact: agent_release_gate.py (Playbook 04 · Deterministic CI Release Verifie
 
 Verifies offline agent execution evidence (JSONL turns) against deterministic
 production acceptance contracts:
-  [ARG001] Schema integrity: required turn fields, unique case/pass pairs & terminal status=='ok'
+  [ARG001] Schema integrity: required fields, unique case/pass pairs, optional corpus coverage & status=='ok'
   [ARG002] Tool governance: zero forbidden tools + optional required grounding tools
   [ARG003] Citation grounding: well-formed inline [cite:ID] markers resolve to retrieved_doc_ids
   [ARG004] Two-pass prefix cache parity: pass>=2 turns with >=1,024 input tokens hit KV cache
@@ -120,6 +120,7 @@ def evaluate_trace(
     required_tools: set[str] | None = None,
     require_acl_trimming: bool = True,
     forbid_raw_prompt_logging: bool = True,
+    expected_case_passes: set[tuple[str, int]] | None = None,
 ) -> list[str]:
     deny = forbidden_tools if forbidden_tools is not None else DEFAULT_FORBIDDEN_TOOLS
     req = required_tools or set()
@@ -141,6 +142,8 @@ def evaluate_trace(
 
         case_id = rec["case_id"]
         turn_key = (case_id, rec["pass_number"])
+        if expected_case_passes is not None and turn_key not in expected_case_passes:
+            failures.append(f"[ARG001] row-{i}: unexpected case_id/pass_number pair.")
         if turn_key in seen_turns:
             failures.append(
                 f"[ARG001] row-{i}: duplicate case_id/pass_number pair "
@@ -195,6 +198,11 @@ def evaluate_trace(
 
         latencies.append(rec["duration_ms"])
 
+    if expected_case_passes is not None:
+        missing_count = len(expected_case_passes.difference(seen_turns))
+        if missing_count:
+            failures.append(f"[ARG001] Trace is missing {missing_count} expected case/pass pair(s).")
+
     p95 = percentile(latencies, 95.0)
     if latencies and p95 > max_p95_ms:
         failures.append(f"[ARG005] Latency p95 {p95:.0f}ms exceeds budget {max_p95_ms:.0f}ms.")
@@ -209,7 +217,7 @@ def validate_contract(raw: Any) -> dict[str, Any]:
     allowed_fields = {
         "max_p95_ms", "min_pass2_cached_tokens", "required_tools", "forbidden_tools",
         "require_acl_trimming", "forbid_raw_prompt_logging",
-        "contract_version", "track", "metadata",
+        "expected_case_passes", "contract_version", "track", "metadata",
     }
     if any(field not in allowed_fields for field in raw):
         raise ValueError(
@@ -239,6 +247,26 @@ def validate_contract(raw: Any) -> dict[str, Any]:
         if field in raw and type(raw[field]) is not bool:
             raise ValueError(f"{field} must be an explicit boolean.")
 
+    expected_case_passes: set[tuple[str, int]] | None = None
+    if "expected_case_passes" in raw:
+        inventory = raw["expected_case_passes"]
+        if not isinstance(inventory, list) or not inventory:
+            raise ValueError("expected_case_passes must be a non-empty array of case/pass objects.")
+        expected_case_passes = set()
+        for index, entry in enumerate(inventory, start=1):
+            prefix = f"expected_case_passes entry-{index}:"
+            if not isinstance(entry, dict) or set(entry) != {"case_id", "pass_number"}:
+                raise ValueError(f"{prefix} must contain only case_id and pass_number.")
+            case_id, pass_number = entry["case_id"], entry["pass_number"]
+            if not isinstance(case_id, str) or not case_id.strip():
+                raise ValueError(f"{prefix} case_id must be a non-empty string.")
+            if type(pass_number) is not int or pass_number < 1:
+                raise ValueError(f"{prefix} pass_number must be an integer >= 1.")
+            pair = (case_id, pass_number)
+            if pair in expected_case_passes:
+                raise ValueError(f"{prefix} duplicate case_id/pass_number pair.")
+            expected_case_passes.add(pair)
+
     return {
         "max_p95_ms": max_p95_ms,
         "min_pass2_cached_tokens": min_cached,
@@ -246,6 +274,7 @@ def validate_contract(raw: Any) -> dict[str, Any]:
         "required_tools": set(raw.get("required_tools", [])),
         "require_acl_trimming": raw.get("require_acl_trimming", True),
         "forbid_raw_prompt_logging": raw.get("forbid_raw_prompt_logging", True),
+        "expected_case_passes": expected_case_passes,
     }
 
 
@@ -301,6 +330,36 @@ def run_self_test() -> int:
     assert evaluate_trace([
         valid_records[0], {**valid_records[0], "case_id": "GOLDEN-001-pass1"},
     ]) == []
+    expected_cases = [
+        {"case_id": "golden-case", "pass_number": rec["pass_number"]}
+        for rec in same_case_passes
+    ]
+    inventory_cfg = validate_contract({"expected_case_passes": expected_cases})
+    assert evaluate_trace(same_case_passes, **inventory_cfg) == []
+    assert evaluate_trace(list(reversed(same_case_passes)), **inventory_cfg) == []
+    assert evaluate_trace(same_case_passes[:1], **inventory_cfg) == [
+        "[ARG001] Trace is missing 1 expected case/pass pair(s).",
+    ]
+    assert evaluate_trace([
+        same_case_passes[0], {**same_case_passes[1], "case_id": "private-unexpected-case"},
+    ], **inventory_cfg) == [
+        "[ARG001] row-2: unexpected case_id/pass_number pair.",
+        "[ARG001] Trace is missing 1 expected case/pass pair(s).",
+    ]
+    assert any("missing 1 expected" in e for e in evaluate_trace([
+        same_case_passes[0], {**same_case_passes[1], "duration_ms": -1},
+    ], **inventory_cfg))
+    assert any("duplicate case_id/pass_number" in e for e in evaluate_trace([
+        *same_case_passes, same_case_passes[0],
+    ], **inventory_cfg))
+    padded_inventory_trace = [
+        {**same_case_passes[0], "duration_ms": 24000},
+        same_case_passes[1],
+        *[{**same_case_passes[1], "case_id": f"extra-{i}"} for i in range(20)],
+    ]
+    assert evaluate_trace(padded_inventory_trace) == []
+    errs = evaluate_trace(padded_inventory_trace, **inventory_cfg)
+    assert len(errs) == 20 and all("unexpected case_id/pass_number" in e for e in errs), errs
     for duplicate in (valid_records[0], {**valid_records[0], "duration_ms": 900}):
         errs = evaluate_trace([valid_records[0], valid_records[1], duplicate, duplicate])
         assert errs == [
@@ -440,6 +499,7 @@ def run_self_test() -> int:
         "max_p95_ms": 0.5, "min_pass2_cached_tokens": 1,
         "required_tools": set(), "forbidden_tools": set(),
         "require_acl_trimming": False, "forbid_raw_prompt_logging": False,
+        "expected_case_passes": None,
     }
 
     invalid_contracts = [(value, "JSON object") for value in (None, [], "contract", 1, True)]
@@ -455,6 +515,15 @@ def run_self_test() -> int:
         ("forbidden_tools", [None, "raw_shell_root", {}, [None], [1], [True], [[]], [""], [" "]]),
         ("require_acl_trimming", [None, "false", 0, 1, [], {}]),
         ("forbid_raw_prompt_logging", [None, "false", 0, 1, [], {}]),
+        ("expected_case_passes", [
+            None, True, "golden-case", {}, [], [None], [[]],
+            [{"case_id": "golden-case"}],
+            [{"case_id": "golden-case", "pass_number": 1, "private-field": "private-value"}],
+            *[[{"case_id": case, "pass_number": 1}] for case in ("", " ", None, 1)],
+            *[[{"case_id": "golden-case", "pass_number": number}]
+              for number in (None, True, "1", 0, -1, 1.5, 1.0)],
+            [expected_cases[0], expected_cases[0]],
+        ]),
     ):
         invalid_contracts.extend(({field: value}, field) for value in values)
     for contract, expected_message in invalid_contracts:
@@ -469,6 +538,54 @@ def run_self_test() -> int:
 
     with tempfile.TemporaryDirectory() as directory:
         trace = Path(directory) / "trace.jsonl"
+        inventory_file = Path(directory) / "inventory-contract.json"
+        inventory_file.write_text(
+            json.dumps({"expected_case_passes": expected_cases}), encoding="utf-8",
+        )
+        for evidence, expected_findings in (
+            (same_case_passes, []),
+            (list(reversed(same_case_passes)), []),
+            (same_case_passes[:1], ["missing 1 expected"]),
+            ([same_case_passes[0], {**same_case_passes[1], "case_id": "GOLDEN-CASE"}],
+             ["unexpected case_id/pass_number", "missing 1 expected"]),
+            (padded_inventory_trace, ["unexpected case_id/pass_number"] * 20),
+            ([*same_case_passes, same_case_passes[0]], ["duplicate case_id/pass_number"]),
+        ):
+            trace.write_text("\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace),
+                     "--contract", str(inventory_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == (1 if expected_findings else 0), result
+                assert not result.stderr and "Traceback" not in result.stdout, result
+                for finding in set(expected_findings):
+                    assert result.stdout.count(finding) == expected_findings.count(finding), result
+                assert "GOLDEN-CASE" not in result.stdout and "extra-" not in result.stdout, result
+                if output_flags:
+                    output = json.loads(result.stdout)
+                    assert output["passed"] is (not expected_findings), output
+                    assert output["record_count"] == len(evidence), output
+                    assert len(output["failures"]) == len(expected_findings), output
+
+        for inventory in ([], [expected_cases[0], expected_cases[0]],
+                          [{"case_id": "private-case", "pass_number": True}]):
+            inventory_file.write_text(
+                json.dumps({"expected_case_passes": inventory}), encoding="utf-8",
+            )
+            for trace_path in (trace, Path(directory) / "missing.jsonl"):
+                for output_flags in ([], ["--json"]):
+                    result = subprocess.run(
+                        [sys.executable, str(Path(__file__).resolve()), str(trace_path),
+                         "--contract", str(inventory_file), *output_flags],
+                        capture_output=True, text=True, check=False,
+                    )
+                    assert result.returncode == 2 and not result.stdout, result
+                    assert "invalid acceptance contract" in result.stderr, result
+                    assert "expected_case_passes" in result.stderr and "[ARG001]" not in result.stderr, result
+                    assert "private-case" not in result.stderr and "Traceback" not in result.stderr, result
+
         for evidence, expected_duplicates in (
             (same_case_passes, 0),
             (padded_trace, 19),
@@ -750,7 +867,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
