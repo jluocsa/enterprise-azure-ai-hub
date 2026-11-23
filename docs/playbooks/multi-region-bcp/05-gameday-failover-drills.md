@@ -48,6 +48,8 @@ An expected-stamp manifest or evidence export that exceeds the JSON parser's nes
 
 The last successful call cannot be later than the last call of any status in the same model/region aggregate. Even if both timestamps are fresh, `LastSuccessfulSeen > LastSeen` blocks snapshot sign-off with exit `1`; equal instants remain valid after timezone normalization. Re-export inconsistent telemetry rather than widening the freshness window or editing timestamps to force a pass. This local consistency check does not authenticate evidence or replace the live drill <span class="ev-badge ev-arch">[Arch]</span>.
 
+If `SuccessfulCalls == TotalCalls`, the last successful call must also be the last call: different `LastSuccessfulSeen` and `LastSeen` instants block sign-off with exit `1`. Equivalent timezone offsets remain valid, and mixed-success aggregates may retain an earlier last success. See the [companion's aggregate-consistency contract and offline regressions](/papers/engineering-kits#fail-closed-cross-region-snapshot-evidence). This local input-consistency rule neither requires all calls to succeed nor authenticates the exported telemetry <span class="ev-badge ev-arch">[Arch]</span>.
+
 ---
 
 ## 2. The 12-Point Multi-Region BCP Readiness Standard (`B1–B12`) `[Agree]`
