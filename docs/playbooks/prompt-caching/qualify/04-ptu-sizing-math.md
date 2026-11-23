@@ -80,6 +80,8 @@ Finite values alone do not ensure reliable integer estimates. The calculator als
 
 <PtuCalculator />
 
+The target model must exactly match a supported calculator option. Blank, unknown, case-altered, or whitespace-padded selections block estimates and Markdown export instead of silently substituting another model's token weights and PTU rates. A field-linked error identifies the model control, and model-specific compatibility guidance is hidden until a supported option or workload preset is restored. This is a local estimator inventory check, not an Azure model-availability check; models outside this inventory require separately verified sizing parameters. Offline interaction regressions cover invalid selections, direct copy-handler blocking, all supported models, and preset recovery <span class="ev-badge ev-arch">[Arch]</span>.
+
 ::: tip Seasonal Filing-Cliff & Deal-Sprint Workloads
 For advisory, assurance, tax, legal, and compliance platforms with `3×–6×` statutory filing or fiscal-close surges, avoid sizing 12-month PTU reservations for peak-month cliffs—see [Seasonal Filing-Cliff & Deal-Sprint PTU Economics](/playbooks/prompt-caching/profiles/regulated-multi-engagement#3-seasonal-filing-cliff-deal-sprint-ptu-economics) (`71%` hybrid PTU-M + Standard spillover savings).
 :::

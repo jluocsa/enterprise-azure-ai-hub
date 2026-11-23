@@ -197,10 +197,15 @@ function applyPreset(p: Preset) {
   surgeMonths.value = p.surgeMo
 }
 
-const spec = computed(() => MODELS.find(m => m.id === selectedId.value) || MODELS[0])
+const spec = computed(() => MODELS.find(m => m.id === selectedId.value))
 
 const validatedInputs = computed(() => {
   const errors: Record<string, string> = {}
+  const model = spec.value
+  if (!model) {
+    errors.selectedId = 'Target Foundry Model: select a supported model before estimating PTU capacity.'
+    return { errors, values: null }
+  }
   function check(key: string, label: string, value: number | string, min: number, max = Infinity) {
     if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
       errors[key] = `${label}: enter a finite number ${max === Infinity ? `at least ${min}` : `from ${min} to ${max}`}.`
@@ -212,7 +217,7 @@ const validatedInputs = computed(() => {
   const input = check('avgInput', 'Avg Input Tokens / Call (short-context estimator)', avgInput.value, 100, 272000)
   const output = check('avgOutput', 'Avg Output Tokens / Call', avgOutput.value, 10)
   const hitPct = check('cacheHitPct', 'Cached Input Share (%)', cacheHitPct.value, 0, 98)
-  const rw = spec.value.regime === 'gpt6'
+  const rw = model.regime === 'gpt6'
     ? check('rwRatio', 'Steady-State Read/Write Ratio', rwRatio.value, 1, 100)
     : 1
   const mult = showSeasonal.value
@@ -242,8 +247,8 @@ function roundToDeployable(raw: number, minPtu: number, inc: number): number {
 
 const calc = computed(() => {
   const values = validatedInputs.value.values
-  if (!values) return null
   const m = spec.value
+  if (!values || !m) return null
   const inputTpm = values.rpm * values.input
   const outputTpm = values.rpm * values.output
   const rawHitRate = values.hitPct / 100
@@ -313,8 +318,8 @@ const calc = computed(() => {
 async function copyEstimate() {
   const estimate = calc.value
   const values = validatedInputs.value.values
-  if (!estimate || !values) return
   const m = spec.value
+  if (!estimate || !values || !m) return
   const text = [
     `### PTU, Cache-Shard & Spillover Estimate (${m.label})`,
     `- **Traffic Profile:** ${values.rpm} Peak RPM · ${values.input.toLocaleString()} Input Tok · ${values.output.toLocaleString()} Output Tok`,
@@ -364,7 +369,7 @@ async function copyEstimate() {
     <div class="ptu-inputs" @input="activePreset = 'custom'">
       <label>
         <span>Target Foundry Model</span>
-        <select v-model="selectedId">
+        <select v-model="selectedId" :aria-invalid="Boolean(inputErrors.selectedId)" :aria-describedby="inputErrors.selectedId ? 'ptu-input-errors' : undefined">
           <option v-for="m in MODELS" :key="m.id" :value="m.id">{{ m.label }}</option>
         </select>
       </label>
@@ -384,7 +389,7 @@ async function copyEstimate() {
         <span>Cached Input Share (%)</span>
         <input v-model.number="cacheHitPct" type="number" min="0" max="98" step="5" :aria-invalid="Boolean(inputErrors.cacheHitPct)" :aria-describedby="inputErrors.cacheHitPct ? 'ptu-input-errors' : undefined" />
       </label>
-      <label v-if="spec.regime === 'gpt6'">
+      <label v-if="spec?.regime === 'gpt6'">
         <span>Steady-State Read/Write Ratio (k:1)</span>
         <input v-model.number="rwRatio" type="number" min="1" max="100" step="1" :aria-invalid="Boolean(inputErrors.rwRatio)" :aria-describedby="inputErrors.rwRatio ? 'ptu-input-errors' : undefined" />
       </label>
@@ -405,7 +410,7 @@ async function copyEstimate() {
       </ul>
     </div>
 
-    <div v-if="calc" class="ptu-results">
+    <div v-if="calc && spec" class="ptu-results">
       <div class="ptu-card highlight">
         <span class="k">Tuned Baseline ({{ calc.effectiveHitPct }}% Hit<template v-if="calc.isCapped"> · R/W Capped</template>)</span>
         <div class="v">{{ calc.depCached }} PTUs</div>
@@ -449,7 +454,7 @@ async function copyEstimate() {
       </div>
     </div>
 
-    <p class="ptu-note">
+    <p v-if="spec" class="ptu-note">
       <strong>SKU Breakpoint Rule:</strong>
       <span v-if="spec.ptuBreakpoints">
         <code>{{ spec.id }}</code> supports <strong>explicit breakpoints on PTU-M</strong>; cached reads weigh <code>{{ spec.readWeight }}x</code> and writes <code>{{ spec.writeWeight }}x</code>.
