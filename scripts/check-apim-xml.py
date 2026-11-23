@@ -88,6 +88,10 @@ def validate_ptu_rewrite(root):
             "PTU rewrite contract: expected only request-wide cache options and "
             "input/messages content breakpoints to be removed, preserving all other fields"
         )
+    if "template" in rewrites[0].attrib:
+        raise ValueError(
+            "PTU rewrite contract: C# body expressions must omit the template attribute"
+        )
     if rewrites[0] not in root.findall("./inbound/set-body"):
         raise ValueError(
             "PTU rewrite contract: the fixed GPT-5.6 PTU primary requires an "
@@ -151,6 +155,10 @@ def validate_spillover(root):
         (branch[1].text or "").strip()
         == '@((string)context.Variables["original-request-body"])',
         "Standard retry must restore the captured original string",
+    )
+    require(
+        "template" not in branch[1].attrib,
+        "C# body restoration must omit the template attribute",
     )
     require(
         retry[1].get("buffer-request-body") == "true",
@@ -263,6 +271,58 @@ class ApimXmlTests(unittest.TestCase):
         validate_ptu_rewrite(validate_studio(rendered))
         validate_spillover(validate_studio(rendered))
         validate_sse(validate_studio(rendered))
+
+    def test_rejects_template_modes_on_csharp_body_expressions(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for path, validate, diagnostic in (
+            ("./inbound/set-body", validate_ptu_rewrite, "PTU rewrite contract"),
+            ("./backend/retry/choose/when/set-body", validate_spillover,
+             "spillover body contract"),
+        ):
+            for template in ("liquid", "", "@(mode)", "unknown"):
+                with self.subTest(path=path, template=template):
+                    root = deepcopy(source)
+                    root.find(path).set("template", template)
+                    with self.assertRaisesRegex(ValueError, diagnostic + ".*template"):
+                        validate(root)
+                    root.find(path).attrib.pop("template")
+                    validate(root)
+
+    def test_cli_blocks_liquid_body_expressions_in_kit_and_rendered_studio(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for body_path, diagnostic in (
+                ("./inbound/set-body", "PTU rewrite contract"),
+                ("./backend/retry/choose/when/set-body", "spillover body contract"),
+            ):
+                policy = validate_policy(source)
+                policy.find(body_path).set("template", "liquid")
+                regression = ET.tostring(policy, encoding="unicode")
+                for target in (None, "kit", "studio"):
+                    kit.write_text(regression if target == "kit" else source, encoding="utf-8")
+                    rendered = regression if target == "studio" else source
+                    studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                      encoding="utf-8")
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with self.subTest(body_path=body_path, target=target), \
+                            patch.dict(globals(), ROOT=root, KIT=kit), \
+                            patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                            redirect_stdout(stdout), redirect_stderr(stderr):
+                        self.assertEqual(main(), 0 if target is None else 1)
+                    self.assertEqual("PASSED" in stdout.getvalue(), target is None)
+                    if target is None:
+                        self.assertEqual(stderr.getvalue(), "")
+                    else:
+                        self.assertIn(diagnostic, stderr.getvalue())
+                        self.assertIn("template", stderr.getvalue())
+                        self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                      stderr.getvalue())
+                        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_rejects_incomplete_or_destructive_ptu_rewrites(self):
         source = validate_policy(KIT.read_text(encoding="utf-8"))
