@@ -165,6 +165,11 @@ def validate_spillover(root):
         "request replay buffering is required independently of response streaming",
     )
     require(
+        retry[1].get("fail-on-error-status-code") in (None, "false"),
+        "forward-request must omit fail-on-error-status-code or set it to false "
+        "so 429/503 responses remain available to the retry condition",
+    )
+    require(
         len(root.findall("./backend/*")) == 1,
         "no body or routing policies may override the retry outside its block",
     )
@@ -440,6 +445,45 @@ class ApimXmlTests(unittest.TestCase):
                     root.remove(root.find("outbound"))
                 with self.assertRaisesRegex(ValueError, "SSE response contract"):
                     validate_sse(root)
+
+    def test_cli_preserves_response_based_spillover_in_kit_and_rendered_studio(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for value in ("true", "", "@(false)", "FALSE", "unknown", "false", None):
+                policy = validate_policy(source)
+                forward = policy.find("./backend/retry/forward-request")
+                if value is None:
+                    forward.attrib.pop("fail-on-error-status-code", None)
+                else:
+                    forward.set("fail-on-error-status-code", value)
+                changed = ET.tostring(policy, encoding="unicode")
+                valid = value in (None, "false")
+                for target in ("kit", "studio"):
+                    kit.write_text(changed if target == "kit" else source, encoding="utf-8")
+                    rendered = changed if target == "studio" else source
+                    studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                      encoding="utf-8")
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with self.subTest(value=value, target=target), \
+                            patch.dict(globals(), ROOT=root, KIT=kit), \
+                            patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                            redirect_stdout(stdout), redirect_stderr(stderr):
+                        self.assertEqual(main(), 0 if valid else 1)
+                    if valid:
+                        self.assertIn("PASSED", stdout.getvalue())
+                        self.assertEqual(stderr.getvalue(), "")
+                    else:
+                        self.assertEqual(stdout.getvalue(), "")
+                        self.assertIn("spillover body contract", stderr.getvalue())
+                        self.assertIn("fail-on-error-status-code", stderr.getvalue())
+                        self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                      stderr.getvalue())
+                        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_rejects_nested_outbound_body_policies_and_expressions(self):
         source = validate_policy(KIT.read_text(encoding="utf-8"))
