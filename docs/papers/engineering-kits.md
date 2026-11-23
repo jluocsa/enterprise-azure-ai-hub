@@ -73,6 +73,8 @@ Raw download: <a :href="withBase('/kits/bcp-failover-readiness-gate.kql')" downl
 
 Create `expected-stamps.json` from the approved deployment inventory, **not** from observed traffic. Declare every expected model/region pair, with at least two distinct regions per model and one identical pinned snapshot across its regions. `reqModel` must match the request-model value emitted by your instrumentation; the sample names below are placeholders <span class="ev-badge ev-arch">[Arch]</span>.
 
+The companion lowercases `stampRegion` in both inputs before counting distinct regions, matching evidence, and detecting duplicates. `eastus` and `EASTUS` cannot masquerade as two regions or conceal a missing secondary: duplicate manifest identities exit `2`, while duplicate evidence identities exit `1`. A single mixed-case spelling of each genuinely distinct region remains valid; model names and snapshot pins retain exact, case-sensitive matching. This is a local identity policy, not region-name validation or alias resolution; use approved region identifiers rather than display names. Offline regressions cover duplicate aliases, missing-secondary detection, mixed-case recovery, and preserved model/snapshot identity <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```json
 [
   {"reqModel": "model-a", "stampRegion": "eastus", "expectedSnapshot": "snapshot-a"},
