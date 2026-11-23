@@ -108,6 +108,8 @@ Both the expected-stamp manifest and evidence export must use **unique member na
 
 JSON exceeding the Python parser's nesting limit in either input also exits `2` with a sanitized input-error diagnostic, no stdout, and no traceback. Both files must parse completely before evidence is evaluated; a valid stamp row followed by excessively nested metadata cannot produce a partial pass. The offline self-test covers deep arrays and objects in both inputs and preserves ordinary nested metadata. This handles parser recursion failures, not a fixed portable depth budget, file-size limit, memory-exhaustion guard, or evidence-authenticity check; it does not raise Python's recursion limit <span class="ev-badge ev-arch">[Arch]</span>.
 
+File-read failures in either input (missing files, directories, permission/I/O errors, or invalid UTF-8) exit `2` with the fixed stderr diagnostic `BCP snapshot gate input error: could not read UTF-8 JSON input.` and no stdout or traceback. Paths, file content, byte offsets, and operating-system exception details are not echoed. Both files must be read completely before evaluation; a valid JSON prefix followed by undecodable bytes cannot produce a partial pass. Offline regressions cover both inputs, injected permission/I/O failures without platform-specific permissions, and recovery with valid files. This is a local diagnostic-privacy rule, not an Azure requirement or evidence-authenticity check; existing JSON/configuration and evidence-failure diagnostics remain distinct <span class="ev-badge ev-arch">[Arch]</span>.
+
 Companion download: <a :href="withBase('/kits/bcp_snapshot_gate.py')" download target="_blank" rel="noopener"><strong><code>Download bcp_snapshot_gate.py</code></strong></a>
 
 ---

@@ -46,6 +46,8 @@ An expected-stamp manifest or evidence export that exceeds the JSON parser's nes
 
 The last successful call cannot be later than the last call of any status in the same model/region aggregate. Even if both timestamps are fresh, `LastSuccessfulSeen > LastSeen` blocks snapshot sign-off with exit `1`; equal instants remain valid after timezone normalization. Re-export inconsistent telemetry rather than widening the freshness window or editing timestamps to force a pass. This local consistency check does not authenticate evidence or replace the live drill <span class="ev-badge ev-arch">[Arch]</span>.
 
+Missing/unreadable files and invalid UTF-8 in either the manifest or evidence export also block sign-off with exit `2`, a fixed sanitized stderr diagnostic, and no stdout or traceback. The companion does not echo paths, content, or operating-system exception details and never evaluates a partially read export. Correct access or regenerate the UTF-8 export rather than treating the read failure as snapshot evidence; see the [kit's diagnostic-privacy regressions](/papers/engineering-kits#fail-closed-cross-region-snapshot-evidence). This is a local input-handling rule, not an Azure requirement <span class="ev-badge ev-arch">[Arch]</span>.
+
 ---
 
 ## 2. The 12-Point Multi-Region BCP Readiness Standard (`B1–B12`) `[Agree]`

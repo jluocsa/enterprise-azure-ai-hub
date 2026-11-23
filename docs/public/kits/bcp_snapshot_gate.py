@@ -5,6 +5,7 @@ Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
 Every JSON object must have unique member names, including nested metadata.
 JSON parser nesting failures produce an input error, not a traceback.
+File read failures omit paths, content, and operating-system exception details.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
 LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
 --max-age-minutes (default: 15). SuccessfulCalls must be positive (HTTP 2xx).
@@ -15,8 +16,10 @@ This checks B2 snapshot parity and B11 coverage, not the entire BCP readiness st
 from __future__ import annotations
 
 import argparse
+import contextlib
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -24,6 +27,7 @@ import sys
 import tempfile
 from typing import Any
 import unittest
+from unittest.mock import patch
 
 
 def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -500,6 +504,67 @@ class SnapshotGateTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertIn("expected stamps", result.stderr)
 
+    def test_cli_sanitizes_read_errors_in_both_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "private-manifest.json"
+            evidence = Path(directory) / "private-evidence.json"
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            fresh_rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time)
+                          for row in self.rows]
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            for target, rows in ((manifest, self.manifest), (evidence, fresh_rows)):
+                for failure in ("missing", "directory", "invalid-utf8", "invalid-suffix"):
+                    manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
+                    evidence.write_text(json.dumps(fresh_rows), encoding="utf-8")
+                    if failure == "missing":
+                        target.unlink()
+                    elif failure == "directory":
+                        target.unlink()
+                        target.mkdir()
+                    elif failure == "invalid-utf8":
+                        target.write_bytes(b"\xffprivate-content")
+                    else:
+                        target.write_bytes(json.dumps(rows).encode("utf-8") + b"\n\xffprivate-content")
+                    result = subprocess.run(command, capture_output=True, text=True, check=False)
+                    with self.subTest(target=target.name, failure=failure):
+                        self.assertEqual(result.returncode, 2)
+                        self.assertEqual(result.stdout, "")
+                        self.assertEqual(
+                            result.stderr.strip(),
+                            "BCP snapshot gate input error: could not read UTF-8 JSON input.",
+                        )
+                    if failure == "directory":
+                        target.rmdir()
+            manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
+            evidence.write_text(json.dumps(fresh_rows), encoding="utf-8")
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stderr, "")
+            self.assertIn("PASSED", result.stdout)
+
+    def test_permission_and_io_errors_are_sanitized(self):
+        for error in (PermissionError("private-path private-content"),
+                      OSError("private-path private-content")):
+            for input_index in (0, 1):
+                reads = [json.dumps(self.manifest)] * input_index + [error]
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with (
+                    self.subTest(error=type(error).__name__, input_index=input_index),
+                    patch.object(sys, "argv", ["bcp_snapshot_gate.py", "private-evidence.json",
+                                               "--expected", "private-manifest.json"]),
+                    patch.object(Path, "read_text", side_effect=reads),
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    code = main()
+                    self.assertEqual(code, 2)
+                    self.assertEqual(stdout.getvalue(), "")
+                    self.assertEqual(
+                        stderr.getvalue().strip(),
+                        "BCP snapshot gate input error: could not read UTF-8 JSON input.",
+                    )
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -518,7 +583,10 @@ def main() -> int:
         expected = validate_expected(load_json(args.expected))
         raw = load_json(args.evidence)
         failures = evaluate_evidence(raw, expected, max_age_minutes=args.max_age_minutes)
-    except (OSError, UnicodeError, ValueError) as error:
+    except (OSError, UnicodeError):
+        print("BCP snapshot gate input error: could not read UTF-8 JSON input.", file=sys.stderr)
+        return 2
+    except ValueError as error:
         print(f"BCP snapshot gate input error: {error}", file=sys.stderr)
         return 2
     if failures:
