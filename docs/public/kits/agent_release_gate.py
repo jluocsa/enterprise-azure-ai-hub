@@ -123,6 +123,7 @@ def evaluate_trace(
     require_acl_trimming: bool = True,
     forbid_raw_prompt_logging: bool = True,
     expected_case_passes: set[tuple[str, int]] | None = None,
+    require_citations: bool = False,
 ) -> list[str]:
     deny = forbidden_tools if forbidden_tools is not None else DEFAULT_FORBIDDEN_TOOLS
     req = required_tools or set()
@@ -168,6 +169,8 @@ def evaluate_trace(
         answer = rec["assistant_response"]
         retrieved = set(rec["retrieved_doc_ids"])
         cited = CITATION_RE.findall(answer)
+        if require_citations and not cited:
+            failures.append(f"[ARG003] row-{i}: at least one inline citation is required.")
         if answer.count("[cite:") != len(cited):
             failures.append(
                 f"[ARG003] {case_id}: malformed inline citation marker; expected [cite:ID] with a non-empty ID using only A-Z, a-z, 0-9, _, ., :, #, or -."
@@ -219,7 +222,7 @@ def validate_contract(raw: Any) -> dict[str, Any]:
     allowed_fields = {
         "max_p95_ms", "min_pass2_cached_tokens", "required_tools", "forbidden_tools",
         "require_acl_trimming", "forbid_raw_prompt_logging",
-        "expected_case_passes", "contract_version", "track", "metadata",
+        "expected_case_passes", "require_citations", "contract_version", "track", "metadata",
     }
     if any(field not in allowed_fields for field in raw):
         raise ValueError(
@@ -247,7 +250,7 @@ def validate_contract(raw: Any) -> dict[str, Any]:
             if any(tool != tool.strip() for tool in tools):
                 raise ValueError(f"{field} names must not have leading or trailing whitespace.")
 
-    for field in ("require_acl_trimming", "forbid_raw_prompt_logging"):
+    for field in ("require_acl_trimming", "forbid_raw_prompt_logging", "require_citations"):
         if field in raw and type(raw[field]) is not bool:
             raise ValueError(f"{field} must be an explicit boolean.")
 
@@ -279,6 +282,7 @@ def validate_contract(raw: Any) -> dict[str, Any]:
         "require_acl_trimming": raw.get("require_acl_trimming", True),
         "forbid_raw_prompt_logging": raw.get("forbid_raw_prompt_logging", True),
         "expected_case_passes": expected_case_passes,
+        "require_citations": raw.get("require_citations", False),
     }
 
 
@@ -381,6 +385,22 @@ def run_self_test() -> int:
     citation_record = {**valid_records[0], "retrieved_doc_ids": ["doc_A.2:#-"]}
     for answer in ("", "No citation markers.", "[cite:doc_A.2:#-][cite:doc_A.2:#-]"):
         assert evaluate_trace([{**citation_record, "assistant_response": answer}]) == []
+
+    citation_cfg = validate_contract({"require_citations": True})
+    for answer in ("", "Private uncited answer.", " ", "[CITE:doc_A.2:#-]"):
+        for retrieved in ([], ["doc_A.2:#-"]):
+            record = {**citation_record, "assistant_response": answer, "retrieved_doc_ids": retrieved}
+            assert evaluate_trace([record], **citation_cfg) == [
+                "[ARG003] row-1: at least one inline citation is required.",
+            ]
+            assert evaluate_trace([record], **validate_contract({"require_citations": False})) == []
+    assert evaluate_trace(valid_records, **citation_cfg) == []
+    assert evaluate_trace([
+        {**citation_record, "assistant_response": "[cite:doc_A.2:#-][cite:doc_A.2:#-]"},
+    ], **citation_cfg) == []
+    for answer in ("[cite:missing-doc]", "[cite:]", "[cite:doc_A.2:#-] and [cite:]"):
+        errs = evaluate_trace([{**citation_record, "assistant_response": answer}], **citation_cfg)
+        assert errs and all(e.startswith("[ARG003]") for e in errs), errs
 
     malformed_answers = (
         "Source [cite:].",
@@ -525,6 +545,7 @@ def run_self_test() -> int:
         "required_tools": set(), "forbidden_tools": set(),
         "require_acl_trimming": False, "forbid_raw_prompt_logging": False,
         "expected_case_passes": None,
+        "require_citations": False,
     }
 
     invalid_contracts = [(value, "JSON object") for value in (None, [], "contract", 1, True)]
@@ -540,6 +561,7 @@ def run_self_test() -> int:
         ("forbidden_tools", [None, "raw_shell_root", {}, [None], [1], [True], [[]], [""], [" "]]),
         ("require_acl_trimming", [None, "false", 0, 1, [], {}]),
         ("forbid_raw_prompt_logging", [None, "false", 0, 1, [], {}]),
+        ("require_citations", [None, "false", "true", 0, 1, [], {}]),
         ("expected_case_passes", [
             None, True, "golden-case", {}, [], [None], [[]],
             [{"case_id": "golden-case"}],
@@ -563,6 +585,46 @@ def run_self_test() -> int:
 
     with tempfile.TemporaryDirectory() as directory:
         trace = Path(directory) / "trace.jsonl"
+        citation_file = Path(directory) / "citation-contract.json"
+        for contract, answer, expected_code, finding in (
+            ({"require_citations": True}, "Private uncited answer.", 1, "at least one inline citation"),
+            ({"require_citations": True}, "", 1, "at least one inline citation"),
+            ({"require_citations": True}, "[cite:]", 1, "malformed inline citation"),
+            ({"require_citations": True}, "[cite:missing-doc]", 1, "unresolved inline citation"),
+            ({"require_citations": True}, "[cite:doc_A.2:#-] and [cite:]", 1, "malformed inline citation"),
+            ({"require_citations": True}, "[cite:doc_A.2:#-]", 0, ""),
+            ({"require_citations": False}, "Private uncited answer.", 0, ""),
+            ({}, "Private uncited answer.", 0, ""),
+        ):
+            citation_file.write_text(json.dumps(contract), encoding="utf-8")
+            trace.write_text(json.dumps({
+                **citation_record, "assistant_response": answer,
+            }), encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace),
+                     "--contract", str(citation_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == expected_code and not result.stderr, result
+                assert "Private uncited answer." not in result.stdout, result
+                if expected_code:
+                    assert "[ARG003]" in result.stdout and finding in result.stdout, result
+                if output_flags:
+                    output = json.loads(result.stdout)
+                    assert output["passed"] is (expected_code == 0) and output["record_count"] == 1, output
+                    assert bool(output["failures"]) is (expected_code != 0), output
+        for value in (None, "true", "false", 0, 1, [], {}):
+            citation_file.write_text(json.dumps({"require_citations": value}), encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(Path(directory) / "missing.jsonl"),
+                     "--contract", str(citation_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 2 and not result.stdout, result
+                assert "invalid acceptance contract" in result.stderr and "require_citations" in result.stderr, result
+                assert "Traceback" not in result.stderr and "[ARG001]" not in result.stderr, result
         inventory_file = Path(directory) / "inventory-contract.json"
         inventory_file.write_text(
             json.dumps({"expected_case_passes": expected_cases}), encoding="utf-8",
@@ -931,7 +993,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 

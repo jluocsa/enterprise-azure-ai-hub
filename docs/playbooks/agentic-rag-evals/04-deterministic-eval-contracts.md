@@ -127,6 +127,12 @@ JSON exceeding the Python parser's nesting limit also exits `2` without a traceb
 
 Repeated valid markers remain allowed. Answers without citation markers remain structurally valid: this gate verifies marker syntax and ID resolution, **not** citation completeness, source relevance, or whether the cited document supports the answer. Keep those semantic checks in the calibrated quality review above.
 
+### Opt-In Citation Presence (`ARG003`)
+
+<span class="ev-badge ev-arch">[Arch]</span> For a grounded-answer corpus, add `"require_citations": true` to the acceptance contract. Every structurally valid turn must then contain at least one well-formed `[cite:ID]` marker, and all markers remain subject to the existing syntax and retrieved-ID resolution checks. Empty answers, uncited answers (even with retrieved documents), and malformed-only markers cannot pass. Missing citations produce a row-numbered `ARG003` finding and exit `1` in text or `--json` mode without echoing the answer.
+
+The field accepts only a JSON boolean; invalid types exit `2` before evidence is read. Omitted or `false` preserves existing behavior, including Studio exports. Studio does not currently populate or simulate this optional control. Use separate contracts for corpora containing intentionally uncited refusals or tool-only turns: when enabled, the requirement applies to every valid turn, not only turns reporting retrievals. A resolved marker proves neither that the source supports the answer nor that all claims are cited; retain semantic review and trusted trace provenance. Offline regressions cover empty/uncited turns, malformed/unresolved markers, successful cited turns, default compatibility, and configuration-validation precedence.
+
 ### Fail-Closed Acceptance Configuration
 
 <span class="ev-badge ev-arch">[Arch]</span> The CLI validates acceptance configuration before reading trace evidence, without coercing strings, booleans, or fractional token thresholds. Invalid configuration exits `2` with a field-specific stderr diagnostic and no success-shaped JSON output, including under `--json`.
@@ -137,6 +143,7 @@ Repeated valid markers remain allowed. Answers without citation markers remain s
 | `min_pass2_cached_tokens` | Integer `>0`; no strings, booleans, or fractional values. |
 | `required_tools`, `forbidden_tools` | Arrays of non-empty strings without leading/trailing whitespace, not a single string; `[]` explicitly disables that list. |
 | `require_acl_trimming`, `forbid_raw_prompt_logging` | Explicit JSON booleans; `"false"`, `0`, and `null` are invalid. |
+| `require_citations` | Optional JSON boolean, default `false`; `true` requires at least one inline citation on every valid turn. |
 | `expected_case_passes` | Optional non-empty array of unique `{ "case_id": "...", "pass_number": 1 }` objects; see the golden-run inventory above. |
 
 The [Studio contract builder](/studio/#agent-eval) also rejects blank/string, non-finite, and non-positive thresholds before displaying or copying contract JSON or the combined ACA/gate CLI. Invalid configuration shows linked field errors and a simulated `BLOCKED (Exit 2)`, never a passing trace result; direct copy-handler calls are guarded too. Positive fractional latency budgets remain valid. Token thresholds must additionally be safe JavaScript integers so the exported JSON preserves their exact value; this browser representation boundary is not an Azure service limit. The default `15000` ms / `1024` tokens is unchanged. The cache-miss scenario applies `ARG004` only when its `4800` input tokens meet the configured threshold, matching the kit; a higher threshold skips that scenario's cache check rather than certifying cache parity. Deterministic Vue interaction regressions run in `npm run verify`. Session-pool sizing and other trace checks remain separate; this illustrative simulation does not evaluate actual evidence or certify an appropriate SLO <span class="ev-badge ev-arch">[Arch]</span>.
