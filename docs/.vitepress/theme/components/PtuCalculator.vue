@@ -225,8 +225,9 @@ const validatedInputs = computed(() => {
       rw === null || mult === null || months === null) {
     return { errors, values: null }
   }
-  if (!Number.isFinite(rpm * (input * 1.25 + output * 6) * mult * 12)) {
-    errors.peakRpm = 'Traffic and token volumes exceed finite calculator arithmetic; reduce the workload.'
+  const arithmeticBudget = rpm * (input * 1.25 + output * 6) * mult * 12
+  if (!Number.isFinite(arithmeticBudget) || arithmeticBudget > Number.MAX_SAFE_INTEGER) {
+    errors.peakRpm = 'Traffic and token volumes exceed safe integer precision for workload and annual surge arithmetic; reduce RPM, output tokens, or surge.'
     errors.avgOutput = errors.peakRpm
     return { errors, values: null }
   }
