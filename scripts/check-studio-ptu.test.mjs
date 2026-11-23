@@ -128,6 +128,39 @@ function assertBlocked(calculator, label) {
   assert.equal(calculator.field(label).props['aria-describedby'], 'ptu-input-errors')
 }
 
+test('unsupported model identities block fallback sizing and direct exports, then recover with supported models', async () => {
+  const calculator = mountCalculator()
+  try {
+    const models = calculator.field('Target Foundry Model').options.map(option => option.props.value)
+    for (const value of [
+      '', ' ', 'unknown-model', 'gpt-6.1-terra', 'GPT-5.6-TERRA',
+      ' gpt-5.6-terra', 'gpt-5.6-terra ', null, undefined, 0,
+    ]) {
+      await calculator.set('Target Foundry Model', value)
+      assertBlocked(calculator, 'Target Foundry Model')
+      assert.match(calculator.text(), /select a supported model/)
+      assert.ok(!calculator.all().some(el => el.props.class === 'ptu-note'),
+        'invalid selections must not display a fallback model compatibility rule')
+      await calculator.copyButton().props.onClick()
+      assert.deepEqual(calculator.copied, [])
+    }
+    for (const model of models) {
+      await calculator.set('Target Foundry Model', model)
+      assert.equal(calculator.copyButton().props.disabled, false)
+      assert.equal(calculator.field('Target Foundry Model').props['aria-invalid'], false)
+      assert.ok(!calculator.all().some(el => el.props.role === 'alert'))
+      await calculator.copyButton().props.onClick()
+      assert.ok(calculator.copied.at(-1).startsWith(`### PTU, Cache-Shard & Spillover Estimate (${model} (`))
+    }
+    await calculator.set('Target Foundry Model', 'unknown-model')
+    await calculator.preset('Document Review Agent (Default)')
+    assert.match(calculator.text(), /170 PTUs/)
+    assert.match(calculator.text(), /435 PTUs \(2\.56/)
+    assert.equal(calculator.copyButton().props.disabled, false)
+    assert.ok(!calculator.all().some(el => el.props.role === 'alert'))
+  } finally { calculator.close() }
+})
+
 test('blank, non-finite, and out-of-range inputs block displayed and exported estimates', async () => {
   const calculator = mountCalculator()
   try {
