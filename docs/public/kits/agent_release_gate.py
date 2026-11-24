@@ -13,6 +13,9 @@ production acceptance contracts:
   [ARG006] Foundry IQ ACL trimming (A5): non-empty RAG retrievals never report acl_trimmed=False
   [ARG007] Metadata-only OTel privacy (A12): zero raw prompt/message content logged in telemetry
 
+Both JSON inputs reject unquoted NaN, Infinity, and -Infinity, including metadata.
+Invalid JSON exits 2 before trace evaluation; diagnostics never echo input values.
+
 Usage:
   python3 agent_release_gate.py ./artifacts/trace.jsonl
   python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release-contract.json
@@ -45,6 +48,10 @@ def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
             raise ValueError("duplicate JSON object members are not allowed.")
         obj[key] = value
     return obj
+
+
+def reject_json_constant(value: str) -> Any:
+    raise ValueError("non-standard JSON numeric constants are not allowed.")
 
 
 def is_finite_number(value: Any) -> bool:
@@ -299,6 +306,7 @@ def load_contract(contract_path: Path) -> dict[str, Any]:
     try:
         raw = json.loads(
             contract_path.read_text(encoding="utf-8"), object_pairs_hook=unique_json_object,
+            parse_constant=reject_json_constant,
         )
     except json.JSONDecodeError:
         raise ValueError("contract must contain valid JSON.") from None
@@ -867,7 +875,6 @@ def run_self_test() -> int:
             ([{**valid_records[0], "metadata": [{"label": "a"}, {"label": "b"}]}], 0),
             ([{"status": "ok"}], 1),
             ([None], 1),
-            ([valid_records[0], {**valid_records[1], "duration_ms": math.nan}], 1),
         ):
             trace.write_text("\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8")
             result = subprocess.run(
@@ -903,6 +910,75 @@ def run_self_test() -> int:
 
         trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         contract_file = Path(directory) / "contract.json"
+        for token in ("NaN", "Infinity", "-Infinity"):
+            for target in ("trace", "contract"):
+                field = "duration_ms" if target == "trace" else "max_p95_ms"
+                base = json.dumps(valid_records[1]) if target == "trace" else "{}"
+                contents = (
+                    token,
+                    base.replace('"duration_ms": 1280', '"duration_ms": ' + token)
+                    if target == "trace" else '{"max_p95_ms":' + token + "}",
+                    '{"metadata":{"private-field":' + token + "}," + base[1:],
+                    '{"metadata":[{"private-field":[' + token + "]}]," + base[1:],
+                )
+                for content in contents:
+                    trace.write_text(
+                        json.dumps(valid_records[0]) + "\n\n"
+                        + (content if target == "trace" else json.dumps(valid_records[1])) + "\n",
+                        encoding="utf-8",
+                    )
+                    contract_file.write_text(
+                        content if target == "contract" else "{}", encoding="utf-8",
+                    )
+                    trace_paths = [trace]
+                    if target == "contract":
+                        trace_paths.append(Path(directory) / "missing.jsonl")
+                    for trace_path in trace_paths:
+                        for output_flags in ([], ["--json"]):
+                            result = subprocess.run(
+                                [sys.executable, str(Path(__file__).resolve()), str(trace_path),
+                                 "--contract", str(contract_file), *output_flags],
+                                capture_output=True, text=True, check=False,
+                            )
+                            assert result.returncode == 2 and not result.stdout, result
+                            if target == "trace":
+                                assert result.stderr.strip() == (
+                                    "Error: [ARG001] line-3: invalid JSON execution record "
+                                    "(malformed JSON, duplicate object members, or non-standard numeric constants)."
+                                ), result
+                            else:
+                                assert result.stderr.strip() == (
+                                    "Error: invalid acceptance contract: "
+                                    "non-standard JSON numeric constants are not allowed."
+                                ), result
+                            assert all(marker not in result.stderr for marker in (
+                                token, field, "private-field", str(trace_path), "Traceback",
+                            )), result
+
+        for metadata in (
+            '{"labels":["NaN","Infinity","-Infinity"],"nested":[true,false,null,1,0.5]}',
+            '{"large_number":1e400}',
+        ):
+            contract_file.write_text('{"metadata":' + metadata + "}", encoding="utf-8")
+            trace.write_text(
+                json.dumps(valid_records[0]) + "\n\n"
+                + '{"metadata":' + metadata + "," + json.dumps(valid_records[1])[1:],
+                encoding="utf-8",
+            )
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace),
+                     "--contract", str(contract_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 0 and not result.stderr, result
+                if output_flags:
+                    assert json.loads(result.stdout) == {
+                        "passed": True, "record_count": 2, "failures": [],
+                    }, result
+                else:
+                    assert "PASSED" in result.stdout, result
+
         for output_flags in ([], ["--json"]):
             trace.write_text(json.dumps({
                 **valid_records[0], "tools_called": ["raw_shell_root "],
@@ -1081,7 +1157,7 @@ def run_self_test() -> int:
             (b"{}", 0, ""),
             (b'{"contract_version":"2.0","required_tools":["knowledge_base_retrieve"]}', 0, ""),
             (b'{"metadata":{"first":{"label":"a"},"second":{"label":"b"}}}', 0, ""),
-            (b'{"max_p95_ms":NaN}', 2, "max_p95_ms"),
+            (b'{"max_p95_ms":NaN}', 2, "non-standard JSON numeric constants"),
             (b'{"min_pass2_cached_tokens":0}', 2, "min_pass2_cached_tokens"),
             (b'{"forbidden_tools":"raw_shell_root"}', 2, "forbidden_tools"),
             (b'{"require_acl_trimming":"false"}', 2, "require_acl_trimming"),
@@ -1159,7 +1235,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (unpadded case identities/latency padding + contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (non-standard JSON constants/CLI recovery + unpadded case identities/latency padding + contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
@@ -1206,7 +1282,9 @@ def main() -> int:
         if not line.strip():
             continue
         try:
-            records.append(json.loads(line, object_pairs_hook=unique_json_object))
+            records.append(json.loads(
+                line, object_pairs_hook=unique_json_object, parse_constant=reject_json_constant,
+            ))
         except RecursionError:
             print(
                 f"Error: [ARG001] line-{line_number}: execution record JSON exceeds the parser nesting limit.",
@@ -1215,7 +1293,7 @@ def main() -> int:
             return 2
         except ValueError:
             print(
-                f"Error: [ARG001] line-{line_number}: invalid JSON execution record (malformed JSON or duplicate object members).",
+                f"Error: [ARG001] line-{line_number}: invalid JSON execution record (malformed JSON, duplicate object members, or non-standard numeric constants).",
                 file=sys.stderr,
             )
             return 2
