@@ -157,6 +157,8 @@ Fail-closed input rules (`DRG001`) exit `2` with no stdout on unreadable/invalid
 
 An optional `expected_source_ids` contract inventory requires exactly the approved datasets, preventing a clean subset or substituted corpus from passing `DRG001`. Missing/unexpected sources exit `1`; invalid inventories exit `2` before evidence is read. Omission preserves Studio compatibility and defaults. Approve the inventory independently; completeness does not prove authenticity or grounding quality. See the [inventory format and offline regressions](/playbooks/ai-data-strategy/05-data-governance-release-gates#expected-source-inventory) <span class="ev-badge ev-arch">[Arch]</span>.
 
+Every dataset's `lineage_sha256` must contain exactly 64 ASCII hexadecimal characters. Missing or malformed digests fail `DRG002` with exit `1`; uppercase and mixed-case hex remain valid. Diagnostics use dataset ordinals without echoing digest or source values. This verifies syntax only, not provenance, approved lineage parity, or zero-copy ingestion; see the [lineage contract and offline regressions](/playbooks/ai-data-strategy/05-data-governance-release-gates#lineage-digest-syntax) <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 data_readiness_gate.py --self-test
 python3 data_readiness_gate.py ./artifacts/data-snapshot.json --contract ./data-readiness-contract.json --json
