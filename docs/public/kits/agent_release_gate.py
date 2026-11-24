@@ -156,15 +156,15 @@ def evaluate_trace(
             seen_turns[turn_key] = i
         status = rec["status"]
         if status != "ok":
-            failures.append(f"[ARG001] {case_id}: terminal status is '{status}' (expected 'ok').")
+            failures.append(f"[ARG001] row-{i}: terminal status must be 'ok'.")
 
         tools_used = rec["tools_called"]
         for tool in tools_used:
             if tool in deny:
-                failures.append(f"[ARG002] {case_id}: invoked forbidden tool '{tool}'.")
+                failures.append(f"[ARG002] row-{i}: invoked a forbidden tool.")
         for req_tool in sorted(req):
             if req_tool not in tools_used:
-                failures.append(f"[ARG002] {case_id}: missing required tool invocation '{req_tool}'.")
+                failures.append(f"[ARG002] row-{i}: missing required tool invocation.")
 
         answer = rec["assistant_response"]
         retrieved = set(rec["retrieved_doc_ids"])
@@ -173,12 +173,12 @@ def evaluate_trace(
             failures.append(f"[ARG003] row-{i}: at least one inline citation is required.")
         if answer.count("[cite:") != len(cited):
             failures.append(
-                f"[ARG003] {case_id}: malformed inline citation marker; expected [cite:ID] with a non-empty ID using only A-Z, a-z, 0-9, _, ., :, #, or -."
+                f"[ARG003] row-{i}: malformed inline citation marker; expected [cite:ID] with a non-empty ID using only A-Z, a-z, 0-9, _, ., :, #, or -."
             )
         for cid in cited:
             if cid not in retrieved:
                 failures.append(
-                    f"[ARG003] {case_id}: unresolved inline citation '[cite:{cid}]' not in retrieved_doc_ids."
+                    f"[ARG003] row-{i}: unresolved inline citation ID not in retrieved_doc_ids."
                 )
 
         pass_num = rec["pass_number"]
@@ -186,19 +186,19 @@ def evaluate_trace(
         cached_tok = rec["cached_tokens"]
         if pass_num >= 2 and input_tok >= min_pass2_cached_tokens and cached_tok < min_pass2_cached_tokens:
             failures.append(
-                f"[ARG004] {case_id}: pass {pass_num} had {input_tok} input tokens but only {cached_tok} cached_tokens (<{min_pass2_cached_tokens})."
+                f"[ARG004] row-{i}: pass {pass_num} had {input_tok} input tokens but only {cached_tok} cached_tokens (<{min_pass2_cached_tokens})."
             )
 
         if require_acl_trimming and retrieved and rec.get("acl_trimmed") is False:
             failures.append(
-                f"[ARG006] {case_id}: retrieved {len(retrieved)} document(s) with acl_trimmed=False (violates Gate A5 security trimming)."
+                f"[ARG006] row-{i}: retrieved {len(retrieved)} document(s) with acl_trimmed=False (violates Gate A5 security trimming)."
             )
 
         if forbid_raw_prompt_logging and (
             rec.get("raw_prompt_logged") is True or rec.get("otel_capture_message_content") is True
         ):
             failures.append(
-                f"[ARG007] {case_id}: telemetry logged raw prompt/message content (violates Gate A12 metadata-only OTel)."
+                f"[ARG007] row-{i}: telemetry logged raw prompt/message content (violates Gate A12 metadata-only OTel)."
             )
 
         latencies.append(rec["duration_ms"])
@@ -493,6 +493,38 @@ def run_self_test() -> int:
     assert len(errs) == 7 and sum("duplicate case_id/pass_number" in e for e in errs) == 1, errs
     assert all(any(e.startswith(f"[ARG00{rule}]") for e in errs) for rule in range(1, 8)), errs
 
+    private_case = "private-case-\ud800-\x1b[31m"
+    private_tool = "private-tool-\ud800-\x1b[31m"
+    private_required_tool = "private-required-tool"
+    privacy_contract = {
+        "forbidden_tools": [private_tool], "required_tools": [private_required_tool],
+    }
+    privacy_record = {
+        **broken_records[0],
+        "case_id": private_case,
+        "status": "private-status\nforged-log-line",
+        "tools_called": [private_tool],
+        "retrieved_doc_ids": ["private-retrieved-doc"],
+        "assistant_response": "private-answer [cite:private-unresolved-doc]",
+    }
+    privacy_cases = (
+        ([privacy_record], privacy_contract, 8),
+        ([{**valid_records[0], "case_id": private_case,
+           "assistant_response": "private-answer [cite:private/doc]"}], {}, 1),
+        ([{**valid_records[0], "case_id": private_case,
+           "assistant_response": "private-uncited-answer"}], {"require_citations": True}, 1),
+    )
+    for evidence, contract, count in privacy_cases:
+        findings = evaluate_trace(evidence, **validate_contract(contract))
+        assert len(findings) == count, findings
+        assert all("row-1:" in finding for finding in findings if not finding.startswith("[ARG005]")), findings
+        assert not any(marker in "\n".join(findings) for marker in (
+            "private-", "forged-log-line", "\x1b", "\ud800",
+        )), findings
+    findings = evaluate_trace([privacy_record], **validate_contract(privacy_contract))
+    assert all(any(finding.startswith(f"[ARG00{rule}]") for finding in findings) for rule in range(1, 8))
+    assert evaluate_trace([{**valid_records[0], "case_id": private_case}]) == []
+
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as tmp:
         json.dump(
             {
@@ -608,6 +640,38 @@ def run_self_test() -> int:
     with tempfile.TemporaryDirectory() as directory:
         trace = Path(directory) / "trace.jsonl"
         conflict_file = Path(directory) / "conflicting-contract.json"
+        privacy_file = Path(directory) / "privacy-contract.json"
+        for evidence, contract, count in privacy_cases:
+            privacy_file.write_text(json.dumps(contract), encoding="utf-8")
+            trace.write_text("\n\n" + "\n\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace),
+                     "--contract", str(privacy_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 1 and not result.stderr, result
+                assert not any(marker in result.stdout for marker in (
+                    "private-", "forged-log-line", "\x1b", "\\ud800", "Traceback",
+                )), result
+                assert result.stdout.count("row-1:") == count - (1 if count == 8 else 0), result
+                if output_flags:
+                    output = json.loads(result.stdout)
+                    assert output["passed"] is False and output["record_count"] == 1, output
+                    assert len(output["failures"]) == count, output
+        trace.write_text(json.dumps({
+            **valid_records[0], "case_id": private_case,
+        }), encoding="utf-8")
+        for output_flags in ([], ["--json"]):
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                capture_output=True, text=True, check=False,
+            )
+            assert result.returncode == 0 and not result.stderr, result
+            assert "private-" not in result.stdout, result
+            if output_flags:
+                output = json.loads(result.stdout)
+                assert output == {"passed": True, "record_count": 1, "failures": []}, output
         trace.write_text("\n".join(json.dumps(rec) for rec in valid_records), encoding="utf-8")
         for contract in conflicting_contracts:
             conflict_file.write_text(json.dumps(contract), encoding="utf-8")
