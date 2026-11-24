@@ -139,6 +139,66 @@ test('invalid BCP numbers hide stale plans, expose field errors, and block direc
   } finally { advisor.close() }
 })
 
+test('unsupported BCP selectors block fallback plans and exports, then recover for every supported option', async () => {
+  const advisor = mountAdvisor()
+  try {
+    for (const label of [
+      'Regulatory Data-Processing', 'Secondary Stamp Capacity', 'Stateful Agent Dependencies',
+    ]) {
+      const supported = advisor.field(label).options.map(option => option.props.value)
+      for (const value of [
+        '', ' ', 'unsupported', supported[0].toUpperCase(),
+        ` ${supported[0]}`, `${supported[0]} `, null, undefined, 0, true, [], {},
+      ]) {
+        await advisor.set(label, value)
+        assert.equal(advisor.copyButton().props.disabled, true, `${label}: ${String(value)}`)
+        assert.equal(advisor.field(label).props['aria-invalid'], true)
+        assert.equal(advisor.field(label).props['aria-describedby'], 'bcp-input-errors')
+        assert.ok(advisor.all().some(el => el.props.role === 'alert' && el.props.id === 'bcp-input-errors'))
+        assert.match(advisor.text(), /select a supported/)
+        assert.ok(!advisor.all().some(el => ['bcp-metrics', 'bcp-summary'].includes(el.props.class)))
+        const exportsBefore = advisor.copied.length
+        await advisor.copyButton().props.onClick()
+        assert.equal(advisor.copied.length, exportsBefore, 'direct handler must not export a fallback plan')
+      }
+      for (const value of supported) {
+        await advisor.set(label, value)
+        assert.equal(advisor.copyButton().props.disabled, false)
+        assert.equal(advisor.field(label).props['aria-invalid'], false)
+        assert.equal(advisor.field(label).props['aria-describedby'], undefined)
+        assert.ok(!advisor.all().some(el => el.props.role === 'alert'))
+        await advisor.copyButton().props.onClick()
+        assert.match(advisor.copied.at(-1), /^### Multi-Region Foundry BCP & Residency Plan/)
+      }
+    }
+  } finally { advisor.close() }
+})
+
+test('BCP selector and numeric errors remain independently actionable until all fields recover', async () => {
+  const advisor = mountAdvisor()
+  try {
+    const fields = [
+      ['Regulatory Data-Processing', 'datazone'],
+      ['Secondary Stamp Capacity', 'active-passive-payg'],
+      ['Stateful Agent Dependencies', 'cosmos-aisearch'],
+      ['Primary Steady Allocation', 170],
+    ]
+    for (const [label] of fields) await advisor.set(label, '')
+    for (const [index, [label, restored]] of fields.entries()) {
+      for (const [pending] of fields.slice(index)) {
+        assert.equal(advisor.field(pending).props['aria-invalid'], true)
+      }
+      await advisor.set(label, restored)
+      assert.equal(advisor.field(label).props['aria-invalid'], false)
+      assert.equal(advisor.copyButton().props.disabled, index < fields.length - 1)
+      await advisor.copyButton().props.onClick()
+      assert.equal(advisor.copied.length, index === fields.length - 1 ? 1 : 0)
+    }
+    assert.match(advisor.text(), /405 PTU-equiv/)
+    assert.match(advisor.copied[0], /Secondary Reserved `0 PTUs`/)
+  } finally { advisor.close() }
+})
+
 test('valid BCP defaults, boundaries, and all capacity postures preserve displayed/exported math', async () => {
   const advisor = mountAdvisor()
   try {

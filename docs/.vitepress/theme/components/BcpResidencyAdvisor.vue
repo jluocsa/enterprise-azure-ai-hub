@@ -10,6 +10,15 @@ const copied = ref(false)
 
 const validatedInputs = computed(() => {
   const errors: Record<string, string> = {}
+  if (!['global', 'datazone', 'regional'].includes(residencyTier.value)) {
+    errors.residencyTier = 'Regulatory Data-Processing Boundary: select a supported residency boundary.'
+  }
+  if (!['active-passive-payg', 'active-passive-minptu', 'active-active'].includes(drPosture.value)) {
+    errors.drPosture = 'Secondary Stamp Capacity Strategy: select a supported capacity posture.'
+  }
+  if (!['cosmos-aisearch', 'cosmos-only', 'stateless'].includes(statefulDeps.value)) {
+    errors.statefulDeps = 'Stateful Agent Dependencies: select a supported dependency topology.'
+  }
   const basePtu = steadyPtu.value
   const hitPct = steadyHitPct.value
   if (typeof basePtu !== 'number' || !Number.isSafeInteger(basePtu) || basePtu < 15 || basePtu % 5 !== 0) {
@@ -127,7 +136,7 @@ async function copyBcpPlan() {
     <div class="bcp-inputs">
       <label>
         <span>1. Regulatory Data-Processing Boundary</span>
-        <select v-model="residencyTier">
+        <select v-model="residencyTier" :aria-invalid="Boolean(inputErrors.residencyTier)" :aria-describedby="inputErrors.residencyTier ? 'bcp-input-errors' : undefined">
           <option value="datazone">Data Zone (US or EU Geographic Boundary — Recommended)</option>
           <option value="regional">Strict Single-Region (Country / Sovereign Pinning)</option>
           <option value="global">Global (Geo-Pinned Data-at-Rest, Global Compute)</option>
@@ -136,7 +145,7 @@ async function copyBcpPlan() {
 
       <label>
         <span>2. Secondary Stamp Capacity Strategy</span>
-        <select v-model="drPosture">
+        <select v-model="drPosture" :aria-invalid="Boolean(inputErrors.drPosture)" :aria-describedby="inputErrors.drPosture ? 'bcp-input-errors' : undefined">
           <option value="active-passive-payg">Active-Passive: Primary PTU-M + Secondary Standard PAYG Standby</option>
           <option value="active-passive-minptu">Warm Anchor: Primary PTU-M + Min-PTU Secondary + PAYG Overflow</option>
           <option value="active-active">Active-Active: Dual Symmetric PTU-M Reservations (Tier-0 Critical)</option>
@@ -155,7 +164,7 @@ async function copyBcpPlan() {
 
       <label class="bcp-span-2">
         <span>5. Stateful Agent Dependencies in Stamp</span>
-        <select v-model="statefulDeps">
+        <select v-model="statefulDeps" :aria-invalid="Boolean(inputErrors.statefulDeps)" :aria-describedby="inputErrors.statefulDeps ? 'bcp-input-errors' : undefined">
           <option value="cosmos-aisearch">Foundry + APIM + Cosmos DB Session Checkpoints + Azure AI Search (Full Agent Stamp)</option>
           <option value="cosmos-only">Foundry + APIM + Cosmos DB Conversation State</option>
           <option value="stateless">Stateless Inference Only (Foundry + APIM)</option>
