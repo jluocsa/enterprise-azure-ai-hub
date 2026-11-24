@@ -4,6 +4,7 @@
 Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
 Every JSON object must have unique member names, including nested metadata.
+Non-standard JSON numeric constants (NaN, Infinity, -Infinity) are rejected.
 Region identity is case-insensitive; model and snapshot identities remain exact.
 JSON parser nesting failures produce an input error, not a traceback.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
@@ -37,10 +38,16 @@ def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return obj
 
 
+def reject_json_constant(value: str) -> Any:
+    raise ValueError("non-standard JSON numeric constants are not allowed.")
+
+
 def load_json(path: Path) -> Any:
     content = path.read_text(encoding="utf-8")
     try:
-        return json.loads(content, object_pairs_hook=unique_json_object)
+        return json.loads(
+            content, object_pairs_hook=unique_json_object, parse_constant=reject_json_constant,
+        )
     except RecursionError:
         raise ValueError("JSON exceeds the parser nesting limit.") from None
 
@@ -579,6 +586,48 @@ class SnapshotGateTests(unittest.TestCase):
                             else:
                                 self.assertEqual(result.stderr, "")
                                 self.assertIn("PASSED", result.stdout)
+
+    def test_cli_rejects_nonstandard_json_constants_in_both_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            fresh_rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time)
+                          for row in self.rows]
+            manifest_text = json.dumps(self.manifest)
+            evidence_text = json.dumps(fresh_rows)
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            for target, rows in ((manifest, self.manifest), (evidence, fresh_rows)):
+                for constant in ("NaN", "Infinity", "-Infinity"):
+                    for payload in (constant, '{"private-field":[' + constant + "]}"):
+                        manifest.write_text(manifest_text, encoding="utf-8")
+                        evidence.write_text(evidence_text, encoding="utf-8")
+                        last_row = '{"metadata":' + payload + "," + json.dumps(rows[1])[1:]
+                        target.write_text(
+                            "[" + json.dumps(rows[0]) + "," + last_row + "]",
+                            encoding="utf-8",
+                        )
+                        result = subprocess.run(command, capture_output=True, text=True, check=False)
+                        with self.subTest(target=target.name, constant=constant, payload=payload):
+                            self.assertEqual(result.returncode, 2, result.stderr)
+                            self.assertEqual(result.stdout, "")
+                            self.assertEqual(
+                                result.stderr.strip(),
+                                "BCP snapshot gate input error: non-standard JSON numeric "
+                                "constants are not allowed.",
+                            )
+                for value in (None, True, 0, -1.5, "NaN", "Infinity", "-Infinity"):
+                    manifest.write_text(manifest_text, encoding="utf-8")
+                    evidence.write_text(evidence_text, encoding="utf-8")
+                    target.write_text(json.dumps([
+                        rows[0], dict(rows[1], metadata={"private-field": [value]}),
+                    ]), encoding="utf-8")
+                    result = subprocess.run(command, capture_output=True, text=True, check=False)
+                    with self.subTest(target=target.name, valid_metadata=value):
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertEqual(result.stderr, "")
+                        self.assertIn("PASSED", result.stdout)
 
     def test_cli_exit_codes_and_file_errors(self):
         with tempfile.TemporaryDirectory() as directory:
