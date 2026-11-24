@@ -76,6 +76,8 @@ def validate_record(
         value = rec.get(field)
         if not isinstance(value, str) or (field != "assistant_response" and not value.strip()):
             failures.append(f"{prefix} {field} must be a string (non-empty for identifiers/status).")
+        elif field == "case_id" and value != value.strip():
+            failures.append(f"{prefix} case_id must not have leading or trailing whitespace.")
 
     for field in ("tools_called", "retrieved_doc_ids"):
         value = rec.get(field)
@@ -272,6 +274,8 @@ def validate_contract(raw: Any) -> dict[str, Any]:
             case_id, pass_number = entry["case_id"], entry["pass_number"]
             if not isinstance(case_id, str) or not case_id.strip():
                 raise ValueError(f"{prefix} case_id must be a non-empty string.")
+            if case_id != case_id.strip():
+                raise ValueError(f"{prefix} case_id must not have leading or trailing whitespace.")
             if type(pass_number) is not int or pass_number < 1:
                 raise ValueError(f"{prefix} pass_number must be an integer >= 1.")
             pair = (case_id, pass_number)
@@ -386,6 +390,39 @@ def run_self_test() -> int:
     errs = evaluate_trace(padded_trace)
     assert len(errs) == 19 and all("duplicate case_id/pass_number" in e for e in errs), errs
     assert "private-case" not in "\n".join(errs), errs
+
+    for whitespace in (" ", "\t", "\n", "\r", "\u00a0", "\u2003"):
+        for case_id in (whitespace + "private-case", "private-case" + whitespace):
+            record = {**same_case_passes[0], "case_id": case_id}
+            assert evaluate_trace([record]) == [
+                "[ARG001] row-1: case_id must not have leading or trailing whitespace.",
+            ]
+            assert evaluate_trace([record, same_case_passes[1]], **inventory_cfg) == [
+                "[ARG001] row-1: case_id must not have leading or trailing whitespace.",
+                "[ARG001] Trace is missing 1 expected case/pass pair(s).",
+            ]
+            try:
+                validate_contract({"expected_case_passes": [{"case_id": case_id, "pass_number": 1}]})
+            except ValueError as exc:
+                assert str(exc) == (
+                    "expected_case_passes entry-1: case_id must not have leading or trailing whitespace."
+                ), exc
+            else:
+                raise AssertionError("Expected padded inventory case_id to be rejected.")
+    for case_id in ("golden case:01", "GOLDEN-case", "golden-case/turn-1"):
+        records = [{**rec, "case_id": case_id} for rec in same_case_passes]
+        contract = validate_contract({"expected_case_passes": [
+            {"case_id": case_id, "pass_number": rec["pass_number"]} for rec in records
+        ]})
+        assert evaluate_trace(records, **contract) == []
+    whitespace_padded_trace = [
+        {**valid_records[0], "case_id": "slow-case", "duration_ms": 24000},
+        *[{**valid_records[0], "case_id": "private-case" + " " * i, "duration_ms": 900}
+          for i in range(1, 21)],
+    ]
+    findings = evaluate_trace(whitespace_padded_trace)
+    assert len(findings) == 21 and findings[-1].startswith("[ARG005]"), findings
+    assert all("case_id must not have" in finding for finding in findings[:-1]), findings
 
     citation_record = {**valid_records[0], "retrieved_doc_ids": ["doc_A.2:#-"]}
     for answer in ("", "No citation markers.", "[cite:doc_A.2:#-][cite:doc_A.2:#-]"):
@@ -732,6 +769,27 @@ def run_self_test() -> int:
                 assert "invalid acceptance contract" in result.stderr and "require_citations" in result.stderr, result
                 assert "Traceback" not in result.stderr and "[ARG001]" not in result.stderr, result
         inventory_file = Path(directory) / "inventory-contract.json"
+        for evidence, count in (
+            ([{**valid_records[0], "case_id": " private-case"}], 1),
+            ([{**valid_records[0], "case_id": "private-case\t"}], 1),
+            ([{**valid_records[0], "case_id": "\u00a0private-case\n"}], 1),
+            (whitespace_padded_trace, 21),
+        ):
+            trace.write_text("\n\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 1 and not result.stderr, result
+                assert "case_id must not have leading or trailing whitespace" in result.stdout, result
+                assert "private-case" not in result.stdout and "Traceback" not in result.stdout, result
+                if evidence is whitespace_padded_trace:
+                    assert "[ARG005]" in result.stdout, result
+                if output_flags:
+                    output = json.loads(result.stdout)
+                    assert output["passed"] is False and output["record_count"] == len(evidence), output
+                    assert len(output["failures"]) == count, output
         inventory_file.write_text(
             json.dumps({"expected_case_passes": expected_cases}), encoding="utf-8",
         )
@@ -763,7 +821,9 @@ def run_self_test() -> int:
                     assert len(output["failures"]) == len(expected_findings), output
 
         for inventory in ([], [expected_cases[0], expected_cases[0]],
-                          [{"case_id": "private-case", "pass_number": True}]):
+                          [{"case_id": "private-case", "pass_number": True}],
+                          [{"case_id": " private-case", "pass_number": 1}],
+                          [{"case_id": "private-case\u00a0", "pass_number": 1}]):
             inventory_file.write_text(
                 json.dumps({"expected_case_passes": inventory}), encoding="utf-8",
             )
@@ -1099,7 +1159,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (unpadded case identities/latency padding + contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
