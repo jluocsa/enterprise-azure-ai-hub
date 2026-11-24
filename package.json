@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Enterprise Azure AI Solution Industrialization Hub — Customer-Zero validated playbooks, interactive PTU/TCO & BCP decision studio, regulated compliance profiles, and executable MIT release gates for Microsoft Foundry and Azure AI.",
+  "description": "Enterprise Azure AI Solution Industrialization Hub — 5 Customer-Zero Microsoft Foundry playbooks (PTU/Caching, APIM Gateway, Multi-Region BCP, Sandboxed Agentic RAG & Fabric/Purview/Cosmos Data Strategy), 6-tool Decision Studio, 7 MIT gates & 64 checklists.",
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

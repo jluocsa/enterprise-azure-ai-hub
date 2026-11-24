@@ -1,8 +1,14 @@
 # Enterprise Azure AI — Solution Industrialization Hub
 
-Live Hub: **<https://jluocsa.github.io/enterprise-azure-ai-hub/>**
+[![Live Hub](https://img.shields.io/badge/Live_Hub-jluocsa.github.io-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://jluocsa.github.io/enterprise-azure-ai-hub/)
+[![Playbooks](https://img.shields.io/badge/Playbooks-5_Live_(39_Chapters)-0F766E?style=for-the-badge)](https://jluocsa.github.io/enterprise-azure-ai-hub/playbooks/)
+[![Decision Studio](https://img.shields.io/badge/Decision_Studio-6_Interactive_Tools-7C3AED?style=for-the-badge)](https://jluocsa.github.io/enterprise-azure-ai-hub/studio/)
+[![MIT Kits & Gates](https://img.shields.io/badge/MIT_Kits-7_Kits_%C2%B7_64_Gates-D97706?style=for-the-badge)](https://jluocsa.github.io/enterprise-azure-ai-hub/papers/engineering-kits)
+[![License: MIT & CC BY 4.0](https://img.shields.io/badge/License-MIT_%2F_CC_BY_4.0-1D4ED8?style=for-the-badge)](./LICENSE)
 
-A governed, multi-author architecture hub and interactive engineering workbench that converts **Customer-Zero** Microsoft Foundry and Azure AI production engagements into **repeatable reference playbooks, interactive sizing/BCP calculators, 3-week delivery scopes, and executable MIT release gates**.
+> **Quick Start:** [**Explore Live Hub**](https://jluocsa.github.io/enterprise-azure-ai-hub/) &middot; [**5 Playbooks Catalog**](https://jluocsa.github.io/enterprise-azure-ai-hub/playbooks/) &middot; [**6-Tool Decision Studio**](https://jluocsa.github.io/enterprise-azure-ai-hub/studio/) &middot; [**7 MIT Kits**](https://jluocsa.github.io/enterprise-azure-ai-hub/papers/engineering-kits) &middot; [**64 PR Checklists**](https://jluocsa.github.io/enterprise-azure-ai-hub/papers/migration-readiness-checklist) &middot; [**3-Week Delivery Scope**](https://jluocsa.github.io/enterprise-azure-ai-hub/operating-model/delivery-scoping)
+
+A governed, multi-author architecture hub and interactive engineering workbench that converts **Customer-Zero** Microsoft Foundry and Azure AI production engagements into **5 full-stack reference playbooks (PTU/Caching, APIM AI Gateway, Multi-Region BCP, Sandboxed Agentic RAG & Fabric/Purview/Cosmos AI Data Strategy), a 6-tool interactive Decision Studio, 3-week delivery scopes, and 7 executable MIT release gates**.
 
 Built with [VitePress](https://vitepress.dev/), styled with an executive Fluent 2 / Azure Architecture Center design system (adaptive Light & Dark mode), and enforced by an automated confidentiality sanitization gate (`scripts/check-sanitized.mjs`), zero-dependency CLI verification kits (`docs/public/kits/`), and print-ready Markdown white papers (`@media print`).
 
