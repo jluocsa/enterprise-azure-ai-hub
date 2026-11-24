@@ -220,3 +220,68 @@ test('GPT-5.6 exports the kit two-API rewrite in both spillover modes; GPT-6 pas
     }
   } finally { builder.close() }
 })
+
+test('unsupported model selections block XML and direct exports regardless of optional controls', async () => {
+  const builder = mountBuilder()
+  const modelLabel = 'Target Primary PTU-M Regime'
+  try {
+    const validXml = new Map()
+    for (const spillover of [true, false]) {
+      await builder.set('429 / 503 Spillover', spillover)
+      for (const governance of [true, false]) {
+        await builder.set(governanceLabel, governance)
+        for (const model of ['gpt-5.6-ptu', 'gpt-6-ptu']) {
+          await builder.set(modelLabel, model)
+          validXml.set(model, builder.xml())
+        }
+        for (const value of ['', ' ', 'unknown', 'gpt-5.6', 'gpt-6.1-ptu', ' gpt-5.6-ptu', 'gpt-6-ptu ', null, undefined, 0]) {
+          await builder.set(modelLabel, value)
+          assert.equal(builder.xml(), undefined, 'unsupported models must hide stale pass-through XML')
+          assert.equal(builder.copyButton().props.disabled, true)
+          assert.equal(builder.field(modelLabel).props['aria-invalid'], true)
+          assert.equal(builder.field(modelLabel).props['aria-describedby'], 'apim-model-error')
+          assert.ok(builder.all().some(el => el.props.role === 'alert' && el.props.id === 'apim-model-error'))
+          const copiesBefore = builder.copied.length
+          await builder.copyButton().props.onClick()
+          assert.equal(builder.copied.length, copiesBefore)
+          for (const model of ['gpt-5.6-ptu', 'gpt-6-ptu']) {
+            await builder.set(modelLabel, model)
+            assert.equal(builder.xml(), validXml.get(model))
+            assert.equal(builder.copyButton().props.disabled, false)
+            assert.equal(builder.field(modelLabel).props['aria-invalid'], false)
+            assert.equal(builder.field(modelLabel).props['aria-describedby'], undefined)
+            assert.ok(!builder.all().some(el => el.props.role === 'alert'))
+          }
+        }
+      }
+    }
+  } finally { builder.close() }
+})
+
+test('model and quota errors remain independently actionable until both inputs recover', async () => {
+  const builder = mountBuilder()
+  const modelLabel = 'Target Primary PTU-M Regime'
+  try {
+    await builder.set(modelLabel, 'unknown')
+    await builder.set(quotaLabel, '')
+    assertBlocked(builder)
+    assert.equal(builder.field(modelLabel).props['aria-invalid'], true)
+    assert.deepEqual(builder.all().filter(el => el.props.role === 'alert').map(el => el.props.id).sort(),
+      ['apim-model-error', 'apim-quota-error'])
+    await builder.set(modelLabel, 'gpt-5.6-ptu')
+    assertBlocked(builder)
+    assert.equal(builder.field(modelLabel).props['aria-invalid'], false)
+    await builder.set(modelLabel, 'unknown')
+    await builder.set(quotaLabel, 450000)
+    assert.equal(builder.xml(), undefined)
+    assert.equal(builder.field(quotaLabel).props['aria-invalid'], false)
+    assert.deepEqual(builder.all().filter(el => el.props.role === 'alert').map(el => el.props.id),
+      ['apim-model-error'])
+    await builder.copyButton().props.onClick()
+    assert.equal(builder.copied.length, 0)
+    await builder.set(modelLabel, 'gpt-5.6-ptu')
+    await builder.copyButton().props.onClick()
+    assert.match(builder.copied[0], /body\.Remove\("prompt_cache_options"\)/)
+    assert.ok(!builder.all().some(el => el.props.role === 'alert'))
+  } finally { builder.close() }
+})
