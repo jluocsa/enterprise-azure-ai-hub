@@ -97,6 +97,12 @@ def validate_ptu_rewrite(root):
             "PTU rewrite contract: the fixed GPT-5.6 PTU primary requires an "
             "unconditional inbound rewrite, not a caller-controlled or conditional branch"
         )
+    for policy in root.find("inbound").iter():
+        if policy.tag in {"find-and-replace", "json-to-xml", "xml-to-json", "xsl-transform"}:
+            raise ValueError(
+                f"PTU rewrite contract: inbound {policy.tag} can change the request "
+                "outside the vetted set-body rewrite, including before the original snapshot"
+            )
 
 
 def validate_spillover(root):
@@ -387,6 +393,69 @@ class ApimXmlTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "PTU rewrite contract:.*unconditional"):
                     validate_ptu_rewrite(root)
                 validate_spillover(root)  # Body capture/restoration alone cannot catch the bypass.
+
+    def test_cli_blocks_unvetted_inbound_body_transforms_and_recovers(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        transforms = (
+            ("find-and-replace", {"from": "prompt_cache_key", "to": "changed-key"}),
+            ("json-to-xml", {"apply": "always", "consider-accept-header": "false"}),
+            ("xml-to-json", {"kind": "direct", "apply": "always"}),
+            ("xsl-transform", {}),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for tag, attributes in transforms:
+                for placement in ("before-snapshot", "after-rewrite"):
+                    for condition in (None, "@(true)", "@(false)"):
+                        policy = validate_policy(source)
+                        inbound = policy.find("inbound")
+                        transform = ET.Element(tag, attributes)
+                        inserted = transform
+                        if condition is not None:
+                            inserted = ET.Element("choose")
+                            ET.SubElement(inserted, "when", condition=condition).append(transform)
+                        if placement == "before-snapshot":
+                            snapshot = inbound.find("set-variable[@name='original-request-body']")
+                            inbound.insert(list(inbound).index(snapshot), inserted)
+                        else:
+                            inbound.append(inserted)
+                        validate_spillover(policy)
+                        validate_sse(policy)
+                        with self.subTest(tag=tag, placement=placement, condition=condition):
+                            with self.assertRaisesRegex(ValueError, f"PTU rewrite contract: inbound {tag}"):
+                                validate_ptu_rewrite(policy)
+                        regression = ET.tostring(policy, encoding="unicode")
+                        inbound.remove(inserted)
+                        validate_ptu_rewrite(policy)
+                        recovered = ET.tostring(policy, encoding="unicode")
+                        for target in ("kit", "studio", None):
+                            kit.write_text(regression if target == "kit" else recovered, encoding="utf-8")
+                            rendered = regression if target == "studio" else recovered
+                            studio.write_text(
+                                f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                encoding="utf-8",
+                            )
+                            stdout, stderr = io.StringIO(), io.StringIO()
+                            with self.subTest(tag=tag, placement=placement, condition=condition,
+                                              target=target), \
+                                    patch.dict(globals(), ROOT=root, KIT=kit), \
+                                    patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                                    redirect_stdout(stdout), redirect_stderr(stderr):
+                                self.assertEqual(main(), 0 if target is None else 1)
+                            if target is None:
+                                self.assertIn("PASSED", stdout.getvalue())
+                                self.assertEqual(stderr.getvalue(), "")
+                            else:
+                                self.assertEqual(stdout.getvalue(), "")
+                                self.assertIn(f"PTU rewrite contract: inbound {tag}", stderr.getvalue())
+                                self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                              stderr.getvalue())
+                                self.assertNotIn("changed-key", stderr.getvalue())
+                                self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_cli_blocks_ptu_rewrite_regressions_in_kit_and_rendered_studio(self):
         from html import escape
