@@ -9,6 +9,12 @@ const tokenLimitTpm = ref<number | string>(450000)
 const streamSafe = ref(true)
 const copied = ref(false)
 
+const modelError = computed(() =>
+  ['gpt-5.6-ptu', 'gpt-6-ptu'].includes(modelGeneration.value)
+    ? ''
+    : 'Target Primary PTU-M Regime: select a supported model regime before generating or copying XML.'
+)
+
 const quotaError = computed(() => {
   if (!enableTokenLimit.value) return ''
   const value = tokenLimitTpm.value
@@ -18,7 +24,7 @@ const quotaError = computed(() => {
 })
 
 const policyXml = computed(() => {
-  if (quotaError.value) return null
+  if (modelError.value || quotaError.value) return null
   const lines: string[] = [
     `<policies>`,
     `  <inbound>`,
@@ -145,7 +151,7 @@ async function copyXml() {
     <div class="apim-controls no-print">
       <label class="apim-select">
         <span>Target Primary PTU-M Regime</span>
-        <select v-model="modelGeneration">
+        <select v-model="modelGeneration" :aria-invalid="Boolean(modelError)" :aria-describedby="modelError ? 'apim-model-error' : undefined">
           <option value="gpt-5.6-ptu">GPT-5.6 PTU-M (Strip Unsupported Breakpoint Fields)</option>
           <option value="gpt-6-ptu">GPT-6 / GPT-6.1 PTU-M (Pass Explicit Breakpoints Through)</option>
         </select>
@@ -177,8 +183,9 @@ async function copyXml() {
       </label>
     </div>
 
+    <div v-if="modelError" id="apim-model-error" class="apim-quota-error" role="alert">{{ modelError }}</div>
     <div v-if="quotaError" id="apim-quota-error" class="apim-quota-error" role="alert">{{ quotaError }}</div>
-    <pre v-else class="apim-code"><code>{{ policyXml }}</code></pre>
+    <pre v-if="policyXml" class="apim-code"><code>{{ policyXml }}</code></pre>
   </div>
 </template>
 
