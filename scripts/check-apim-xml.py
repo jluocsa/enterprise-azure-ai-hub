@@ -110,6 +110,11 @@ def validate_spillover(root):
     snapshots = inbound.findall("set-variable[@name='original-request-body']")
     require(len(snapshots) == 1, "capture exactly one original request body")
     require(
+        len(root.findall(".//set-variable[@name='original-request-body']")) == 1,
+        "original-request-body must have exactly one assignment in the entire "
+        "document, including nested branches and other policy sections",
+    )
+    require(
         snapshots[0].get("value")
         == "@(context.Request.Body.As<string>(preserveContent: true))",
         "snapshot must preserve the original string without JSON reserialization",
@@ -580,6 +585,76 @@ class ApimXmlTests(unittest.TestCase):
                     retry.set("condition", "@(context.Response.StatusCode == 429)")
                 with self.assertRaisesRegex(ValueError, "spillover body contract"):
                     validate_spillover(root)
+
+    def test_rejects_original_body_reassignments_and_recovers(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for section in ("inbound", "backend", "outbound", "on-error"):
+            for condition in ("@(true)", "@(false)"):
+                for value in (
+                    "@(context.Request.Body.As<string>(preserveContent: true))",
+                    "@(changedBody)",
+                    "replacement",
+                ):
+                    with self.subTest(section=section, condition=condition, value=value):
+                        root = deepcopy(source)
+                        parent = root.find(section)
+                        choose = ET.SubElement(parent, "choose")
+                        branch = ET.SubElement(choose, "when", condition=condition)
+                        assignment = ET.SubElement(
+                            branch, "set-variable", name="original-request-body", value=value,
+                        )
+                        with self.assertRaisesRegex(
+                            ValueError, "spillover body contract:.*exactly one assignment",
+                        ):
+                            validate_spillover(root)
+                        parent.remove(choose)
+                        validate_spillover(root)
+                        if section == "inbound":
+                            parent.insert(0, choose)
+                            with self.assertRaisesRegex(
+                                ValueError, "spillover body contract:.*exactly one assignment",
+                            ):
+                                validate_spillover(root)
+                            assignment.set("name", "independent-body-copy")
+                            validate_spillover(root)
+
+    def test_cli_blocks_original_body_overwrites_in_kit_and_rendered_studio(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for section in ("inbound", "backend", "outbound", "on-error"):
+                policy = validate_policy(source)
+                branch = ET.SubElement(
+                    ET.SubElement(policy.find(section), "choose"), "when", condition="@(true)",
+                )
+                ET.SubElement(branch, "set-variable", name="original-request-body",
+                              value="@(context.Request.Body.As<string>(preserveContent: true))")
+                regression = ET.tostring(policy, encoding="unicode")
+                for target in ("kit", "studio", None):
+                    kit.write_text(regression if target == "kit" else source, encoding="utf-8")
+                    rendered = regression if target == "studio" else source
+                    studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                      encoding="utf-8")
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with self.subTest(section=section, target=target), \
+                            patch.dict(globals(), ROOT=root, KIT=kit), \
+                            patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                            redirect_stdout(stdout), redirect_stderr(stderr):
+                        self.assertEqual(main(), 0 if target is None else 1)
+                    if target is None:
+                        self.assertIn("PASSED", stdout.getvalue())
+                        self.assertEqual(stderr.getvalue(), "")
+                    else:
+                        self.assertEqual(stdout.getvalue(), "")
+                        self.assertIn("spillover body contract", stderr.getvalue())
+                        self.assertIn("exactly one assignment", stderr.getvalue())
+                        self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                      stderr.getvalue())
+                        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_expression_encoding_round_trips(self):
         text = """<policies>
