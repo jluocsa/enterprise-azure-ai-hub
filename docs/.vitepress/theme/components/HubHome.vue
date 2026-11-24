@@ -355,7 +355,7 @@ const deliveryWeeks = [
               <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
                 <path fill="currentColor" d="M4.5 2.75a.75.75 0 0 1 1.14-.64l8 5a.75.75 0 0 1 0 1.28l-8 5A.75.75 0 0 1 4.5 12.75v-10Z" />
               </svg>
-              <span>Watch 5-Min Full-Stack Film</span>
+              <span>Watch 5:45 Full-Stack Film</span>
             </button>
             <a class="ms-btn ms-btn-secondary" :href="withBase('/playbooks/')">
               <span>Explore 5 Live Playbooks</span>
