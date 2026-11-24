@@ -83,7 +83,7 @@ Playbooks are owned by **named Track Leads and Co-Authors**, not anonymous wiki 
 
 - **Visible Bylines:** Every playbook displays its Track Owners, Customer-Zero provenance category, governance status, and `Last verified` date in the `<PlaybookMeta />` header banner across both chapter pages and consolidated white-paper subpages.
 - **Scoped Directory Ownership:** `.github/CODEOWNERS` routes PRs in `/docs/playbooks/<track>/` directly to that track's co-authors while keeping root sanitization rules gated centrally.
-- **Low-Friction Peer Contribution:** Contributors can either co-own a full playbook track ([see all 4 Live Playbooks in the Architecture Catalog](/playbooks/)) or submit a single workload profile, APIM policy, KQL query, or CI check via Pull Request.
+- **Low-Friction Peer Contribution:** Contributors can either co-own a full playbook track ([see all 5 Live Playbooks in the Architecture Catalog](/playbooks/)) or submit a single workload profile, APIM policy, KQL query, or CI check via Pull Request.
 
 ## 4. Outcome-Oriented Adoption Metrics (What We Measure—and What We Don't)
 

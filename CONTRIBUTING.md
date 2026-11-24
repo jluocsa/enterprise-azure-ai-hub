@@ -5,7 +5,7 @@ The **Enterprise Azure AI Solution Industrialization Hub** operates as a **gover
 ## 1. Repository & Track Ownership
 
 - **Hub Maintainers (`.github/CODEOWNERS` root):** Own the site design system, evidence conventions (`[M]`, `[Arch]`, `[Agree]`, `[Validate]`), interactive Decision Studio, and automated sanitization gate.
-- **Playbook Track Leads & Co-Authors:** Own a dedicated track directory (`prompt-caching`, `apim-gateway`, `multi-region-bcp`, `agentic-rag-evals`), review pull requests within their scope, and keep `Last verified` dates current across model waves.
+- **Playbook Track Leads & Co-Authors:** Own a dedicated track directory (`prompt-caching`, `apim-gateway`, `multi-region-bcp`, `agentic-rag-evals`, `ai-data-strategy`), review pull requests within their scope, and keep `Last verified` dates current across model waves.
 - **Field Contributors:** Submit workload profiles, APIM policy snippets, KQL release gates, static lint checks, or documentation refinements via Pull Request (or the *"Suggest an edit to this page"* link on any page).
 
 ## 2. Three Mandatory Pre-Publication Gates

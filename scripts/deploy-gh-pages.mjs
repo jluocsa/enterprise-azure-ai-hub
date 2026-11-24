@@ -23,6 +23,16 @@ execFileSync(process.execPath, [RUN_PY, path.join(ROOT, 'docs', 'public', 'kits'
   stdio: 'inherit',
   windowsHide: true,
 })
+execFileSync(process.execPath, [RUN_PY, path.join(ROOT, 'docs', 'public', 'kits', 'bcp_snapshot_gate.py'), '--self-test'], {
+  cwd: ROOT,
+  stdio: 'inherit',
+  windowsHide: true,
+})
+execFileSync(process.execPath, [RUN_PY, path.join(ROOT, 'docs', 'public', 'kits', 'data_readiness_gate.py'), '--self-test'], {
+  cwd: ROOT,
+  stdio: 'inherit',
+  windowsHide: true,
+})
 execFileSync(process.execPath, [path.join(ROOT, 'node_modules', 'vitepress', 'bin', 'vitepress.js'), 'build', 'docs'], {
   cwd: ROOT,
   stdio: 'inherit',

@@ -79,8 +79,12 @@ ORDER BY RANK RRF(
 When upgrading an embedding model, tuning chunk overlap, or migrating Cosmos DB vector dimensions:
 
 1. **Compute Re-Embedding Token Volume Before Starting:**
-   $$\text{TotalTokens} = \text{Documents} \times \text{AvgChunksPerDoc} \times \text{AvgTokensPerChunk}$$
-   $$\text{BackfillMinutes} = \frac{\text{TotalTokens}}{\text{EmbeddingTPMQuota} \times 0.80}$$
+
+```text
+TotalTokens     = Documents × AvgChunksPerDoc × AvgTokensPerChunk
+BackfillMinutes = TotalTokens ÷ (EmbeddingTPMQuota × 0.80)
+```
+
    *Example:* `250,000` documents × `18` chunks × `512` tokens = **`2.304B` embedding tokens**. At a `1,000,000 TPM` batch embedding quota (`80%` usable ceiling = `800K TPM`), full backfill requires **`~48 hours`**—which would cause catastrophic downtime if executed in place against a live index!
 2. **Route Backfills Through Dedicated Batch Quotas:** Never share your interactive inference or live ingestion APIM quota with multi-billion-token re-embedding jobs ([Playbook 02](/playbooks/apim-gateway/04-finops-token-governance)).
 3. **Swap Atomically via Alias / Blue-Green Cutover:**

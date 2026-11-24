@@ -9,7 +9,7 @@ description: Turnkey intake qualification scorecard and 3-week structured delive
   stepLabel="PROACTIVE DELIVERY · 03"
   readTime="4 min read"
   problem="Proactive readiness work stalls without a fast qualification filter and a bounded week-by-week delivery plan."
-  takeaway="Qualify exposure in 30 minutes using 6 boundary questions, then execute a structured 3-week engagement with concrete exit artifacts."
+  takeaway="Qualify exposure in 30 minutes using 7 core boundary dimensions (9 interactive toggles), then execute a structured 3-week engagement with concrete exit artifacts."
   csaUse="Run the interactive scorecard below during a 30-minute discovery session, toggle the workload traits, and copy the scope summary."
 />
 
@@ -29,6 +29,7 @@ Capture **orders of magnitude and architectural boundaries** during a 30-minute 
 | **4. Prefix Size & Peak Concurrency** | Do static instructions + tool schemas exceed **1,024 tokens**, and does any prompt family exceed **~15 RPM** at peak? | Prefixes `<1,024` tokens cannot cache (disable writes on 5.6+); families `>15 RPM` require deterministic `prompt_cache_key` sharding (`N = ⌈RPM ÷ 12⌉`). |
 | **5. Existing CI & Telemetry Maturity** | Does the team already run automated prompt evaluations (`pytest` / DeepEval / Foundry Evals) and emit OpenTelemetry spans to Application Insights? | Determines effort needed to wire `PCR001–006` static linting, 2-pass cache assertions, and the Log Analytics KQL release gate. |
 | **6. Ethical Walls, Chargeback & Seasonal Cliffs** | Does the platform isolate concurrent client engagements/matters, bill tokens to `cost_center` codes, or face `3×–6×` filing/audit-close traffic surges? | Activates the [Regulated Multi-Engagement & Compliance Profile](/playbooks/prompt-caching/profiles/regulated-multi-engagement): `Posture A` zero-client-cache mode, out-of-band OTel chargeback, seasonal PTU + PAYG spillover math, and `C-WP1–C-WP4` workpaper parity gates. |
+| **7. AI Data Plane: Fabric IQ, Purview DSPM & Cosmos Hybrid** | Does the workload combine structured Fabric/OneLake BI semantics, Purview sensitivity-label & ACL revocation SLAs, or high-churn Cosmos DB `DiskANN`+`RRF` hybrid retrieval? | Activates [Playbook 05 · AI Data Strategy & Governance](/playbooks/ai-data-strategy/01-executive-thesis): dedicated interactive F-SKU isolation, event-driven `<=15m`/`<=5m` ACL tombstoning, tenant-partitioned Cosmos hybrid search, and `D1–D12` / `data_readiness_gate.py`. |
 
 ## 2. Phased 3-Week Delivery Blueprint
 

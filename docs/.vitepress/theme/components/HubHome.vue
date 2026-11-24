@@ -319,7 +319,7 @@ const deliveryWeeks = [
   {
     phase: 'WEEK 3 · SIGN-OFF',
     title: '2-Pass Evals, Game-Day & KQL Gates',
-    body: 'Execute peak load tests, inject synthetic 429 regional failover drills, verify deterministic eval contracts, and sign C/G/B/A readiness gates.',
+    body: 'Execute peak load tests, inject synthetic 429 regional failover drills, verify agent & data gates, and sign C/G/B/A/D readiness checklists.',
     exit: 'Exit: Signed Production Cutover Record',
     href: '/papers/migration-readiness-checklist',
   },
@@ -464,7 +464,7 @@ const deliveryWeeks = [
             <h2 class="hh-h2">Full-Stack Playbooks, Decision Studio &amp; Executable Kits</h2>
             <p class="hh-sub">
               Every asset below is live, Customer-Zero grounded, and cross-linked across capacity sizing, gateway traffic control,
-              regional business continuity, and sandboxed agent evaluation.
+              regional business continuity, sandboxed agent evaluation, and AI data governance.
             </p>
           </div>
 
@@ -482,7 +482,7 @@ const deliveryWeeks = [
                 :class="['hh-pill', { active: activeFilter === 'playbooks' }]"
                 @click="activeFilter = 'playbooks'"
               >
-                4 Playbooks
+                5 Playbooks
               </button>
               <button
                 type="button"
@@ -503,7 +503,7 @@ const deliveryWeeks = [
               v-model="searchQuery"
               type="search"
               class="hh-search-input"
-              placeholder="Filter by topic (e.g. PTU, APIM, BCP, RAG, KQL)…"
+              placeholder="Filter by topic (e.g. PTU, APIM, BCP, RAG, Fabric, Purview, Cosmos)…"
               aria-label="Filter catalog cards by keyword"
             />
           </div>
@@ -538,22 +538,22 @@ const deliveryWeeks = [
       <div class="ms-container">
         <div class="hh-sec-head">
           <span class="hh-step-kicker">02 &middot; UNIFIED PRODUCTION TOPOLOGY</span>
-          <h2 class="hh-h2">How All Four Playbooks Interlock on One Enterprise Request Path</h2>
+          <h2 class="hh-h2">How All Five Playbooks Interlock on One Enterprise Request Path</h2>
           <p class="hh-sub">
-            Disjointed point guidance leaves fatal seams between gateways, runtimes, caches, and DR stamps. The hub aligns
+            Disjointed point guidance leaves fatal seams between data estates, runtimes, gateways, caches, and DR stamps. The hub aligns
             every layer into a single end-to-end Microsoft Foundry production blueprint.
           </p>
         </div>
 
         <div class="arch-diagram">
           <svg
-            viewBox="0 0 780 214"
+            viewBox="0 0 780 258"
             role="img"
             aria-labelledby="hh-topo-title hh-topo-desc"
             font-family="Segoe UI, Inter, -apple-system, sans-serif"
           >
-            <title id="hh-topo-title">Unified Four-Playbook Enterprise Azure AI Production Topology</title>
-            <desc id="hh-topo-desc">Shows Playbook 04 3-Tier ACA Sandboxed Agent Runtime and Foundry IQ RAG calling Playbook 02 Azure API Management AI Gateway with Managed Identity and FinOps headers, routing to Playbook 01 Pos 1-6 Cached Primary PTU-M and Standard PAYG Spillover, backed by Playbook 03 Paired Regional BCP Stamp and OpenTelemetry KQL Release Gates.</desc>
+            <title id="hh-topo-title">Unified Five-Playbook Enterprise Azure AI Production Topology</title>
+            <desc id="hh-topo-desc">Shows Playbook 05 AI Data Plane (Fabric IQ, OneLake, Purview DSPM for AI, and Cosmos DB DiskANN/RRF) grounding Playbook 04 3-Tier ACA Sandboxed Agent Runtime and Foundry IQ RAG calling Playbook 02 Azure API Management AI Gateway with Managed Identity and FinOps headers, routing to Playbook 01 Pos 1-6 Cached Primary PTU-M and Standard PAYG Spillover, backed by Playbook 03 Paired Regional BCP Stamp and 64 Readiness Gates.</desc>
             <defs>
               <marker id="hh-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
                 <path d="M0 0 L8 4 L0 8Z" fill="#0f766e" />
@@ -570,7 +570,7 @@ const deliveryWeeks = [
             <text x="24" y="100" font-size="8.6" font-weight="700" fill="#115e59">ACA Dynamic Session MicroVM</text>
             <text x="24" y="113" font-size="7.8" fill="#334e68">Isolated tools + Content Underst.</text>
             <rect x="17" y="131" width="158" height="36" rx="5" fill="#edf3fb" stroke="#5b87b2" />
-            <text x="24" y="146" font-size="8.4" font-weight="700" fill="#183e62">Foundry IQ Grounded RAG</text>
+            <text x="24" y="146" font-size="8.4" font-weight="700" fill="#183e62">Foundry IQ &amp; Fabric IQ Tools</text>
             <text x="24" y="159" font-size="7.7" fill="#334e68">MCP retrieval + ACL trimming</text>
 
             <path d="M184 95 H206" stroke="#0f766e" stroke-width="1.9" marker-end="url(#hh-arr)" />
@@ -606,7 +606,7 @@ const deliveryWeeks = [
 
             <path d="M592 95 H614" stroke="#0f766e" stroke-width="1.9" marker-end="url(#hh-arr)" />
 
-            <!-- Col 4: Playbook 03 BCP + 7-Layer Gates -->
+            <!-- Col 4: Playbook 03 BCP + MIT CI Gates -->
             <rect x="618" y="14" width="154" height="86" rx="7" fill="#edf3fb" stroke="#5b87b2" stroke-width="1.4" />
             <text x="626" y="31" font-size="8.4" font-weight="700" fill="#183e62">PLAYBOOK 03 · DR STAMP</text>
             <text x="626" y="46" font-size="7.9" fill="#334e68">&bull; Data Zone / Regional SLA</text>
@@ -615,13 +615,18 @@ const deliveryWeeks = [
             <text x="626" y="86" font-size="7.8" font-weight="700" fill="#1d4ed8">[&lt;15s Game-Day RTO]</text>
 
             <rect x="618" y="108" width="154" height="68" rx="7" fill="#eaf4f5" stroke="#0f766e" stroke-width="1.5" />
-            <text x="626" y="125" font-size="8.4" font-weight="700" fill="#115e59">MIT CI &amp; OTel GATES</text>
-            <text x="626" y="140" font-size="7.9" fill="#334e68">&bull; pcr_lint + contract CLI</text>
-            <text x="626" y="153" font-size="7.9" fill="#334e68">&bull; App Insights KQL gates</text>
-            <text x="626" y="166" font-size="7.8" font-weight="700" fill="#0f766e">[52 Readiness Checks]</text>
+            <text x="626" y="125" font-size="8.4" font-weight="700" fill="#115e59">7 MIT CI &amp; OTel GATES</text>
+            <text x="626" y="140" font-size="7.9" fill="#334e68">&bull; pcr + agent + data CLIs</text>
+            <text x="626" y="153" font-size="7.9" fill="#334e68">&bull; 3 App Insights KQL gates</text>
+            <text x="626" y="166" font-size="7.8" font-weight="700" fill="#0f766e">[64 Readiness Checks]</text>
 
-            <text x="10" y="198" font-size="8.4" fill="#526c80">
-              End-to-end enterprise request lifecycle governed across Agent Harness (PB04), AI Gateway (PB02), Prefix/PTU Economics (PB01), and Multi-Region BCP (PB03).
+            <!-- Foundation Layer: Playbook 05 AI Data Plane -->
+            <rect x="8" y="188" width="764" height="44" rx="7" fill="#eaf7f5" stroke="#0f766e" stroke-width="1.5" />
+            <text x="18" y="206" font-size="8.5" font-weight="700" fill="#115e59">PLAYBOOK 05 · AI DATA PLANE &amp; GOVERNANCE (D1–D12)</text>
+            <text x="18" y="222" font-size="8.0" fill="#334e68">Microsoft Fabric / OneLake &amp; Fabric IQ (Dedicated F-SKU) &middot; Purview DSPM for AI (Labels + &le;5m ACL Tombstoning) &middot; Cosmos DB DiskANN + RRF &middot; OTel Eval Flywheel</text>
+
+            <text x="10" y="248" font-size="8.3" fill="#526c80">
+              End-to-end enterprise lifecycle governed across Data Plane (PB05), Agent Harness (PB04), AI Gateway (PB02), Prefix/PTU Economics (PB01), and Multi-Region BCP (PB03).
             </text>
           </svg>
         </div>

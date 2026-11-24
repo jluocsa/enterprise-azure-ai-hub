@@ -1,6 +1,6 @@
 ---
 title: "Full-Stack Enterprise Microsoft Foundry Platform Blueprint (v2.0)"
-description: Consolidated executive white paper uniting Prompt Caching & PTU Economics, Multi-Backend APIM AI Gateway, Multi-Region BCP, and 3-Tier ACA Sandboxed Agentic RAG + 7-Layer Release Governance.
+description: Consolidated executive white paper uniting Prompt Caching & PTU Economics, Multi-Backend APIM AI Gateway, Multi-Region BCP, 3-Tier ACA Sandboxed Agentic RAG, and AI Data Strategy (Fabric IQ, Purview DSPM & Cosmos Hybrid).
 ---
 
 # Full-Stack Enterprise Microsoft Foundry Platform Blueprint (`v2.0`)
@@ -20,19 +20,20 @@ description: Consolidated executive white paper uniting Prompt Caching & PTU Eco
 <PageBrief
   stepLabel="EXECUTIVE REFERENCE PAPER · PRINT EDITION"
   readTime="8 min read"
-  problem="Enterprise CTOs, CISOs, and Architecture Review Boards need one cohesive blueprint showing how capacity economics, gateway resiliency, data residency, and agent safety fit together."
-  takeaway="Industrialize Microsoft Foundry across four governed seams: Pos 1–6 Prefix & Two-Regime PTU Math, SKU-Aware APIM Spillover, Residency-Symmetric DR Stamps, and MicroVM-Sandboxed Agentic Evals."
+  problem="Enterprise CTOs, CISOs, CDOs, and Architecture Review Boards need one cohesive blueprint showing how capacity economics, gateway resiliency, data residency, agent safety, and AI data governance fit together."
+  takeaway="Industrialize Microsoft Foundry across five governed seams: Pos 1–6 Prefix & Two-Regime PTU Math, SKU-Aware APIM Spillover, Residency-Symmetric DR Stamps, MicroVM-Sandboxed Agentic Evals, and Fabric IQ + Purview DSPM + Cosmos Hybrid Data Governance."
   csaUse="Click 'Print / Save as PDF' above to generate a clean executive briefing packet for customer or internal architecture sign-off."
 />
 
 ## 1. Executive Summary
 
-Enterprise generative AI programs rarely fail during initial proof-of-concept demos. Failures cluster at **production cutover and model-upgrade waves** (`gpt-4.x` / `o3-mini` &rarr; `gpt-5.6`, `gpt-6`, `gpt-6.1`), where four cross-service pressures converge simultaneously:
+Enterprise generative AI programs rarely fail during initial proof-of-concept demos. Failures cluster at **production cutover and model-upgrade waves** (`gpt-4.x` / `o3-mini` &rarr; `gpt-5.6`, `gpt-6`, `gpt-6.1`), where five cross-service pressures converge simultaneously:
 
 1. **Capacity & Latency Spikes ([Playbook 01](/playbooks/prompt-caching/start/01-executive-thesis)):** Stateless web/container agents (`Model 2`) re-send `4,000–25,000+` system, rubric, tool, and case-context tokens on every turn. Injecting a timestamp, user ID, or unsorted tool schema near Position 1 zeroes out Azure KV prefix reuse—driving a **`2.56×` spike in required Provisioned Throughput (`170 → 435 PTUs`)** and unamortized cache-write charges <span class="ev-badge ev-m">[M]</span> <span class="ev-badge ev-arch">[Arch]</span>.
 2. **Burst Throttling & Billing Coupling ([Playbook 02](/playbooks/apim-gateway/01-executive-thesis)):** Reserving year-round PTU-M for `4×` seasonal filing/close cliffs wastes `71%` of annual capacity spend, while naive gateway buffering stalls Server-Sent Events (`SSE`) and inline chargeback IDs fracture shared cache keys.
 3. **Sovereignty & Cold-Cache DR Surges ([Playbook 03](/playbooks/multi-region-bcp/01-executive-thesis)):** Regional failovers fail when spillover pools cross Data Zone boundaries, when secondary stamps choke on the **`1.8×–2.56×` cold-cache warm-up surge** during the first 15 minutes of cutover, or when Cosmos DB and Azure AI Search lag behind.
 4. **Runtime Blast Radius & Flaky Evals ([Playbook 04](/playbooks/agentic-rag-evals/01-executive-thesis)):** Executing agent tools inside shared orchestrators creates tenant-bleed risk, while relying solely on statistical LLM-as-judge scores as PR blockers causes flaky CI pipelines.
+5. **AI Data Plane Split-Brain, Oversharing & Vector Immutability ([Playbook 05](/playbooks/ai-data-strategy/01-executive-thesis)):** Flat vector dumps hallucinate tabular KPIs, stripped **Microsoft Purview** labels and nightly ACL crawlers breach ethical walls, and immutable **Cosmos DB `DiskANN`** policies cause rebuild outages unless unified with **Fabric IQ**, event-driven tombstoning, and `D1–D12` CI gates <span class="ev-badge ev-m">[M]</span> <span class="ev-badge ev-arch">[Arch]</span>.
 
 ---
 
@@ -66,5 +67,5 @@ Always verify target model generation before reserving Provisioned Throughput (`
 
 1. **Intake (30 Minutes):** Score workload boundaries in the [Interactive Decision Studio](/studio/#triage) to select activated tracks and size initial PTU/BCP envelopes.
 2. **Week 1 — Baseline & Static Audit:** Run `pcr_lint.py` across application repos, capture 24-hour un-tuned App Insights baselines, and verify regional SKU/quota parity.
-3. **Week 2 — Middleware, Gateway & Sandbox Refactor:** Reorder prompts to `Pos 1–6`, deploy `apim-foundry-spillover-policy.xml`, wire Foundry IQ MCP + Content Understanding, and enforce Git-SHA ACA session tags.
+3. **Week 2 — Middleware, Gateway, Sandbox & Data Plane Refactor:** Reorder prompts to `Pos 1–6`, deploy `apim-foundry-spillover-policy.xml`, wire Foundry IQ MCP + Fabric IQ + Content Understanding, stamp Purview labels & Entra ACL tombstoning, scope Cosmos DiskANN/RRF tenant keys, and enforce Git-SHA ACA session tags.
 4. **Week 3 — Load, Game-Day & 64-Gate Sign-Off:** Execute peak concurrency tests, run a 30-minute regional `429`/`503` Game-Day failover drill, enforce `agent_release_gate.py` + `data_readiness_gate.py` in CI, and sign off the applicable [`C` / `G` / `B` / `A` / `D` Readiness Checklists](/papers/migration-readiness-checklist).
