@@ -64,7 +64,7 @@ def scan_python_ast(path: Path, source: str) -> list[Finding]:
         call_src = ast.unparse(node) if hasattr(ast, "unparse") else ""
         kw_names = {kw.arg: kw.value for kw in node.keywords if kw.arg}
 
-        # PCR001: Missing, invalid constant, or per-user/request prompt_cache_key
+        # PCR001: Missing, statically invalid, or per-user/request prompt_cache_key
         if func_src.endswith(("responses.create", "completions.create")):
             if "prompt_cache_key" not in kw_names:
                 findings.append(
@@ -87,6 +87,18 @@ def scan_python_ast(path: Path, source: str) -> list[Finding]:
                             rel,
                             node.lineno,
                             "prompt_cache_key is a blank/non-string constant; local routing readiness policy requires a non-empty string constant.",
+                        )
+                    )
+                elif isinstance(key_node, (
+                    ast.List, ast.Tuple, ast.Set, ast.Dict,
+                    ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp,
+                )):
+                    findings.append(
+                        Finding(
+                            "PCR001",
+                            rel,
+                            node.lineno,
+                            "prompt_cache_key is a non-string container expression; local routing readiness policy requires a non-empty string.",
                         )
                     )
                 elif DYNAMIC_KEY_RE.search(key_expr):
@@ -278,23 +290,37 @@ def run_self_test() -> int:
         '""', '" \\t\\r\\n"', '"\\u2003"', "None", "True", "False",
         "0", "42", "1.5", "1e309", "2j", 'b"shared:v1:s0"', "...",
     )
+    container_keys = (
+        "[]", '["shared:v1:s0"]', "[*shared_keys]", "[1 / 0]",
+        "()", '("shared:v1:s0",)', "(*shared_keys,)",
+        "{}", '{"scope": shared_key}', "{**shared_options}",
+        '{"shared:v1:s0"}', "{*shared_keys}",
+        "[key for key in shared_keys]", "{key for key in shared_keys}",
+        "{key: key for key in shared_keys}", "(key for key in shared_keys)",
+    )
     # Compound expressions remain unresolved; scanning must never evaluate them.
     unresolved_keys = (
         "shared_key", "build_key()", 'f"shared:{shard}"',
         '"shared:" + str(shard)', "-1", "1+2j", "-1+2j",
-        "1 / 0", '"x" * 1000000000', '{"scope": shared_key}', "set()",
+        "1 / 0", '"x" * 1000000000', "set()",
+        '"shared:v1:s0" if enabled else shared_key',
+        'str(["shared:v1:s0"])', '["shared:v1:s0"][0]',
     )
     valid_keys = ('"shared:v1:s0"', '"0"', '"shared:" "v1:s0"')
     key_samples: list[str] = []
     invalid_lines: list[int] = []
     for api in ("responses.create", "chat.completions.create"):
-        for expression in invalid_keys + valid_keys + unresolved_keys:
+        for expression in invalid_keys + container_keys + valid_keys + unresolved_keys:
             sample = f"client.{api}(prompt_cache_key={expression})\n"
             findings = scan_python_ast(Path("keys.py"), sample)
-            if expression in invalid_keys:
+            if expression in invalid_keys + container_keys:
                 assert len(findings) == 1 and findings[0].rule == "PCR001", (expression, findings)
                 assert findings[0].file == "keys.py" and findings[0].line == 1, findings
-                assert "non-empty string constant" in findings[0].message, findings
+                expected_message = (
+                    "non-string container" if expression in container_keys
+                    else "non-empty string constant"
+                )
+                assert expected_message in findings[0].message, findings
                 invalid_lines.append(len(key_samples) + 1)
             else:
                 assert findings == [], (expression, findings)
@@ -367,6 +393,24 @@ def run_self_test() -> int:
                            for f in findings), findings
             else:
                 assert result.stdout.count("[PCR001]") == len(invalid_lines), result.stdout
+        keys.write_text(
+            "".join(
+                f"client.{api}(prompt_cache_key={expression})\n"
+                for api in ("responses.create", "chat.completions.create")
+                for expression in valid_keys + unresolved_keys
+            ),
+            encoding="utf-8",
+        )
+        for output_flags in ([], ["--json"]):
+            result = subprocess.run(
+                [sys.executable, str(SELF_PATH), str(keys), *output_flags],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            assert result.returncode == 0 and not result.stderr, result
+            if output_flags:
+                assert json.loads(result.stdout) == [], result.stdout
+            else:
+                assert "PASSED" in result.stdout and "[PCR001]" not in result.stdout, result.stdout
         broken = root / "broken.py"
         broken.write_text("def broken(:\n", encoding="utf-8")
         invalid_utf8 = root / "invalid.py"
@@ -462,7 +506,7 @@ def run_self_test() -> int:
             walk.side_effect = denied_walk
             assert scan_path(empty)[0].rule == "PCR000"
 
-    print("✅ pcr_lint.py self-test PASSED (PCR000 scan integrity/AST recursion + PCR001 constant keys/CLI + PCR003 keyword serialization/CLI + PCR001–PCR006 verified).")
+    print("✅ pcr_lint.py self-test PASSED (PCR000 scan integrity/AST recursion + PCR001 constant/container keys/CLI recovery + PCR003 keyword serialization/CLI + PCR001–PCR006 verified).")
     return 0
 
 
