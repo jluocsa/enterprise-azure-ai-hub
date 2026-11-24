@@ -59,9 +59,11 @@ defineExpose({ playFromStart })
             </span>
             <h2 class="ivs-title">Executive &amp; CSA Forum Full-Stack Walkthrough Film</h2>
             <p class="ivs-sub">
-              5:45 11-chapter architectural briefing covering all 52 verified subpages: 5 Customer-Zero playbooks (39 chapters, including
-              AI Data Strategy with Fabric IQ, Purview DSPM &amp; Cosmos Hybrid), Regulated Ethical-Wall Profile, 6-tool Decision Studio,
-              2 printable white papers, 7 MIT kits, 64 PR checklists, and the 24/7 loop.
+              5:45, 11-chapter walkthrough of all 51 published hub pages&mdash;from GPT-5.6/6/6.1 cutover risks through all
+              5 Customer-Zero playbooks (39 chapters: Prompt Caching &amp; PTU, APIM AI Gateway, Multi-Region BCP, Sandboxed
+              Agentic RAG &amp; Evals, and AI Data Strategy with Fabric IQ, Purview DSPM &amp; Cosmos Hybrid), the Regulated
+              Ethical-Wall Profile, 6-tool Decision Studio, 2 printable white papers, 7 MIT kits, 64 cutover gates, 4 companion
+              OSS repos, and the 5-stage factory, 3-week sprint &amp; 24/7 dual-agent loop.
             </p>
           </div>
 
