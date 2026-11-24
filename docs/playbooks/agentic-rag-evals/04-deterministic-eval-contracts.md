@@ -86,6 +86,12 @@ All supplied ACL/privacy flags must be booleans even when their enforcement is d
 
 Missing/unreadable trace files, directory inputs, and invalid UTF-8 also exit `2` with a sanitized `ARG001` stderr diagnostic and no stdout in text or `--json` mode. The CLI reads the complete file before evaluating any turns, so a valid prefix followed by undecodable bytes cannot produce a partial pass. Read-error diagnostics omit paths, file content, and operating-system exception details; self-tests cover file/encoding failures and injected permission/I/O errors without relying on platform-specific file permissions <span class="ev-badge ev-arch">[Arch]</span>.
 
+### Metadata-Only Failure Reports
+
+<span class="ev-badge ev-arch">[Arch]</span> Every per-turn finding identifies the non-blank record ordinal (`row-N`), never the case ID, reported status text, tool names (including required tools from the contract), citation IDs, or answer content. Those strings can carry sensitive identifiers or terminal control characters; the verifier must not copy them into CI logs while enforcing metadata-only telemetry. Correlate the row with the original trace and approved contract in access-controlled storage. The trace-wide `ARG005` finding still reports the numeric p95 and budget; cache findings retain numeric counts.
+
+Rule IDs, finding counts, exact tool/citation matching, acceptance decisions, exit codes, and JSON `record_count` are unchanged; consumers parsing the old value-bearing message text must switch to rule IDs and row ordinals. Offline text/JSON regressions exercise all seven rules, malformed and missing citations, synthetic private strings, embedded newline/ANSI control characters, and escaped unpaired Unicode surrogates without leaking values or causing output-encoding failures. Clean evidence with the same case identifier still passes. This local reporting policy does not redact the source trace or authenticate its contents; retain trusted provenance and restricted artifact access.
+
 ### Unique Case/Pass Evidence (`ARG001`) {#unique-case-pass-evidence}
 
 <span class="ev-badge ev-arch">[Arch]</span> Each structurally valid `(case_id, pass_number)` pair must occur only once per trace file. Repeated evidence can inflate the latency sample: one slow turn followed by twenty copies of a fast turn can put the slow turn outside the nearest-rank p95. Identical copies and conflicting records with the same pair both produce `ARG001` and exit `1`, including under `--json`; no duplicate-containing trace can pass.
