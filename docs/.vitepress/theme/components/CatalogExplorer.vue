@@ -86,6 +86,27 @@ const tracks = [
     kitHref: '/papers/engineering-kits#agent-gate',
     kitLabel: 'agent_release_gate.py CLI',
   },
+  {
+    num: 'PLAYBOOK 05 · 6 CHAPTERS',
+    status: 'LIVE v2.0',
+    title: 'AI Data Strategy, Microsoft Fabric / OneLake & Fabric IQ, Purview DSPM & Cosmos Hybrid',
+    provenance: 'Enterprise multi-source grounding, Fabric analytics & regulated ethical-wall AI data plane',
+    problem:
+      'Dumping tabular BI tables into vector stores causes hallucinated KPI math, stripping Purview sensitivity labels/ACLs creates oversharing risk, and immutable Cosmos DB vector policies trigger rebuild outages.',
+    chapters: [
+      { label: '01 · Executive Thesis & AI Data Plane', href: '/playbooks/ai-data-strategy/01-executive-thesis' },
+      { label: '02 · Fabric, OneLake & Fabric IQ Integration', href: '/playbooks/ai-data-strategy/02-fabric-onelake-fabric-iq' },
+      { label: '03 · Purview DSPM, Labels & Ethical Walls', href: '/playbooks/ai-data-strategy/03-purview-dspm-acl-ethical-walls' },
+      { label: '04 · Cosmos DB Vector/Hybrid & Retrieval', href: '/playbooks/ai-data-strategy/04-cosmos-vector-hybrid-retrieval' },
+      { label: '05 · D1–D12 Gates & Automated CI', href: '/playbooks/ai-data-strategy/05-data-governance-release-gates' },
+      { label: '06 · Verification Matrix & Learn Citations', href: '/playbooks/ai-data-strategy/06-sources' },
+    ],
+    primaryHref: '/playbooks/ai-data-strategy/01-executive-thesis',
+    studioHref: '/studio/#data-strategy',
+    studioLabel: 'AI Data Strategy Advisor',
+    kitHref: '/papers/engineering-kits#data-gate',
+    kitLabel: 'data_readiness_gate.py + KQL',
+  },
 ]
 </script>
 
@@ -95,11 +116,11 @@ const tracks = [
       <div class="ms-container">
         <div class="ms-eyebrow">
           <span class="ms-eyebrow-dot"></span>
-          <span>ARCHITECTURE CATALOG &middot; 4 LIVE FULL-STACK TRACKS</span>
+          <span>ARCHITECTURE CATALOG &middot; 5 LIVE FULL-STACK TRACKS</span>
         </div>
         <h1 class="ce-title">
           Enterprise Foundry Architecture Series
-          <span class="ms-hero-accent">33 Deep-Dive Chapters &amp; 52 Release Gates</span>
+          <span class="ms-hero-accent">39 Deep-Dive Chapters &amp; 64 Release Gates</span>
         </h1>
         <p class="ce-lead">
           Each playbook owns one critical production layer of an enterprise Microsoft Foundry platform—complete with

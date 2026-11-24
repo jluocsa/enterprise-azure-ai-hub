@@ -22,9 +22,9 @@ function printOverview() {
 async function copyCustomerPitch() {
   const pitch = [
     `Enterprise Azure AI — Solution Industrialization Hub (v2.0 · Verified ${verifiedStamp.value})`,
-    `• Full-Stack Scope: 4 Customer-Zero validated playbooks covering Prompt Caching & PTU Economics (GPT-5.6/6/6.1), Multi-Backend APIM AI Gateway, Multi-Region Foundry BCP & Residency, and Sandboxed Agentic RAG + 7-Layer Evals.`,
-    `• Proven Outcomes: 2.56× PTU capacity spike prevented · 71% seasonal filing-cliff TCO saved · <15s gateway failover RTO · 52 release readiness gates.`,
-    `• Interactive Workbench & MIT Kits: Live PTU/TCO simulator, 30-min multi-track intake triage, BCP cold-cache surge advisor, APIM XML policy generator, Python AST linters, and App Insights KQL gates.`,
+    `• Full-Stack Scope: 5 Customer-Zero validated playbooks covering Prompt Caching & PTU Economics (GPT-5.6/6/6.1), Multi-Backend APIM AI Gateway, Multi-Region Foundry BCP & Residency, Sandboxed Agentic RAG + 7-Layer Evals, and AI Data Strategy (Microsoft Fabric / OneLake & Fabric IQ, Purview DSPM for AI, Cosmos DB DiskANN/RRF Hybrid).`,
+    `• Proven Outcomes: 2.56× PTU capacity spike prevented · 71% seasonal filing-cliff TCO saved · <15s gateway failover RTO · 64 release readiness gates.`,
+    `• Interactive Workbench & MIT Kits: Live PTU/TCO simulator, APIM XML policy generator, BCP cold-cache surge advisor, ACA Sandbox & Eval builder, AI Data Strategy Advisor, 30-min multi-track intake triage, Python CLIs, and App Insights KQL gates.`,
     `• Live Hub: https://jluocsa.github.io/enterprise-azure-ai-hub/`,
   ].join('\n')
   try {
@@ -89,6 +89,19 @@ const stackLayers = [
     toolHref: '/studio/#agent-eval',
     toolLabel: 'Open Sandbox & Eval Builder',
   },
+  {
+    id: 'pb05',
+    code: 'LAYER 05 · PLAYBOOK 05',
+    pill: '6 Chapters · Live',
+    title: 'AI Data Strategy, Fabric–Foundry & Purview DSPM Governance',
+    shortMeta: 'Fabric / OneLake & Fabric IQ · Purview DSPM for AI · Cosmos DiskANN + RRF · ACL Tombstoning',
+    failureMode: 'Flat vector dumps hallucinate KPIs, stripped Purview labels/stale ACL crawlers leak restricted data, and immutable Cosmos vectors cause rebuild cliffs.',
+    rule: 'Route structured KPIs to Fabric IQ, unstructured corpora to AI Search, operational memory to tenant-partitioned Cosmos DiskANN+RRF, under Purview DSPM.',
+    gate: 'D1–D12 Standard: ≤15m (≤5m regulated) ACL revocation · 100% Purview label inheritance · 0 poisoned chunks',
+    playbookHref: '/playbooks/ai-data-strategy/01-executive-thesis',
+    toolHref: '/studio/#data-strategy',
+    toolLabel: 'Open Data Strategy Advisor',
+  },
 ]
 
 const activeLayer = computed(() => stackLayers[selectedLayerIdx.value] || stackLayers[0])
@@ -105,14 +118,14 @@ const headlineStats = [
     detail: 'Right-sized steady PTU-M baseline paired with APIM 429 Retry-After spillover to Standard PAYG during 4× filing cliffs.',
   },
   {
-    value: '4 Tracks',
+    value: '5 Tracks',
     label: 'Full-Stack Live Playbooks',
-    detail: '33 deep-dive chapters spanning Prompt Caching/PTU, APIM AI Gateway, Multi-Region BCP, and Sandboxed Agentic RAG + Evals.',
+    detail: '39 deep-dive chapters spanning Caching/PTU, APIM Gateway, Multi-Region BCP, Agentic RAG + Evals, and AI Data Strategy (Fabric IQ, Purview & Cosmos).',
   },
   {
-    value: '52 Gates',
+    value: '64 Gates',
     label: 'Executable Release Controls',
-    detail: 'C1–C15, G1–G12, B1–B12, and A1–A12 readiness checklists backed by 5 MIT Python, APIM XML, and App Insights KQL kits.',
+    detail: 'C1–C15, G1–G12, B1–B12, A1–A12, and D1–D12 checklists backed by 7 MIT Python, APIM XML, and App Insights KQL kits.',
   },
 ]
 
@@ -173,6 +186,17 @@ const catalogItems: CatalogCard[] = [
     cta: 'Open Playbook 04',
   },
   {
+    category: 'playbooks',
+    badge: 'PLAYBOOK 05 · 6 CHAPTERS',
+    tone: 'live',
+    title: '05 · AI Data Strategy, Fabric–Foundry & Purview DSPM Governance',
+    summary:
+      'Three-store enterprise AI data plane uniting Microsoft Fabric / OneLake & Fabric IQ, Purview DSPM for AI sensitivity labels & ACL tombstoning, and Azure Cosmos DB DiskANN + RRF hybrid search.',
+    tags: ['Fabric IQ / OneLake', 'Purview DSPM', 'Cosmos DiskANN+RRF', 'D1–D12'],
+    href: '/playbooks/ai-data-strategy/01-executive-thesis',
+    cta: 'Open Playbook 05',
+  },
+  {
     category: 'studio',
     badge: 'WORKLOAD PROFILE · REGULATED',
     tone: 'profile',
@@ -185,12 +209,12 @@ const catalogItems: CatalogCard[] = [
   },
   {
     category: 'studio',
-    badge: 'DECISION STUDIO · 5 LIVE TOOLS',
+    badge: 'DECISION STUDIO · 6 LIVE TOOLS',
     tone: 'studio',
-    title: 'Interactive Architecture Decision Studio (PTU, APIM, BCP, Sandbox & Triage)',
+    title: 'Interactive Architecture Decision Studio (PTU, APIM, BCP, Sandbox, Data & Triage)',
     summary:
-      'Browser-native engineering workbench combining the Two-Regime PTU/TCO Simulator, APIM XML Policy Builder, Multi-Region Cold-Cache Surge Advisor, ACA Sandbox & Eval Contract Builder, and 30-Min Intake Triage.',
-    tags: ['5 Live Calculators', 'Zero Telemetry', '1-Click JSON/XML/MD'],
+      'Browser-native engineering workbench combining the Two-Regime PTU/TCO Simulator, APIM XML Policy Builder, Multi-Region Cold-Cache Surge Advisor, ACA Sandbox & Eval Builder, AI Data Strategy Advisor, and 30-Min Intake Triage.',
+    tags: ['6 Live Calculators', 'Zero Telemetry', '1-Click JSON/XML/MD'],
     href: '/studio/',
     cta: 'Launch Decision Studio',
   },
@@ -218,12 +242,12 @@ const catalogItems: CatalogCard[] = [
   },
   {
     category: 'kits',
-    badge: '5 EXECUTABLE MIT KITS',
+    badge: '7 EXECUTABLE MIT KITS',
     tone: 'gateway',
-    title: 'Drop-In Python Linters, APIM Spillover XML & App Insights KQL Gates',
+    title: 'Drop-In Python Linters, Data & Agent Gates, APIM XML & KQL Workbooks',
     summary:
-      'Zero-dependency pcr_lint.py AST scanner, agent_release_gate.py contract verifier, apim-foundry-spillover-policy.xml, and two Log Analytics KQL release-gate workbooks.',
-    tags: ['pcr_lint.py', 'agent_release_gate.py', 'APIM XML', 'KQL Gates'],
+      'Zero-dependency pcr_lint.py AST scanner, agent_release_gate.py, data_readiness_gate.py (DRG001–007), apim-foundry-spillover-policy.xml, and three Log Analytics KQL release-gate workbooks.',
+    tags: ['pcr_lint.py', 'agent_release_gate.py', 'data_readiness_gate.py', 'KQL Gates'],
     href: '/papers/engineering-kits',
     cta: 'Download & Copy MIT Kits',
   },
@@ -323,7 +347,7 @@ const deliveryWeeks = [
             Enterprise AI initiatives rarely stall on a prototype—they stall at production scale when
             <strong>capacity spikes, gateway throttling, regional sovereignty, and agent safety collide</strong>.
             This governed factory converts proven <strong>Customer-Zero</strong> breakthroughs into
-            <strong>4 full-stack playbooks, interactive sizing studios, and executable MIT release gates</strong>.
+            <strong>5 full-stack playbooks, interactive sizing studios, and executable MIT release gates</strong>.
           </p>
 
           <div class="hh-actions no-print">
@@ -334,7 +358,7 @@ const deliveryWeeks = [
               <span>Watch 5-Min Full-Stack Film</span>
             </button>
             <a class="ms-btn ms-btn-secondary" :href="withBase('/playbooks/')">
-              <span>Explore 4 Live Playbooks</span>
+              <span>Explore 5 Live Playbooks</span>
               <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -364,12 +388,12 @@ const deliveryWeeks = [
           </div>
         </div>
 
-        <!-- Interactive 4-Layer Reference Architecture Stack -->
+        <!-- Interactive 5-Layer Reference Architecture Stack -->
         <aside class="hh-stack-panel no-print" aria-label="Interactive Reference Architecture Stack">
           <div class="hh-stack-header">
             <div>
               <span class="hh-stack-kicker">INTERACTIVE REFERENCE STACK &middot; CLICK ANY LAYER</span>
-              <strong class="hh-stack-heading">Four Production Layers of Enterprise Azure AI</strong>
+              <strong class="hh-stack-heading">Five Production Layers of Enterprise Azure AI</strong>
             </div>
             <span class="hh-sanitized-pill">100% Sanitized</span>
           </div>

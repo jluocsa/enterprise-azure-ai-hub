@@ -120,7 +120,7 @@ function mountStudio(hash = '') {
 
 function assertActive(studio, id) {
   const tabs = studio.tabs()
-  assert.equal(tabs.length, 5)
+  assert.equal(tabs.length, 6)
   assert.deepEqual(tabs.filter(tab => tab.props.tabindex === 0).map(tab => tab.props.id), [id])
   assert.deepEqual(tabs.filter(tab => tab.props['aria-selected']).map(tab => tab.props.id), [id])
   for (const tab of tabs) {
@@ -134,7 +134,7 @@ function assertActive(studio, id) {
 }
 
 test('default and deep-linked tabs have reciprocal panel semantics and one tab stop', async () => {
-  for (const id of ['', 'ptu', 'apim', 'bcp', 'agent-eval', 'triage', 'unknown']) {
+  for (const id of ['', 'ptu', 'apim', 'bcp', 'agent-eval', 'data-strategy', 'triage', 'unknown']) {
     const studio = mountStudio(id ? `#${id}` : '')
     try {
       await nextTick()
@@ -152,10 +152,12 @@ test('arrows follow visual order with wrapping; Home and End move focus and sele
       ['ptu', 'ArrowRight', 'apim'],
       ['apim', 'ArrowRight', 'bcp'],
       ['bcp', 'ArrowRight', 'agent-eval'],
-      ['agent-eval', 'ArrowRight', 'triage'],
+      ['agent-eval', 'ArrowRight', 'data-strategy'],
+      ['data-strategy', 'ArrowRight', 'triage'],
       ['triage', 'ArrowRight', 'ptu'],
       ['ptu', 'ArrowLeft', 'triage'],
-      ['triage', 'ArrowLeft', 'agent-eval'],
+      ['triage', 'ArrowLeft', 'data-strategy'],
+      ['data-strategy', 'ArrowLeft', 'agent-eval'],
       ['agent-eval', 'ArrowLeft', 'bcp'],
       ['bcp', 'ArrowLeft', 'apim'],
       ['apim', 'ArrowLeft', 'ptu'],

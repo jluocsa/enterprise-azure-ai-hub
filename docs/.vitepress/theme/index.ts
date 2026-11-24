@@ -4,6 +4,7 @@ import AgentEvalBuilder from './components/AgentEvalBuilder.vue'
 import ApimPolicyBuilder from './components/ApimPolicyBuilder.vue'
 import BcpResidencyAdvisor from './components/BcpResidencyAdvisor.vue'
 import CatalogExplorer from './components/CatalogExplorer.vue'
+import DataStrategyAdvisor from './components/DataStrategyAdvisor.vue'
 import HubHome from './components/HubHome.vue'
 import IntakeScorecard from './components/IntakeScorecard.vue'
 import IntroVideoShowcase from './components/IntroVideoShowcase.vue'
@@ -20,6 +21,7 @@ export default {
     app.component('ApimPolicyBuilder', ApimPolicyBuilder)
     app.component('BcpResidencyAdvisor', BcpResidencyAdvisor)
     app.component('CatalogExplorer', CatalogExplorer)
+    app.component('DataStrategyAdvisor', DataStrategyAdvisor)
     app.component('HubHome', HubHome)
     app.component('IntakeScorecard', IntakeScorecard)
     app.component('IntroVideoShowcase', IntroVideoShowcase)

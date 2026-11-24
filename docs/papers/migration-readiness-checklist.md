@@ -1,21 +1,21 @@
 ---
-title: "Unified 52-Point PR & Production Cutover Checklists"
-description: Copy-ready Pull Request and Azure DevOps release sign-off templates across Playbook 01 (C1–C15 + C-WP1–C-WP4), Playbook 02 (G1–G12), Playbook 03 (B1–B12), and Playbook 04 (A1–A12).
+title: "Unified 64-Point PR & Production Cutover Checklists"
+description: Copy-ready Pull Request and Azure DevOps release sign-off templates across Playbook 01 (C1–C15 + C-WP1–C-WP4), Playbook 02 (G1–G12), Playbook 03 (B1–B12), Playbook 04 (A1–A12), and Playbook 05 (D1–D12).
 ---
 
 # Unified Production Cutover & PR Checklists
 
 <PlaybookMeta
-  track="Release Governance · All 4 Live Playbooks"
-  verified="2026-11-19 22:12 PST"
+  track="Release Governance · All 5 Live Playbooks"
+  verified="2026-11-23 19:30 PST"
   status="Live v2.0"
   printable
 />
 
 <PageBrief
-  stepLabel="CUTOVER SIGN-OFF TEMPLATES · 52 CONTROLS"
+  stepLabel="CUTOVER SIGN-OFF TEMPLATES · 64 CONTROLS"
   readTime="3 min read"
-  problem="Ad-hoc launch reviews miss cross-service interactions between prefix caching, APIM spillover, regional residency, and agent sandboxing."
+  problem="Ad-hoc launch reviews miss cross-service interactions between prefix caching, APIM spillover, regional residency, agent sandboxing, and AI data governance."
   takeaway="Paste the modular Markdown blocks below directly into .github/pull_request_template.md or Azure DevOps release gates."
   csaUse="Copy the combined checklist or only the track blocks matching your engagement scope."
 />
@@ -100,4 +100,24 @@ description: Copy-ready Pull Request and Azure DevOps release sign-off templates
 - [ ] A10: Calibrated Foundry Evals (Groundedness, Relevance, TaskAdherence) within <=2% baseline delta
 - [ ] A11: Indirect prompt-injection & cross-tenant red-team suite passes with 0 critical findings
 - [ ] A12: End-to-end W3C traceparent gen_ai.* spans active with CAPTURE_MESSAGE_CONTENT=false
+```
+
+---
+
+## 5. Playbook 05 · AI Data Strategy, Fabric–Foundry & Governance (`D1–D12`)
+
+```markdown
+### Playbook 05 — AI Data Strategy, Fabric–Foundry & Governance (D1–D12)
+- [ ] D1: Dual-path store routing verified (Fabric IQ structured KPIs, AI Search unstructured corpora, Cosmos DB DiskANN+RRF operational memory)
+- [ ] D2: OneLake zero-copy Shortcuts & AI-Ready Gold lineage (source_uri, lineage_sha256, medallion_tier) populated
+- [ ] D3: Dedicated interactive Fabric F-SKU (<=65% steady CU) isolated from batch Spark ETL refresh capacities
+- [ ] D4: Microsoft Purview DSPM for AI active across Foundry & Fabric (oversharing scan, interaction audit, DLP)
+- [ ] D5: Purview sensitivity_label & non-empty Entra acl_group_ids stamped immutably on every non-public chunk/document
+- [ ] D6: Event-driven ACL revocation & tombstoning SLA verified (<=15m enterprise / <=5m regulated; 0 overdue tombstones)
+- [ ] D7: Cosmos DB DiskANN/quantizedFlat/flat + BM25 RRF policies verified with single-partition tenant/engagement key
+- [ ] D8: Zero-downtime AI Search index alias or Cosmos blue-green container cutover & dedicated batch re-embedding TPM quota
+- [ ] D9: Layout-aware ingestion via Azure AI Content Understanding with bounded chunks (128-2,048 tokens) & deterministic chunk IDs
+- [ ] D10: Corpus anti-poisoning scanner blocks indirect prompt-injection patterns & <=5% duplicate/empty chunk ratio
+- [ ] D11: Retrieved chunks injected strictly at Pos 6 (cache-safe) & dual-region index lag stays <1%
+- [ ] D12: OTel-to-Fabric Gold eval flywheel active; data_readiness_gate.py (DRG001-DRG007) exits 0 in CI & KQL workbook deployed
 ```

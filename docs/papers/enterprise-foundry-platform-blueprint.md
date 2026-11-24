@@ -6,11 +6,11 @@ description: Consolidated executive white paper uniting Prompt Caching & PTU Eco
 # Full-Stack Enterprise Microsoft Foundry Platform Blueprint (`v2.0`)
 
 <PlaybookMeta
-  track="Executive Blueprint · Playbooks 01–04 Synthesis"
+  track="Executive Blueprint · Playbooks 01–05 Synthesis"
   provenance="Customer-Zero Validated Across Regulated Enterprise Platforms"
   governance="Sanitized · Peer Reviewed · IP Screened"
   owners="John Luo (@jluocsa) · Co-Authors Welcome"
-  verified="2026-11-19 22:12 PST"
+  verified="2026-11-23 19:30 PST"
   status="Live v2.0"
   studioHref="/studio/"
   studioLabel="Open Decision Studio →"
@@ -36,14 +36,15 @@ Enterprise generative AI programs rarely fail during initial proof-of-concept de
 
 ---
 
-## 2. Four-Layer Reference Architecture Matrix
+## 2. Five-Layer Reference Architecture Matrix
 
-| Production Layer | Core Architectural Mechanism | Primary QuantitativeSLO / Outcome | Governing Standard |
+| Production Layer | Core Architectural Mechanism | Primary Quantitative SLO / Outcome | Governing Standard |
 | :--- | :--- | :--- | :--- |
 | **Layer 01 · Context & PTU Economics** | Strict `Pos 1–6` (`T0 → L2 → L1 → Volatile Tail`) prefix order, deterministic `prompt_cache_key` sharding (`N = ⌈RPM ÷ 12⌉`), Posture A/B ethical walls, and two-regime PTU math (`5.6` vs. `6`/`6.1`). | `≥80%` repeat cache hit rate · `≥10:1` R/W ratio · **`2.56×` PTU spike prevented** | `C1–C15` + `C-WP1–C-WP4` |
 | **Layer 02 · APIM AI Gateway & FinOps** | Managed Identity RBAC (`disableLocalAuth: true`), Priority-1 PTU-M + Priority-2 Standard PAYG pool with `Retry-After` circuit breaker, 5.6 breakpoint strip, `buffer-response="false"` SSE, and out-of-band `x-cost-center` OTel metrics. | **`71%` seasonal TCO saved** · `<35ms` SSE TTFT delta · `100%` keyless upstream | `G1–G12` |
 | **Layer 03 · Multi-Region BCP & Residency** | Residency-symmetric `DataZone` / `Regional` pools, secondary PAYG quota sized `≥2.6×` steady TPM for cold-cache hydration, `RA-GZRS` ADLS + dual AI Search stamps, and multi-region Cosmos DB thread state. | **`<15s` gateway cutover RTO** · `0` residency boundary leaks · Quarterly Game-Day pass | `B1–B12` |
-| **Layer 04 · Sandboxed Agents & Evals** | SDK-free orchestrator proxying `AG-UI` SSE from microVM-isolated ACA Dynamic Sessions (Git-SHA tagged), Content Understanding Markdown ingestion, Foundry IQ MCP retrieval, and deterministic CI contract gates (`ARG001–005`). | `100%` microVM session isolation · `100%` resolved citation IDs · `0` flaky PR blocks | `A1–A12` |
+| **Layer 04 · Sandboxed Agents & Evals** | SDK-free orchestrator proxying `AG-UI` SSE from microVM-isolated ACA Dynamic Sessions (Git-SHA tagged), Content Understanding Markdown ingestion, Foundry IQ MCP retrieval, and deterministic CI contract gates (`ARG001–007`). | `100%` microVM session isolation · `100%` resolved citation IDs · `0` flaky PR blocks | `A1–A12` |
+| **Layer 05 · AI Data Strategy & Governance** | Dual-path **Microsoft Fabric / OneLake & Fabric IQ** (dedicated F-SKU), **Microsoft Purview DSPM for AI** label inheritance & event-driven ACL tombstoning, and **Cosmos DB DiskANN + RRF** tenant-partitioned hybrid search (`DRG001–007`). | **`≤15m` (`≤5m` reg.) ACL revocation** · `100%` Purview label inheritance · `0` poisoned chunks | `D1–D12` |
 
 ---
 
@@ -66,4 +67,4 @@ Always verify target model generation before reserving Provisioned Throughput (`
 1. **Intake (30 Minutes):** Score workload boundaries in the [Interactive Decision Studio](/studio/#triage) to select activated tracks and size initial PTU/BCP envelopes.
 2. **Week 1 — Baseline & Static Audit:** Run `pcr_lint.py` across application repos, capture 24-hour un-tuned App Insights baselines, and verify regional SKU/quota parity.
 3. **Week 2 — Middleware, Gateway & Sandbox Refactor:** Reorder prompts to `Pos 1–6`, deploy `apim-foundry-spillover-policy.xml`, wire Foundry IQ MCP + Content Understanding, and enforce Git-SHA ACA session tags.
-4. **Week 3 — Load, Game-Day & 52-Gate Sign-Off:** Execute peak concurrency tests, run a 30-minute regional `429`/`503` Game-Day failover drill, enforce `agent_release_gate.py` in CI, and sign off the applicable [`C` / `G` / `B` / `A` Readiness Checklists](/papers/migration-readiness-checklist).
+4. **Week 3 — Load, Game-Day & 64-Gate Sign-Off:** Execute peak concurrency tests, run a 30-minute regional `429`/`503` Game-Day failover drill, enforce `agent_release_gate.py` + `data_readiness_gate.py` in CI, and sign off the applicable [`C` / `G` / `B` / `A` / `D` Readiness Checklists](/papers/migration-readiness-checklist).

@@ -46,3 +46,7 @@ mcp_servers = {
 | **Document-Level Access Control** | Indexing firm-wide and client-confidential PDFs in one flat index without security filters. | Populate `acl_group_ids` / `engagement_scope` fields at index time and enforce mandatory OData / Entra token trimming (`search.in(...)`) on every retrieval call <span class="ev-badge ev-m">[M]</span>. |
 | **Citation Verifiability** | Allowing the agent to synthesize prose citations without chunk IDs or source URIs. | Require structured `[doc_id#page_or_section]` inline citations mapped to returned `knowledge_base_retrieve` reference objects; verify in CI via [`agent_release_gate.py`](/papers/engineering-kits#agent-gate). |
 | **Least-Privilege RBAC** | Passing Azure AI Search admin keys (`AZURE_SEARCH_KEY`) into runtime session containers. | Restrict admin keys strictly to offline index-provisioning scripts; grant runtime Managed Identities only `Search Index Data Reader` <span class="ev-badge ev-m">[M]</span>. |
+
+::: tip Extending Upstream to Fabric IQ, Purview DSPM & Cosmos DB Hybrid
+For dual-path structured routing (**Microsoft Fabric / OneLake & Fabric IQ**), end-to-end **Purview DSPM for AI** sensitivity-label inheritance & `<=5m`/`<=15m` ACL tombstoning, and **Cosmos DB `DiskANN` + `RRF`** tenant-partitioned hybrid retrieval, see [Playbook 05 · AI Data Strategy, Fabric–Foundry & Governance](/playbooks/ai-data-strategy/01-executive-thesis).
+:::
