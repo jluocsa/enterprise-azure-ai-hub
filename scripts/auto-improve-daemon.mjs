@@ -27,6 +27,7 @@ const HUB_TRACKS = [
   { id: 'playbook-02', label: 'Playbook 02 · Multi-Backend APIM AI Gateway', match: /apim|gateway|spillover/i },
   { id: 'playbook-03', label: 'Playbook 03 · Multi-Region Foundry BCP & Failover', match: /bcp|multi-region|failover|residency/i },
   { id: 'playbook-04', label: 'Playbook 04 · Agentic Harness, Foundry IQ RAG & Evals', match: /agentic|rag|eval|arg00/i },
+  { id: 'playbook-05', label: 'Playbook 05 · AI Data Strategy, Fabric–Foundry & Governance', match: /ai-data-strategy|fabric|onelake|purview|cosmos|diskann|drg00|data_readiness/i },
   { id: 'decision-studio', label: 'Interactive Decision Studio (Vue Calculators & Builders)', match: /studio|calculator|builder|advisor|scorecard|\.vue/i },
   { id: 'engineering-kits', label: 'MIT Engineering Kits, Governance Gates & White Papers', match: /kit|paper|governance|link|lint|kql|xml/i },
 ]
@@ -316,6 +317,30 @@ function runVerifySuite(cwd, { allowFail = false } = {}) {
       args: [path.join(cwd, 'scripts', 'run-python.mjs'), path.join(cwd, 'docs', 'public', 'kits', 'agent_release_gate.py'), '--self-test'],
     },
     {
+      name: 'check:kits (bcp_snapshot_gate self-test)',
+      cmd: process.execPath,
+      args: [path.join(cwd, 'scripts', 'run-python.mjs'), path.join(cwd, 'docs', 'public', 'kits', 'bcp_snapshot_gate.py'), '--self-test'],
+    },
+    {
+      name: 'check:kits (data_readiness_gate self-test)',
+      cmd: process.execPath,
+      args: [path.join(cwd, 'scripts', 'run-python.mjs'), path.join(cwd, 'docs', 'public', 'kits', 'data_readiness_gate.py'), '--self-test'],
+    },
+    {
+      name: 'check:studio',
+      cmd: process.execPath,
+      args: [
+        '--test',
+        path.join(cwd, 'scripts', 'check-studio-tabs.test.mjs'),
+        path.join(cwd, 'scripts', 'check-studio-ptu.test.mjs'),
+        path.join(cwd, 'scripts', 'check-studio-apim.test.mjs'),
+        path.join(cwd, 'scripts', 'check-studio-bcp.test.mjs'),
+        path.join(cwd, 'scripts', 'check-studio-agent.test.mjs'),
+        path.join(cwd, 'scripts', 'check-studio-data.test.mjs'),
+        path.join(cwd, 'scripts', 'check-verified-timestamps.test.mjs'),
+      ],
+    },
+    {
       name: 'docs:build',
       cmd: process.execPath,
       args: [path.join(ROOT, 'node_modules', 'vitepress', 'bin', 'vitepress.js'), 'build', 'docs'],
@@ -329,6 +354,11 @@ function runVerifySuite(cwd, { allowFail = false } = {}) {
       name: 'check:links (site)',
       cmd: process.execPath,
       args: [path.join(cwd, 'scripts', 'run-python.mjs'), path.join(cwd, 'scripts', 'check-links.py')],
+    },
+    {
+      name: 'check:apim',
+      cmd: process.execPath,
+      args: [path.join(cwd, 'scripts', 'run-python.mjs'), path.join(cwd, 'scripts', 'check-apim-xml.py')],
     },
   ]
 
@@ -442,7 +472,7 @@ async function deployLatestMainToPages() {
       copyLocalSanitizeList(wtDir)
       runCmd(process.execPath, [path.join(wtDir, 'scripts', 'deploy-gh-pages.mjs')], {
         cwd: wtDir,
-        timeout: 300000,
+        timeout: 600000,
       })
     }
   )

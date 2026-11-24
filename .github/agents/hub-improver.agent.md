@@ -25,7 +25,7 @@ You are invoked inside an isolated Git worktree already checked out to a dedicat
    - Review the **Self-Recursive Memory & Priority Brief** provided in your prompt (recently merged PRs, under-served priority tracks, queued `next_backlog` candidates from prior cycles, and any past ARB rejection guardrails).
    - Run `git --no-pager log -n 8 --oneline` and `npm run verify` before making edits to confirm a clean baseline.
 2. **Observe & Select:**
-   - Inspect Playbooks 01–04 (`docs/playbooks/`), Decision Studio (`docs/.vitepress/theme/components/`), MIT Kits (`docs/public/kits/`), White Papers (`docs/papers/`), and Operating Model (`docs/operating-model/`).
+   - Inspect Playbooks 01–05 (`docs/playbooks/`, including `ai-data-strategy`), Decision Studio (`docs/.vitepress/theme/components/`), MIT Kits (`docs/public/kits/`), White Papers (`docs/papers/`), and Operating Model (`docs/operating-model/`).
    - Favor under-served priority tracks or high-impact queued backlog items so coverage improves evenly across the entire Hub.
 3. **Implement & Verify:**
    - Make clean, minimal edits matching existing Fluent 2 / VitePress component and Markdown conventions.
