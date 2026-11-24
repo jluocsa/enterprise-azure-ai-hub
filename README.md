@@ -29,8 +29,9 @@ Built with [VitePress](https://vitepress.dev/), styled with an executive Fluent 
 | **[Playbook 02 · Multi-Backend Foundry APIM AI Gateway](https://jluocsa.github.io/enterprise-azure-ai-hub/playbooks/apim-gateway/01-executive-thesis)** | Enterprise GenAI gateway fronting `/openai/v1/responses` & `/chat/completions` across PTU-M and Standard pools | 6 chapters, `Retry-After` circuit breakers, SKU parameter stripping, SSE safety & FinOps OTel headers |
 | **[Playbook 03 · Multi-Region Foundry BCP & Failover](https://jluocsa.github.io/enterprise-azure-ai-hub/playbooks/multi-region-bcp/01-executive-thesis)** | Regulated business continuity, Global vs. Data Zone vs. Regional residency, and stateful stamp failover | 6 chapters, cold-cache failover surge math, Cosmos/AI Search parity & Game-Day drill protocol |
 | **[Playbook 04 · Agentic Harness, Foundry IQ RAG & Evals](https://jluocsa.github.io/enterprise-azure-ai-hub/playbooks/agentic-rag-evals/01-executive-thesis)** | 3-tier sandboxed agent runtimes (ACA Dynamic Sessions), grounded RAG, and 7-layer deterministic release gates | 6 chapters, AG-UI SSE isolation, Content Understanding ingestion, `gen_ai.*` OTel & contract gates |
-| **[Interactive Decision Studio](https://jluocsa.github.io/enterprise-azure-ai-hub/studio/)** | Live client-side calculators and policy generators for architecture design sessions | Two-Regime PTU/TCO Simulator, 30-Min Multi-Track Triage, BCP Residency Advisor & APIM XML Builder |
-| **[White Papers & MIT Engineering Kits](https://jluocsa.github.io/enterprise-azure-ai-hub/papers/)** | Printable executive papers (`@media print`) + copy/download-ready CI, gateway & telemetry kits | `pcr_lint.py`, `agent_release_gate.py`, `apim-foundry-spillover-policy.xml`, and 2 KQL workbooks |
+| **[Playbook 05 · AI Data Strategy, Fabric–Foundry & Governance](https://jluocsa.github.io/enterprise-azure-ai-hub/playbooks/ai-data-strategy/01-executive-thesis)** | Unified AI data plane across Microsoft Fabric / OneLake & Fabric IQ, Purview DSPM for AI, and Cosmos DB DiskANN/RRF hybrid search | 6 chapters, `D1–D12` gates, dedicated F-SKU isolation, `<=5m`/`<=15m` ACL tombstoning & anti-poisoning |
+| **[Interactive Decision Studio](https://jluocsa.github.io/enterprise-azure-ai-hub/studio/)** | Live client-side calculators and policy generators for architecture design sessions | Two-Regime PTU/TCO Simulator, APIM XML Builder, BCP Residency Advisor, ACA Sandbox & Eval Builder, AI Data Strategy Advisor & 30-Min Triage |
+| **[White Papers & MIT Engineering Kits](https://jluocsa.github.io/enterprise-azure-ai-hub/papers/)** | Printable executive papers (`@media print`) + copy/download-ready CI, gateway & telemetry kits | `pcr_lint.py`, `agent_release_gate.py`, `data_readiness_gate.py`, `apim-foundry-spillover-policy.xml`, and 3 KQL workbooks |
 
 ---
 
@@ -44,16 +45,17 @@ enterprise-azure-ai-hub/
 │  │  └─ theme/                          # Fluent 2 / Foundry design system & interactive Vue tools
 │  ├─ operating-model/                   # 5-stage factory, governance & 3-week delivery scope
 │  ├─ playbooks/
-│  │  ├─ index.md                        # Unified 4-Playbook Architecture Catalog
+│  │  ├─ index.md                        # Unified 5-Playbook Architecture Catalog
 │  │  ├─ prompt-caching/                 # Playbook 01 (15 chapters + Regulated Profile + Sources)
 │  │  ├─ apim-gateway/                   # Playbook 02 (6 chapters: APIM Pools, Spillover & FinOps)
 │  │  ├─ multi-region-bcp/               # Playbook 03 (6 chapters: Residency, Stamp DR & Game-Days)
-│  │  └─ agentic-rag-evals/              # Playbook 04 (6 chapters: ACA Sandbox, Foundry IQ & 7-Layer Evals)
-│  ├─ studio/                            # Interactive 4-Tool Engineering Decision Studio
+│  │  ├─ agentic-rag-evals/              # Playbook 04 (6 chapters: ACA Sandbox, Foundry IQ & 7-Layer Evals)
+│  │  └─ ai-data-strategy/               # Playbook 05 (6 chapters: Fabric IQ, Purview DSPM & Cosmos Hybrid)
+│  ├─ studio/                            # Interactive 6-Tool Engineering Decision Studio
 │  ├─ papers/                            # Printable executive white papers, kits & PR checklists
 │  └─ public/
 │     ├─ favicon.svg / og-card.png       # Custom brand identity & OpenGraph social card
-│     ├─ kits/                           # 5 runnable Python, APIM XML & KQL release-gate kits
+│     ├─ kits/                           # 7 runnable Python, APIM XML & KQL release-gate kits
 │     └─ video/                          # 1080p CSA Forum studio intro MP4, WebM, poster PNG & WebVTT
 ├─ scripts/
 │  ├─ auto-improve-daemon.mjs            # Continuous self-recursive dual-agent engine & memory ledger

@@ -1,6 +1,6 @@
 ---
 title: White Papers & Executable MIT Engineering Kits
-description: Print-ready executive white papers, 5 copy-and-download MIT engineering kits (Python AST linter, Agent Contract CLI, APIM Spillover XML, and 2 App Insights KQL gates), and 52-point PR readiness checklists.
+description: Print-ready executive white papers, 7 copy-and-download MIT engineering kits (Python AST linter, Agent Contract CLI, Data Readiness CLI, APIM Spillover XML, and 3 App Insights KQL gates), and 64-point PR readiness checklists.
 ---
 
 <script setup>
@@ -13,7 +13,7 @@ import { withBase } from 'vitepress'
   stepLabel="DELIVERABLES & MIT KITS"
   readTime="3 min read"
   problem="Enterprise rollouts need both print-ready executive architecture papers for review boards and drop-in CI/gateway/KQL code for repositories."
-  takeaway="Every live track ships synchronized Markdown white papers (@media print Save-as-PDF), 5 MIT-licensed automation kits, and 52 PR cutover gates."
+  takeaway="Every live track ships synchronized Markdown white papers (@media print Save-as-PDF), 7 MIT-licensed automation kits, and 64 PR cutover gates."
   csaUse="Select any deliverable below—Print / Save as PDF for ARB/CISO sign-off, or 1-click copy/download scripts straight into CI/CD and Azure."
 />
 
@@ -38,8 +38,8 @@ import { withBase } from 'vitepress'
     <text x="392" y="81" font-size="7.8" font-weight="700" fill="#6d28d9">[Drop-In Azure Kits]</text>
     <rect x="572" y="12" width="180" height="86" rx="6" fill="#fff7eb" stroke="#d97706" stroke-width="1.4"/>
     <text x="580" y="31" font-size="9.1" font-weight="700" fill="#92400e">4. Cutover Sign-Off</text>
-    <text x="580" y="47" font-size="8.1" fill="#92400e">52-Point PR &amp; Release</text>
-    <text x="580" y="60" font-size="8.1" fill="#92400e">Checklists (C / G / B / A)</text>
+    <text x="580" y="47" font-size="8.1" fill="#92400e">64-Point PR &amp; Release</text>
+    <text x="580" y="60" font-size="8.1" fill="#92400e">Checklists (C/G/B/A/D)</text>
     <text x="580" y="81" font-size="7.8" font-weight="700" fill="#b45309">[Copy-Paste Markdown]</text>
     <text x="10" y="118" font-size="8.3" fill="#526c80">All white papers and kits are source-controlled, searchable via ⌘K / Ctrl+K, and verified clean by npm run verify.</text>
   </svg>
@@ -56,7 +56,7 @@ import { withBase } from 'vitepress'
 
 ---
 
-## 2. Five Executable MIT Engineering Kits
+## 2. Seven Executable MIT Engineering Kits
 
 | Kit File | Track | Purpose | Inline Preview | Raw Download |
 | :--- | :--- | :--- | :--- | :--- |
@@ -65,12 +65,14 @@ import { withBase } from 'vitepress'
 | **`apim-foundry-spillover-policy.xml`** | Playbook 02 | Production APIM policy XML with Managed Identity, out-of-band `x-cost-center` FinOps, 5.6 breakpoint guard, 429 spillover, and unbuffered SSE. | [Preview & Copy →](/papers/engineering-kits#apim-policy) | <a :href="withBase('/kits/apim-foundry-spillover-policy.xml')" download target="_blank" rel="noopener"><code>apim-foundry-spillover-policy.xml</code></a> |
 | **`bcp-failover-readiness-gate.kql`** | Playbook 03 | Multi-region stamp health, snapshot-drift detector, and cold-cache cutover surge KQL workbook query for Game-Day drills. | [Preview & Copy →](/papers/engineering-kits#bcp-kql) | <a :href="withBase('/kits/bcp-failover-readiness-gate.kql')" download target="_blank" rel="noopener"><code>bcp-failover-readiness-gate.kql</code></a> |
 | **`agent_release_gate.py`** | Playbook 04 | Zero-dependency Python CLI (`ARG001–ARG007` + `--contract` JSON) verifying trace JSONL for resolved inline citations, tool allowlists, Pass-2 cache hits, p95 latency, ACL trimming, and OTel privacy. | [Preview & Copy →](/papers/engineering-kits#agent-gate) | <a :href="withBase('/kits/agent_release_gate.py')" download target="_blank" rel="noopener"><code>agent_release_gate.py</code></a> |
+| **`data_readiness_gate.py`** | Playbook 05 | Zero-dependency Python CLI (`DRG001–DRG007` + `--contract` JSON) enforcing Fabric/OneLake lineage & F-SKU isolation, Purview DSPM labels, Entra ACL tombstoning SLA, Cosmos DB DiskANN+RRF partition scoping, AI Search aliases, and anti-poisoning hygiene. | [Preview & Copy →](/papers/engineering-kits#data-gate) | <a :href="withBase('/kits/data_readiness_gate.py')" download target="_blank" rel="noopener"><code>data_readiness_gate.py</code></a> |
+| **`data-grounding-freshness-gate.kql`** | Playbook 05 | Azure Monitor KQL workbook auditing Purview label coverage, ACL revocation lag, Cosmos DB hybrid RU & `429` rates, Fabric CU throttling, and zero-grounding drift. | [Preview & Copy →](/papers/engineering-kits#data-kql) | <a :href="withBase('/kits/data-grounding-freshness-gate.kql')" download target="_blank" rel="noopener"><code>data-grounding-freshness-gate.kql</code></a> |
 
 ---
 
-## 3. Unified 52-Point Production Cutover & PR Checklists
+## 3. Unified 64-Point Production Cutover & PR Checklists
 
-- **[Open Unified Readiness Checklists (`C1–C15`, `G1–G12`, `B1–B12`, `A1–A12`) →](/papers/migration-readiness-checklist)** — Copy-ready Markdown templates for `.github/pull_request_template.md` and Azure DevOps release gates.
+- **[Open Unified Readiness Checklists (`C1–C15`, `G1–G12`, `B1–B12`, `A1–A12`, `D1–D12`) →](/papers/migration-readiness-checklist)** — Copy-ready Markdown templates for `.github/pull_request_template.md` and Azure DevOps release gates.
 
 ## 4. Companion Open-Source Repositories
 

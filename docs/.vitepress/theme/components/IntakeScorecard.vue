@@ -9,6 +9,7 @@ const highRpmAndLargePrefix = ref(true)
 const multiBackendGateway = ref(true)
 const multiRegionResidency = ref(false)
 const agenticRagSandbox = ref(true)
+const dataStrategyGrounding = ref(true)
 const regulatedMultiClient = ref(false)
 const copied = ref(false)
 
@@ -21,6 +22,7 @@ const score = computed(() => {
   if (multiBackendGateway.value) pts += 1
   if (multiRegionResidency.value) pts += 2
   if (agenticRagSandbox.value) pts += 2
+  if (dataStrategyGrounding.value) pts += 2
   if (regulatedMultiClient.value) pts += 2
   return pts
 })
@@ -80,6 +82,13 @@ const recommendedTracks = computed(() => {
       href: '/playbooks/agentic-rag-evals/01-executive-thesis',
     })
   }
+  if (dataStrategyGrounding.value) {
+    tracks.push({
+      code: 'Playbook 05',
+      title: 'AI Data Strategy, Fabric–Foundry & Purview DSPM Governance',
+      href: '/playbooks/ai-data-strategy/01-executive-thesis',
+    })
+  }
   if (regulatedMultiClient.value) {
     tracks.push({
       code: 'Profile',
@@ -109,6 +118,9 @@ const branches = computed(() => {
   }
   if (agenticRagSandbox.value) {
     out.push('Isolate code/tool execution inside ACA Dynamic Sessions, ground citations via Foundry IQ MCP, and gate releases with deterministic eval contracts.')
+  }
+  if (dataStrategyGrounding.value) {
+    out.push('Route structured KPIs to Fabric IQ (isolated F-SKU), enforce Purview DSPM labels & <=15m/<=5m ACL tombstoning, scope Cosmos DiskANN+RRF by tenant partition key, and gate CI via data_readiness_gate.py (D1–D12).')
   }
   if (regulatedMultiClient.value) {
     out.push('Enforce Posture A/B client ethical walls, extract x-cost-center out-of-band in APIM, and audit C-WP1–C-WP4 workpaper parity.')
@@ -197,15 +209,23 @@ async function copyScopeSummary() {
       </label>
 
       <label class="isc-toggle">
+        <input v-model="dataStrategyGrounding" type="checkbox" />
+        <div>
+          <strong>7. AI Data Plane: Fabric IQ, Purview DSPM &amp; Cosmos Hybrid</strong>
+          <span>OneLake / Fabric IQ analytics, Purview sensitivity labels &amp; ACL tombstoning, DiskANN+RRF</span>
+        </div>
+      </label>
+
+      <label class="isc-toggle">
         <input v-model="regulatedMultiClient" type="checkbox" />
         <div>
-          <strong>7. Client Ethical Walls, Chargeback or Filing Cliffs</strong>
+          <strong>8. Client Ethical Walls, Chargeback or Filing Cliffs</strong>
           <span>Multi-matter isolation, cost-center billing, or 3&times;–6&times; seasonal surges</span>
         </div>
       </label>
 
       <label class="isc-select-box">
-        <span>8. Target Production SKU Topology</span>
+        <span>9. Target Production SKU Topology</span>
         <select v-model="skuMix">
           <option value="ptu-hybrid">PTU-M Primary + Standard PAYG Spillover (Recommended)</option>
           <option value="ptu-only">Provisioned Throughput (PTU-M) Only</option>
@@ -217,7 +237,7 @@ async function copyScopeSummary() {
     <div :class="['isc-verdict', `tone-${tier.tone}`]">
       <div class="isc-verdict-top">
         <span class="isc-verdict-badge">{{ tier.level }}</span>
-        <span class="isc-score-pill">Exposure Score: {{ score }} / 15</span>
+        <span class="isc-score-pill">Exposure Score: {{ score }} / 17</span>
       </div>
       <p class="isc-verdict-summary">{{ tier.summary }}</p>
 

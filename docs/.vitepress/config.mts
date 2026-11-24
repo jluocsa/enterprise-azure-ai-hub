@@ -10,7 +10,7 @@ const buildVerifiedStamp = formatPacificTimestamp(buildTimestamp)
 export default defineConfig({
   title: 'Azure AI Industrialization Hub',
   description:
-    'Enterprise Azure AI Solution Industrialization Hub — Customer-Zero validated architecture playbooks, interactive PTU/TCO & BCP calculators, APIM AI Gateway policies, sandboxed agentic RAG patterns, and executable MIT release gates for Microsoft Foundry.',
+    'Enterprise Azure AI Solution Industrialization Hub — Customer-Zero validated architecture playbooks, interactive PTU/TCO, BCP & AI Data Strategy calculators, APIM AI Gateway policies, sandboxed agentic RAG patterns, and executable MIT release gates for Microsoft Foundry.',
   lang: 'en-US',
   base,
   cleanUrls: true,
@@ -40,7 +40,7 @@ export default defineConfig({
       {
         property: 'og:image:alt',
         content:
-          'Enterprise Azure AI Solution Industrialization Hub — 4 Live Playbooks, Interactive Decision Studio & Executable MIT Release Gates',
+          'Enterprise Azure AI Solution Industrialization Hub — 5 Live Playbooks, Interactive Decision Studio & Executable MIT Release Gates',
       },
     ],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
@@ -97,7 +97,7 @@ export default defineConfig({
         text: 'Playbooks',
         items: [
           {
-            text: 'Architecture Catalog (All 4 Live Tracks)',
+            text: 'Architecture Catalog (All 5 Live Tracks)',
             link: '/playbooks/',
           },
           {
@@ -115,6 +115,10 @@ export default defineConfig({
           {
             text: '04 · Agentic Harness, Foundry IQ RAG & Evals',
             link: '/playbooks/agentic-rag-evals/01-executive-thesis',
+          },
+          {
+            text: '05 · AI Data Strategy, Fabric–Foundry & Governance',
+            link: '/playbooks/ai-data-strategy/01-executive-thesis',
           },
           {
             text: 'Profile · Regulated Multi-Engagement & Ethical Walls',
@@ -136,11 +140,11 @@ export default defineConfig({
             link: '/papers/foundry-prompt-caching-gpt56-whitepaper',
           },
           {
-            text: 'Executable Kits · Linter, APIM XML, Eval & KQL',
+            text: 'Executable Kits · Linter, APIM XML, Eval, Data & KQL',
             link: '/papers/engineering-kits',
           },
           {
-            text: 'Checklists · C1–C15, G1–G12, B1–B12 & A1–A12',
+            text: 'Checklists · C1–C15, G1–G12, B1–B12, A1–A12 & D1–D12',
             link: '/papers/migration-readiness-checklist',
           },
         ],
@@ -169,7 +173,7 @@ export default defineConfig({
         {
           text: 'Live Architecture Tracks & Tools',
           items: [
-            { text: 'Architecture Catalog (All 4 Tracks)', link: '/playbooks/' },
+            { text: 'Architecture Catalog (All 5 Tracks)', link: '/playbooks/' },
             { text: 'Interactive Decision Studio', link: '/studio/' },
             { text: 'White Papers & MIT Engineering Kits', link: '/papers/' },
           ],
@@ -190,7 +194,7 @@ export default defineConfig({
               link: '/papers/foundry-prompt-caching-gpt56-whitepaper',
             },
             {
-              text: '5 Executable MIT Engineering Kits',
+              text: '7 Executable MIT Engineering Kits',
               link: '/papers/engineering-kits',
             },
             {
@@ -203,7 +207,7 @@ export default defineConfig({
           text: 'Interactive Tools & Playbooks',
           items: [
             { text: 'Interactive Decision Studio', link: '/studio/' },
-            { text: 'Architecture Catalog (Playbooks 01–04)', link: '/playbooks/' },
+            { text: 'Architecture Catalog (Playbooks 01–05)', link: '/playbooks/' },
             { text: '3-Week Repeatable Delivery Scope', link: '/operating-model/delivery-scoping' },
           ],
         },
@@ -302,7 +306,7 @@ export default defineConfig({
               link: '/playbooks/apim-gateway/01-executive-thesis',
             },
             {
-              text: 'All 4 Playbooks Catalog',
+              text: 'All 5 Playbooks Catalog',
               link: '/playbooks/',
             },
           ],
@@ -465,7 +469,68 @@ export default defineConfig({
               link: '/playbooks/multi-region-bcp/01-executive-thesis',
             },
             {
-              text: 'All 4 Playbooks Catalog',
+              text: 'Next → Playbook 05 · AI Data Strategy & Fabric IQ',
+              link: '/playbooks/ai-data-strategy/01-executive-thesis',
+            },
+            {
+              text: 'All 5 Playbooks Catalog',
+              link: '/playbooks/',
+            },
+          ],
+        },
+      ],
+
+      '/playbooks/ai-data-strategy/': [
+        {
+          text: 'Playbook 05 · AI Data Strategy',
+          items: [
+            {
+              text: '01 · Executive Thesis & AI Data Plane',
+              link: '/playbooks/ai-data-strategy/01-executive-thesis',
+            },
+            {
+              text: '02 · Fabric, OneLake & Fabric IQ',
+              link: '/playbooks/ai-data-strategy/02-fabric-onelake-fabric-iq',
+            },
+            {
+              text: '03 · Purview DSPM, Labels & Ethical Walls',
+              link: '/playbooks/ai-data-strategy/03-purview-dspm-acl-ethical-walls',
+            },
+            {
+              text: '04 · Cosmos DB Vector/Hybrid & Retrieval',
+              link: '/playbooks/ai-data-strategy/04-cosmos-vector-hybrid-retrieval',
+            },
+            {
+              text: '05 · D1–D12 Gates & Automated CI',
+              link: '/playbooks/ai-data-strategy/05-data-governance-release-gates',
+            },
+            {
+              text: '06 · Verification Matrix & Sources',
+              link: '/playbooks/ai-data-strategy/06-sources',
+            },
+          ],
+        },
+        {
+          text: 'Connected Series & Tools',
+          items: [
+            {
+              text: 'Interactive AI Data Strategy Advisor',
+              link: '/studio/#data-strategy',
+            },
+            {
+              text: 'Kit · data_readiness_gate.py CLI',
+              link: '/papers/engineering-kits#data-gate',
+            },
+            {
+              text: 'Kit · data-grounding-freshness-gate.kql',
+              link: '/papers/engineering-kits#data-kql',
+            },
+            {
+              text: 'Prev ← Playbook 04 · Agentic Harness & Evals',
+              link: '/playbooks/agentic-rag-evals/01-executive-thesis',
+            },
+            {
+              text: 'All 5 Playbooks Catalog',
               link: '/playbooks/',
             },
           ],

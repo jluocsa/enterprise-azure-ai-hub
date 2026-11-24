@@ -1,19 +1,19 @@
 ---
-title: "5 Executable MIT Engineering Kits · Linter, APIM XML, Contract CLI & KQL Gates"
-description: "Copy-ready and downloadable MIT-licensed automation kits across Playbooks 01–04: pcr_lint.py, ptu-cache-release-gate.kql, apim-foundry-spillover-policy.xml, bcp-failover-readiness-gate.kql, and agent_release_gate.py."
+title: "7 Executable MIT Engineering Kits · Linter, APIM XML, Eval, Data & KQL Gates"
+description: "Copy-ready and downloadable MIT-licensed automation kits across Playbooks 01–05: pcr_lint.py, ptu-cache-release-gate.kql, apim-foundry-spillover-policy.xml, bcp-failover-readiness-gate.kql, agent_release_gate.py, data_readiness_gate.py, and data-grounding-freshness-gate.kql."
 ---
 
 <script setup>
 import { withBase } from 'vitepress'
 </script>
 
-# 5 Executable MIT Engineering Kits
+# 7 Executable MIT Engineering Kits
 
 <PageBrief
-  stepLabel="EXECUTABLE MIT KITS · PLAYBOOKS 01–04"
+  stepLabel="EXECUTABLE MIT KITS · PLAYBOOKS 01–05"
   readTime="3 min setup"
-  problem="Translating architecture documents into working CI linters, APIM XML policies, and Log Analytics KQL queries manually delays every engagement."
-  takeaway="All five kits below are rendered live from docs/public/kits/, zero-dependency, sanitized, and MIT-licensed for immediate repository drop-in."
+  problem="Translating architecture documents into working CI linters, APIM XML policies, data governance verifiers, and Log Analytics KQL queries manually delays every engagement."
+  takeaway="All seven kits below are rendered live from docs/public/kits/, zero-dependency, sanitized, and MIT-licensed for immediate repository drop-in."
   csaUse="Use 1-click copy on any code block or click the raw download link to commit directly into CI/CD, Bicep/APIM, and Azure Monitor."
 />
 
@@ -144,3 +144,30 @@ python3 agent_release_gate.py ./artifacts/trace.jsonl --contract ./agent-release
 Raw download: <a :href="withBase('/kits/agent_release_gate.py')" download target="_blank" rel="noopener"><strong><code>Download agent_release_gate.py</code></strong></a>
 
 <<< @/public/kits/agent_release_gate.py{python}
+
+---
+
+## 6. AI Data Strategy & Governance Release Gate CLI (`data_readiness_gate.py`) {#data-gate}
+
+Zero-dependency Python 3 CLI (`DRG001–DRG007`) verifying offline AI data-plane readiness snapshots against CLI defaults or a `data-readiness-contract.json` exported from the [Interactive AI Data Strategy Advisor](/studio/#data-strategy). Enforces Fabric / OneLake AI-Ready Gold lineage & dedicated interactive F-SKU isolation (`DRG002`), Microsoft Purview DSPM for AI & sensitivity label inheritance (`DRG003`), Entra ACL & ethical-wall revocation/tombstoning SLAs (`DRG004`), Azure Cosmos DB `DiskANN`+`RRF` partition scoping & AI Search blue-green alias/regional lag parity (`DRG005`), corpus chunk hygiene & indirect prompt-injection anti-poisoning (`DRG006`), and Pos 6 cache-safe freshness + eval flywheel contracts (`DRG007`) <span class="ev-badge ev-arch">[Arch]</span>.
+
+Fail-closed input rules (`DRG001`) exit `2` with no stdout on unreadable/invalid UTF-8 files, duplicate JSON object keys (including nested objects), excessive JSON nesting, or unsupported top-level contract fields. See [Playbook 05 · Ch 05](/playbooks/ai-data-strategy/05-data-governance-release-gates#drg-contract) for the full contract specification.
+
+```bash
+python3 data_readiness_gate.py --self-test
+python3 data_readiness_gate.py ./artifacts/data-snapshot.json --contract ./data-readiness-contract.json --json
+```
+
+Raw download: <a :href="withBase('/kits/data_readiness_gate.py')" download target="_blank" rel="noopener"><strong><code>Download data_readiness_gate.py</code></strong></a>
+
+<<< @/public/kits/data_readiness_gate.py{python}
+
+---
+
+## 7. AI Data Grounding, Purview Label & Freshness Gate (`data-grounding-freshness-gate.kql`) {#data-kql}
+
+Audits live Microsoft Fabric IQ, Azure AI Search, and Azure Cosmos DB hybrid retrieval telemetry for missing Purview sensitivity labels (`D5`), untrimmed ACL queries (`D5`), ACL revocation lag breaches (`D6`), Cosmos DB hybrid RU spikes / `429` throttling (`D7`), Fabric F-SKU throttling (`D3`), and zero-result grounding drift (`D12`).
+
+Raw download: <a :href="withBase('/kits/data-grounding-freshness-gate.kql')" download target="_blank" rel="noopener"><strong><code>Download data-grounding-freshness-gate.kql</code></strong></a>
+
+<<< @/public/kits/data-grounding-freshness-gate.kql{kusto}

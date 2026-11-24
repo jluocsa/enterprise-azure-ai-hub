@@ -4,10 +4,11 @@ import { useRoute, withBase } from 'vitepress'
 import AgentEvalBuilder from './AgentEvalBuilder.vue'
 import ApimPolicyBuilder from './ApimPolicyBuilder.vue'
 import BcpResidencyAdvisor from './BcpResidencyAdvisor.vue'
+import DataStrategyAdvisor from './DataStrategyAdvisor.vue'
 import IntakeScorecard from './IntakeScorecard.vue'
 import PtuCalculator from './PtuCalculator.vue'
 
-type TabId = 'ptu' | 'triage' | 'bcp' | 'apim' | 'agent-eval'
+type TabId = 'ptu' | 'triage' | 'bcp' | 'apim' | 'agent-eval' | 'data-strategy'
 
 const activeTab = ref<TabId>('ptu')
 const tabList = ref<HTMLElement | null>(null)
@@ -47,10 +48,18 @@ const tabs: { id: TabId; badge: string; title: string; subtitle: string; playboo
     playbookLabel: 'Read Playbook 04 Contract Design →',
   },
   {
+    id: 'data-strategy',
+    badge: 'TOOL 05 · PLAYBOOK 05',
+    title: 'AI Data Strategy & Grounding Advisor',
+    subtitle: 'Model Fabric IQ, Purview DSPM, Cosmos DiskANN/RRF sizing & DRG001–DRG007 governance gates.',
+    playbookHref: '/playbooks/ai-data-strategy/01-executive-thesis',
+    playbookLabel: 'Read Playbook 05 Data Strategy →',
+  },
+  {
     id: 'triage',
-    badge: 'TOOL 05 · OPERATING MODEL',
+    badge: 'TOOL 06 · OPERATING MODEL',
     title: '30-Min Intake & Scope Builder',
-    subtitle: 'Score 8 architectural boundaries and generate a copy-ready 1-session ADS or 3-week engagement scope.',
+    subtitle: 'Score 9 architectural boundaries and generate a copy-ready 1-session ADS or 3-week engagement scope.',
     playbookHref: '/operating-model/delivery-scoping',
     playbookLabel: 'Read 3-Week Delivery Blueprint →',
   },
@@ -90,7 +99,7 @@ function onTabKeydown(event: KeyboardEvent, id: TabId) {
 function syncFromHash() {
   if (typeof window === 'undefined') return
   const h = window.location.hash.replace('#', '') as TabId
-  if (['ptu', 'triage', 'bcp', 'apim', 'agent-eval'].includes(h)) {
+  if (['ptu', 'triage', 'bcp', 'apim', 'agent-eval', 'data-strategy'].includes(h)) {
     activeTab.value = h
   }
 }
@@ -182,6 +191,9 @@ watch(
         <div id="studio-panel-agent-eval" role="tabpanel" aria-labelledby="agent-eval" tabindex="0" v-show="activeTab === 'agent-eval'">
           <AgentEvalBuilder />
         </div>
+        <div id="studio-panel-data-strategy" role="tabpanel" aria-labelledby="data-strategy" tabindex="0" v-show="activeTab === 'data-strategy'">
+          <DataStrategyAdvisor />
+        </div>
       </div>
     </section>
   </div>
@@ -230,7 +242,7 @@ watch(
 }
 .st-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 11px;
 }
 @media (max-width: 1120px) {
