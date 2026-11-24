@@ -6,13 +6,13 @@ A governed, multi-author architecture hub and interactive engineering workbench 
 
 Built with [VitePress](https://vitepress.dev/), styled with an executive Fluent 2 / Azure Architecture Center design system (adaptive Light & Dark mode), and enforced by an automated confidentiality sanitization gate (`scripts/check-sanitized.mjs`), zero-dependency CLI verification kits (`docs/public/kits/`), and print-ready Markdown white papers (`@media print`).
 
-## CSA Forum Full-Stack Walkthrough Film (5:00 · 1080p HD with Studio Voiceover)
+## CSA Forum Full-Stack Walkthrough Film (5:45 · 1080p HD with Studio Voiceover)
 
 <video controls playsinline preload="metadata" poster="./docs/public/video/enterprise-azure-ai-hub-csa-forum-intro-poster.png" width="100%">
   <source src="./docs/public/video/enterprise-azure-ai-hub-csa-forum-intro.mp4" type='video/mp4; codecs="avc1.64002a, mp4a.40.2"' />
   <source src="./docs/public/video/enterprise-azure-ai-hub-csa-forum-intro.webm" type='video/webm; codecs="vp9, opus"' />
-  <a href="https://jluocsa.github.io/enterprise-azure-ai-hub/#csa-forum-video" title="Watch the 5:00 CSA Forum Full-Stack Studio Film with Voiceover & Synchronized Captions">
-    <img src="./docs/public/video/readme-video-card.png" alt="Watch the 5:00 CSA Forum Full-Stack Studio Film (1080p HD with Voiceover, Score & Synchronized Captions)" width="100%" />
+  <a href="https://jluocsa.github.io/enterprise-azure-ai-hub/#csa-forum-video" title="Watch the 5:45 CSA Forum Full-Stack Studio Film with Voiceover & Synchronized Captions">
+    <img src="./docs/public/video/readme-video-card.png" alt="Watch the 5:45 CSA Forum Full-Stack Studio Film (1080p HD with Voiceover, Score & Synchronized Captions)" width="100%" />
   </a>
 </video>
 

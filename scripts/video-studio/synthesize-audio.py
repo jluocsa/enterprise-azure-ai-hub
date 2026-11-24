@@ -70,10 +70,10 @@ SCENES = [
         "title": "Enterprise Azure AI Solution Industrialization Hub",
         "narration": (
             "Welcome to the Enterprise Azure AI Solution Industrialization Hub, version two-point-zero. "
-            "Across the Home Overview, Architecture Catalog, and forty-five verified subpages, "
-            "this governed workbench unites four live Customer-Zero playbooks spanning thirty-three chapters, "
-            "a Regulated Multi-Engagement Profile, a five-tool Decision Studio, "
-            "two printable white papers, five MIT kits, and fifty-two cutover controls."
+            "Across the Home Overview, Architecture Catalog, and fifty-two verified subpages, "
+            "this governed workbench unites five live Customer-Zero playbooks spanning thirty-nine chapters, "
+            "a Regulated Multi-Engagement Profile, a six-tool Decision Studio, "
+            "two printable white papers, seven MIT kits, and sixty-four cutover controls."
         ),
     },
     {
@@ -136,39 +136,54 @@ SCENES = [
         ),
     },
     {
-        "id": "07-decision-studio",
-        "chapter": "07 · 5-Tool Architecture Decision Studio",
-        "shortLabel": "07 · Decision Studio",
-        "kicker": "BROWSER-NATIVE WORKBENCH · 5 LIVE CALCULATORS · ZERO TELEMETRY",
-        "title": "Interactive Sizing, APIM XML, BCP Surge, Sandbox & Triage Studio",
+        "id": "07-playbook-05-data-strategy",
+        "chapter": "07 · Playbook 05: AI Data Strategy & Fabric IQ",
+        "shortLabel": "07 · PB05 Data Strategy",
+        "kicker": "PLAYBOOK 05 · 6 CHAPTERS · FABRIC IQ, PURVIEW DSPM & COSMOS HYBRID",
+        "title": "AI Data Strategy: Fabric OneLake, Purview DSPM & Cosmos DiskANN",
         "narration": (
-            "At slash-studio, the Architecture Decision Studio hosts five deep-linked, client-side calculators "
+            "Playbook Zero-Five's six subpages unify the enterprise AI data plane across three governed Azure stores. "
+            "Microsoft Fabric, OneLake zero-copy shortcuts, and Fabric IQ serve certified structured analytics on dedicated interactive F-SKU capacities, "
+            "while Azure AI Search indexes unstructured corpora and Cosmos DB pairs DiskANN vectors with BM25 RRF hybrid search inside tenant-scoped partitions. "
+            "Microsoft Purview DSPM for AI enforces sensitivity-label inheritance, sub-five-minute regulated ACL tombstoning, "
+            "anti-poisoning scans, and D1-to-D12 release gates."
+        ),
+    },
+    {
+        "id": "08-decision-studio",
+        "chapter": "08 · 6-Tool Architecture Decision Studio",
+        "shortLabel": "08 · Decision Studio",
+        "kicker": "BROWSER-NATIVE WORKBENCH · 6 LIVE CALCULATORS · ZERO TELEMETRY",
+        "title": "Interactive PTU, APIM, BCP, Sandbox, Data Strategy & Triage Studio",
+        "narration": (
+            "At slash-studio, the Architecture Decision Studio hosts six deep-linked, client-side calculators "
             "with zero external telemetry and automated keyboard and range tests: "
-            "the two-regime PTU, shard, and spillover TCO simulator; "
+            "the two-regime PTU and spillover TCO simulator; "
             "the SKU-aware APIM XML policy builder; "
             "the multi-region cold-cache surge advisor; "
             "the ACA microVM and contract builder; "
-            "and the thirty-minute eight-boundary intake triage."
+            "the AI Data Strategy advisor for Fabric IQ, Purview DSPM, and Cosmos hybrid sizing; "
+            "and the thirty-minute nine-boundary intake triage."
         ),
     },
     {
-        "id": "08-papers-kits-checklists",
-        "chapter": "08 · White Papers, 5 MIT Kits & 52 Checklists",
-        "shortLabel": "08 · Papers & MIT Kits",
+        "id": "09-papers-kits-checklists",
+        "chapter": "09 · White Papers, 7 MIT Kits & 64 Checklists",
+        "shortLabel": "09 · Papers & MIT Kits",
         "kicker": "PRINTABLE BLUEPRINTS, ZERO-DEP MIT CODE & COMPANION REPOS",
-        "title": "Executive White Papers, 5 MIT Engineering Kits & 52 PR Gates",
+        "title": "Executive White Papers, 7 MIT Engineering Kits & 64 PR Gates",
         "narration": (
             "Across the five Papers and Kits subpages, every track ships runnable deliverables: "
             "two print-ready PDF white papers—the Full-Stack Blueprint and the GPT-5.6 Caching Paper—plus "
-            "five zero-dependency MIT kits: the PCR Python AST linter, agent trace and snapshot parity CLIs, "
-            "APIM spillover XML, and two Application Insights KQL workbooks, "
-            "paired with fifty-two PR checklists and four companion harnesses including microsoft-slash-waza."
+            "seven zero-dependency MIT kits: the PCR Python AST linter, agent trace, BCP snapshot, and data-readiness-gate CLIs, "
+            "APIM spillover XML, and three Application Insights KQL workbooks, "
+            "paired with sixty-four PR checklists and four companion harnesses including microsoft-slash-waza."
         ),
     },
     {
-        "id": "09-factory-delivery-autonomy",
-        "chapter": "09 · 5-Stage Factory, 3-Wk Scope & Autonomous Loop",
-        "shortLabel": "09 · Factory & Auto-Loop",
+        "id": "10-factory-delivery-autonomy",
+        "chapter": "10 · 5-Stage Factory, 3-Wk Scope & Autonomous Loop",
+        "shortLabel": "10 · Factory & Auto-Loop",
         "kicker": "GOVERNED OPERATING MODEL, 3-WEEK SPRINT & 24/7 DUAL-AGENT LOOP",
         "title": "5-Stage Factory, 3-Week Delivery & Continuous Self-Recursive Loop",
         "narration": (
@@ -180,15 +195,15 @@ SCENES = [
         ),
     },
     {
-        "id": "10-call-to-action",
-        "chapter": "10 · CSA Forum Call to Action",
-        "shortLabel": "10 · Call to Action",
+        "id": "11-call-to-action",
+        "chapter": "11 · CSA Forum Call to Action",
+        "shortLabel": "11 · Call to Action",
         "kicker": "SCALE FULL-STACK INDUSTRIALIZED LEVERAGE",
         "title": "Solve Once. Govern Cleanly. Scale Everywhere.",
         "narration": (
-            "Put all forty-five subpages to work on your next Foundry architecture review: "
-            "simulate sizing and policies in the Decision Studio, "
-            "wire the five MIT kits and fifty-two checklists into CI, "
+            "Put all fifty-two subpages to work on your next Foundry architecture review: "
+            "simulate sizing, gateway policies, and data strategy in the Decision Studio, "
+            "wire the seven MIT kits and sixty-four checklists into CI, "
             "and bring your toughest Customer-Zero breakthrough into the factory—"
             "so every team can solve once, govern cleanly, and scale everywhere."
         ),
@@ -196,6 +211,17 @@ SCENES = [
 ]
 
 CAPTION_REPLACEMENTS = [
+    (r"\bfifty-two verified subpages\b", "52 verified subpages"),
+    (r"\bfifty-two subpages\b", "52 subpages"),
+    (r"\bthirty-nine chapters\b", "39 chapters"),
+    (r"\bsixty-four\b", "64"),
+    (r"\bsix-tool\b", "6-tool"),
+    (r"\bnine-boundary\b", "9-boundary"),
+    (r"\bseven MIT kits\b", "7 MIT kits"),
+    (r"\bseven zero-dependency MIT kits\b", "7 zero-dependency MIT kits"),
+    (r"\bsub-five-minute\b", "<5-minute"),
+    (r"\bdata-readiness-gate\b", "data_readiness_gate.py"),
+    (r"\bPlaybook Zero-Five\b", "Playbook 05"),
     (r"\bforty-five-page\b", "45-page"),
     (r"\bforty-five pages\b", "45 pages"),
     (r"\btwo-point-five-six-times\b", "2.56×"),
@@ -619,7 +645,7 @@ async def main() -> None:
     PUBLIC_VIDEO_DIR.mkdir(parents=True, exist_ok=True)
     ffmpeg_bin = find_ffmpeg()
 
-    target_duration = float(os.environ.get("TARGET_VIDEO_DURATION", "300.0"))
+    target_duration = float(os.environ.get("TARGET_VIDEO_DURATION", "345.0"))
     intro_lead = 0.85
 
     print(
@@ -643,6 +669,9 @@ async def main() -> None:
 
     total_voice_sec = sum(len(seg) / SAMPLE_RATE for _, _, seg, _ in prepared_stems)
     n_gaps = max(1, len(SCENES) - 1)
+    min_needed = intro_lead + total_voice_sec + n_gaps * 0.62 + 1.80
+    if target_duration < min_needed:
+        target_duration = math.ceil(min_needed)
     remaining_sec = target_duration - intro_lead - total_voice_sec
     if remaining_sec >= n_gaps * 0.45 + 1.50:
         outro_hold = min(3.40, max(2.00, remaining_sec * 0.24))

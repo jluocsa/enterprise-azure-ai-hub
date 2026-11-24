@@ -84,7 +84,7 @@ def main() -> None:
     )
     draw.text(
         (cx + 54, py0 + 60),
-        "1080p HD  ·  Studio Voiceover + Score  ·  10 Chapters & Captions",
+        "1080p HD  ·  Studio Voiceover + Score  ·  11 Chapters & Captions",
         font=f_sub,
         fill=(125, 211, 252, 255),
     )
