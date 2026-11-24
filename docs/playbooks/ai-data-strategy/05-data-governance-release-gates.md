@@ -58,7 +58,7 @@ The MIT-licensed, zero-dependency Python 3 CLI ([`docs/public/kits/data_readines
 | **`DRG002`** | Fabric / OneLake lineage (`medallion_tier` in `gold`/`ai-gold`, non-empty `source_uri`, and exactly 64 ASCII hexadecimal characters in `lineage_sha256`), valid `store_target` (`fabric-iq`, `ai-search`, `cosmos-hybrid`), and `dedicated_interactive_fsku=true` when `fabric-iq` is enabled. |
 | **`DRG003`** | Microsoft Purview DSPM for AI active (`purview_dspm_enabled=true`), valid non-empty `sensitivity_label` on every dataset, and zero restricted datasets (`Confidential` / `Highly Confidential`) marked `allow_public_index=true`. |
 | **`DRG004`** | Entra ACL enforcement (`acl_enforced=true`), non-empty `acl_group_ids` on non-public datasets, `revocation_lag_minutes <= max_revocation_lag_min` (`15` enterprise / `5` regulated), and zero overdue tombstones (`overdue_tombstones == 0`). |
-| **`DRG005`** | Store-specific production parity: `cosmos-hybrid` requires `vector_index_type` in `{"diskANN", "quantizedFlat", "flat"}`, `hybrid_rrf_enabled=true`, `tenant_partition_key_scoped=true`, and consistent `embedding_dim`; `ai-search` requires `alias_cutover_enabled=true` and `region_lag_pct <= max_region_lag_pct`. |
+| **`DRG005`** | Store-specific production parity: `cosmos-hybrid` requires `vector_index_type` in `{"diskANN", "quantizedFlat", "flat"}`, `hybrid_rrf_enabled=true`, `tenant_partition_key_scoped=true`, and consistent positive-integer `embedding_dim` within the selected index limit (`flat`: `505`; `quantizedFlat`/`diskANN`: `4096`); `ai-search` requires `alias_cutover_enabled=true` and `region_lag_pct <= max_region_lag_pct`. |
 | **`DRG006`** | Corpus hygiene & anti-poisoning: `avg_chunk_tokens` within `[min_chunk_tokens, max_chunk_tokens]`, `duplicate_or_empty_ratio_pct <= max_duplicate_ratio_pct`, and zero indirect prompt-injection signatures in `sample_chunks[]`. |
 | **`DRG007`** | Grounding freshness & cache-safe flywheel: `freshness_lag_minutes <= max_freshness_lag_min`, `pos6_cache_safe_ordering=true`, and `eval_flywheel_enabled=true` when required by contract. |
 
@@ -100,6 +100,16 @@ Every dataset, across all three store targets, must supply `lineage_sha256` as e
 This is a local lineage-metadata syntax contract, not a Microsoft service requirement. Generate the digest from an independently defined lineage artifact and retain that artifact for review: the gate does not recompute hashes, authenticate provenance, compare approved lineage pins, or prove zero-copy ingestion. A syntactically valid fabricated or stale digest can still pass <span class="ev-badge ev-arch">[Arch]</span>.
 
 Offline self-tests cover missing and malformed values for every store, valid casing and recovery, combined governance failures, and text/JSON CLI exit codes with non-echoing diagnostics. Existing sample snapshots and Decision Studio contract exports remain compatible. These regressions run in `npm run verify`, without accessing live Fabric, Search, or Cosmos resources <span class="ev-badge ev-val">[Validate]</span>.
+
+### Cosmos Vector Index Dimension Limits (`DRG005`) {#cosmos-dimension-limits}
+
+Azure Cosmos DB for NoSQL supports at most **505 dimensions** for `flat` vector indexes and **4,096 dimensions** for `quantizedFlat` and `diskANN`, according to the [published vector-index limits](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-search#vector-indexing-policies) <span class="ev-badge ev-m">[M]</span>.
+
+For each `cosmos-hybrid` dataset, `DRG005` requires a positive integer `embedding_dim` no greater than the selected index's limit. A `flat` index with `1536` or `3072` dimensions therefore blocks readiness even though those are valid Decision Studio sizing presets. Oversized dimensions exit `1`, with dataset ordinals rather than source identifiers in the new diagnostic; other findings and cross-dataset dimension consistency checks remain active. Fabric and AI Search datasets are unaffected <span class="ev-badge ev-arch">[Arch]</span>.
+
+This offline metadata check does not inspect the deployed container policy, vector lengths, embedding-model compatibility, or retrieval recall. Choose a compatible index and embedding model before creating the container; passing this check does not prove live deployment readiness <span class="ev-badge ev-arch">[Arch]</span>.
+
+Self-tests cover each index's inclusive upper boundary, one dimension above it, small valid dimensions, incompatible `flat` presets, malformed index types, combined governance/parity failures, and text/JSON CLI exit codes. They run through `node scripts/run-python.mjs docs/public/kits/data_readiness_gate.py --self-test` in `npm run verify`, without live Azure access <span class="ev-badge ev-val">[Validate]</span>.
 
 ## 3. Continuous Production Drift Monitoring (`data-grounding-freshness-gate.kql`)
 

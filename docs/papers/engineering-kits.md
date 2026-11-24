@@ -163,6 +163,8 @@ An optional `expected_source_ids` contract inventory requires exactly the approv
 
 Every dataset's `lineage_sha256` must contain exactly 64 ASCII hexadecimal characters. Missing or malformed digests fail `DRG002` with exit `1`; uppercase and mixed-case hex remain valid. Diagnostics use dataset ordinals without echoing digest or source values. This verifies syntax only, not provenance, approved lineage parity, or zero-copy ingestion; see the [lineage contract and offline regressions](/playbooks/ai-data-strategy/05-data-governance-release-gates#lineage-digest-syntax) <span class="ev-badge ev-arch">[Arch]</span>.
 
+`DRG005` also blocks Cosmos `embedding_dim` above the [published index limits](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-search#vector-indexing-policies): `505` for `flat`, `4096` for `quantizedFlat` / `diskANN` <span class="ev-badge ev-m">[M]</span>. Oversized metadata exits `1` without masking other findings; this does not verify deployed vector lengths or model compatibility. See the [dimension contract and offline regressions](/playbooks/ai-data-strategy/05-data-governance-release-gates#cosmos-dimension-limits) <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 data_readiness_gate.py --self-test
 python3 data_readiness_gate.py ./artifacts/data-snapshot.json --contract ./data-readiness-contract.json --json
