@@ -37,6 +37,8 @@ description: Architecting Azure Cosmos DB for NoSQL DiskANN vector and BM25 RRF 
 In Azure Cosmos DB for NoSQL, **vector policies and vector indexes are immutable after container creation** <span class="ev-badge ev-m">[M]</span>. Changing `dimensions` (for example migrating `1536 → 3072`), `dataType`, or `distanceFunction` requires creating a **new container**, backfilling embeddings via Change Feed / batch pipeline, and executing a **blue-green config swap**—never an in-place schema migration <span class="ev-badge ev-arch">[Arch]</span>.
 :::
 
+The [published vector-index limits](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-search#vector-indexing-policies) are **505 dimensions** for `flat` and **4,096 dimensions** for `quantizedFlat` / `diskANN` <span class="ev-badge ev-m">[M]</span>. The [offline `DRG005` dimension check](./05-data-governance-release-gates#cosmos-dimension-limits) blocks snapshots exceeding the selected index's limit; the Studio's `1536` / `3072` presets cannot be used with a `flat` index <span class="ev-badge ev-arch">[Arch]</span>.
+
 ### Production Weighted Hybrid Query Pattern (`DiskANN` + `BM25` + `RRF`) `[M]`
 
 Combine `VectorDistance` and `FullTextScore` inside `ORDER BY RANK RRF(...)`, optionally weighting semantic vectors higher than keyword BM25 (for example `[2, 1]`). Always execute with an explicit **tenant/engagement partition key** and `tombstoned = false` predicate:
