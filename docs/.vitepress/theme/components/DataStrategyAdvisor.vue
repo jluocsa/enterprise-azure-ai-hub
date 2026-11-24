@@ -33,6 +33,7 @@ const validatedSizing = computed(() => {
   const docs = docCount.value
   const chunks = avgChunksPerDoc.value
   const tok = avgTokensPerChunk.value
+  const dim = embeddingDim.value
   const tpm = embeddingTpmQuota.value
   const qps = peakHybridQps.value
 
@@ -44,6 +45,9 @@ const validatedSizing = computed(() => {
   }
   if (typeof tok !== 'number' || !Number.isSafeInteger(tok) || tok < 128 || tok > 2048) {
     errors.avgTokensPerChunk = 'Avg Tokens / Chunk: enter a whole number from 128 to 2,048.'
+  }
+  if (dim !== 1536 && dim !== 3072) {
+    errors.embeddingDim = 'Embedding Dimension: select a supported preset (1,536 or 3,072 dimensions).'
   }
   if (typeof tpm !== 'number' || !Number.isFinite(tpm) || tpm < 10000 || tpm > Number.MAX_SAFE_INTEGER) {
     errors.embeddingTpmQuota = 'Batch Embedding TPM Quota: enter a finite number of at least 10,000.'
@@ -77,7 +81,7 @@ const validatedSizing = computed(() => {
   }
 
   // Raw FP32 vectors = 4 bytes/dim; DiskANN/HNSW + metadata overhead ~ 1.45x raw footprint
-  const rawVectorGb = (totalChunks * embeddingDim.value * 4) / (1024 ** 3)
+  const rawVectorGb = (totalChunks * dim * 4) / (1024 ** 3)
   const indexMemoryGb = rawVectorGb * 1.45
   const effectiveTpm = tpm * 0.8
   const backfillHours = totalEmbedTokens / (effectiveTpm * 60)
@@ -345,7 +349,11 @@ async function copyCli() {
       </label>
       <label>
         <span>4. Embedding Dimension</span>
-        <select v-model.number="embeddingDim">
+        <select
+          v-model.number="embeddingDim"
+          :aria-invalid="!!sizingErrors.embeddingDim"
+          :aria-describedby="sizingErrors.embeddingDim ? 'dsa-sizing-errors' : undefined"
+        >
           <option :value="1536">1,536 dims (text-embedding-3-small / ada)</option>
           <option :value="3072">3,072 dims (text-embedding-3-large)</option>
         </select>
