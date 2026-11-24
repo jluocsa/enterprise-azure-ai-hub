@@ -168,6 +168,70 @@ test('invalid corpus scale blocks sizing & CLI copy while keeping contract JSON 
   } finally { advisor.close() }
 })
 
+test('unsupported embedding dimensions block sizing and direct CLI copy while preserving independent contracts', async () => {
+  const advisor = mountAdvisor()
+  try {
+    await advisor.buttons()[0].props.onClick()
+    const baselineContract = advisor.copied.at(-1)
+    await advisor.buttons()[1].props.onClick()
+    const baselineCli = advisor.copied.at(-1)
+    advisor.copied.length = 0
+
+    for (const value of [
+      '', '1536', '3072', 'unsupported', 0, -1536, 1536.5, 2048, 4096,
+      NaN, Infinity, -Infinity, null, undefined, true, [], {},
+    ]) {
+      await advisor.set('Embedding Dimension', value)
+      assert.match(advisor.text(), /Embedding Dimension: select a supported preset/)
+      assert.ok(advisor.all().some(el => el.props.role === 'alert' && el.props.id === 'dsa-sizing-errors'))
+      assert.equal(advisor.field('Embedding Dimension').props['aria-invalid'], true)
+      assert.equal(advisor.field('Embedding Dimension').props['aria-describedby'], 'dsa-sizing-errors')
+      assert.ok(!advisor.all().some(el => ['dsa-metric highlight', 'dsa-metric teal'].includes(el.props.class)))
+      assert.equal(advisor.buttons()[1].props.disabled, true)
+      await advisor.buttons()[1].props.onClick()
+      assert.deepEqual(advisor.copied, [])
+
+      assert.equal(advisor.buttons()[0].props.disabled, false)
+      await advisor.buttons()[0].props.onClick()
+      assert.equal(advisor.copied.pop(), baselineContract)
+      assert.match(advisor.text(), /PASS \(Exit 0\)/)
+
+      for (const [dimension, memoryGb] of [[1536, '37.34'], [3072, '74.67']]) {
+        await advisor.set('Embedding Dimension', dimension)
+        assert.equal(advisor.field('Embedding Dimension').props['aria-invalid'], false)
+        assert.equal(advisor.field('Embedding Dimension').props['aria-describedby'], undefined)
+        assert.ok(!advisor.all().some(el => el.props.id === 'dsa-sizing-errors'))
+        assert.ok(advisor.text().includes(`${memoryGb} GB DiskANN/HNSW est.`))
+        assert.match(advisor.text(), /48 hrs/)
+        assert.equal(advisor.buttons()[1].props.disabled, false)
+        await advisor.buttons()[1].props.onClick()
+        assert.equal(advisor.copied.pop(), baselineCli)
+      }
+    }
+  } finally { advisor.close() }
+})
+
+test('embedding-dimension and numeric sizing errors remain independently actionable until both recover', async () => {
+  const advisor = mountAdvisor()
+  try {
+    await advisor.set('Embedding Dimension', 2048)
+    await advisor.set('Total Corpus Documents', 0)
+    assert.equal(advisor.field('Embedding Dimension').props['aria-invalid'], true)
+    assert.equal(advisor.field('Total Corpus Documents').props['aria-invalid'], true)
+
+    await advisor.set('Embedding Dimension', 3072)
+    assert.equal(advisor.field('Embedding Dimension').props['aria-invalid'], false)
+    assert.equal(advisor.field('Total Corpus Documents').props['aria-invalid'], true)
+    assert.equal(advisor.buttons()[1].props.disabled, true)
+    await advisor.buttons()[1].props.onClick()
+    assert.deepEqual(advisor.copied, [])
+
+    await advisor.set('Total Corpus Documents', 250000)
+    assert.ok(!advisor.all().some(el => el.props.id === 'dsa-sizing-errors'))
+    assert.equal(advisor.buttons()[1].props.disabled, false)
+  } finally { advisor.close() }
+})
+
 test('exported data-readiness-contract.json executes cleanly against data_readiness_gate.py CLI', async () => {
   const advisor = mountAdvisor()
   const directory = await mkdtemp(join(tmpdir(), 'studio-data-contract-'))

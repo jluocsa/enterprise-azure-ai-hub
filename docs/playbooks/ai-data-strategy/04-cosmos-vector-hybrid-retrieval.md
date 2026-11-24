@@ -91,6 +91,10 @@ BackfillMinutes = TotalTokens ÷ (EmbeddingTPMQuota × 0.80)
    - **Azure AI Search:** Build `kb-prod-v2`, verify document count & recall parity against `kb-prod-v1`, then atomically repoint the **Index Alias** (`kb-prod-live → kb-prod-v2`) <span class="ev-badge ev-m">[M]</span>.
    - **Azure Cosmos DB:** Provision `memory-v2` with the updated immutable `DiskANN` vector policy, backfill via Change Feed Processor, verify count/hybrid recall parity, and switch the active container binding in App Configuration / Key Vault <span class="ev-badge ev-arch">[Arch]</span>.
 
+The [Data Strategy Advisor](/studio/#data-strategy) accepts only its numeric `1,536` and `3,072` embedding-dimension presets for sizing. Unsupported values hide capacity estimates and block CLI copying, including direct copy-handler invocation; a linked field error identifies the invalid selection. Governance contract JSON and the readiness simulation remain independent of sizing. This is a local calculator preset boundary, not an Azure service dimension limit <span class="ev-badge ev-arch">[Arch]</span>.
+
+Offline interaction tests cover unsupported values and types, combined numeric/selector errors, recovery to both presets, unchanged contract/CLI exports, and preserved backfill and vector-memory estimates. They run in `npm run check:studio` and `npm run verify` without live Azure access <span class="ev-badge ev-val">[Validate]</span>.
+
 ---
 
 ## 4. Layout-Aware Ingestion, Anti-Poisoning & Eval Flywheel (`Gates D9–D12`)
