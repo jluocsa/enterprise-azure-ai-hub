@@ -112,6 +112,8 @@ Both the expected-stamp manifest and evidence export must use **unique member na
 
 JSON exceeding the Python parser's nesting limit in either input also exits `2` with a sanitized input-error diagnostic, no stdout, and no traceback. Both files must parse completely before evidence is evaluated; a valid stamp row followed by excessively nested metadata cannot produce a partial pass. The offline self-test covers deep arrays and objects in both inputs and preserves ordinary nested metadata. This handles parser recursion failures, not a fixed portable depth budget, file-size limit, memory-exhaustion guard, or evidence-authenticity check; it does not raise Python's recursion limit <span class="ev-badge ev-arch">[Arch]</span>.
 
+Both inputs also reject unquoted `NaN`, `Infinity`, and `-Infinity` anywhere, including otherwise ignored nested metadata. These non-standard JSON numeric constants exit `2` before sign-off, with no stdout or traceback and a fixed diagnostic that does not echo paths, member names, or values. Quoted strings such as `"NaN"` and ordinary JSON metadata remain permitted; this parsing rule does not validate metadata semantics or add a finite-range check for standard JSON numbers. Offline CLI regressions cover both files, direct and nested constants after a valid first row, and recovery with valid metadata. This is a local input-integrity policy, not an Azure service requirement or evidence-authenticity check <span class="ev-badge ev-arch">[Arch]</span>.
+
 Companion download: <a :href="withBase('/kits/bcp_snapshot_gate.py')" download target="_blank" rel="noopener"><strong><code>Download bcp_snapshot_gate.py</code></strong></a>
 
 ---
