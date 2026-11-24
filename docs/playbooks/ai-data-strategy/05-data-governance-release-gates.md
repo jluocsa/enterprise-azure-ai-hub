@@ -55,7 +55,7 @@ The MIT-licensed, zero-dependency Python 3 CLI ([`docs/public/kits/data_readines
 | Rule ID | Deterministic Check Enforced |
 | :--- | :--- |
 | **`DRG001`** | Snapshot schema integrity, non-empty `datasets[]`, unique `source_id` entries, optional exact `expected_source_ids` inventory, explicit types/booleans, finite numeric bounds. |
-| **`DRG002`** | Fabric / OneLake lineage (`medallion_tier` in `gold`/`ai-gold`, non-empty `source_uri` and `lineage_sha256`), valid `store_target` (`fabric-iq`, `ai-search`, `cosmos-hybrid`), and `dedicated_interactive_fsku=true` when `fabric-iq` is enabled. |
+| **`DRG002`** | Fabric / OneLake lineage (`medallion_tier` in `gold`/`ai-gold`, non-empty `source_uri`, and exactly 64 ASCII hexadecimal characters in `lineage_sha256`), valid `store_target` (`fabric-iq`, `ai-search`, `cosmos-hybrid`), and `dedicated_interactive_fsku=true` when `fabric-iq` is enabled. |
 | **`DRG003`** | Microsoft Purview DSPM for AI active (`purview_dspm_enabled=true`), valid non-empty `sensitivity_label` on every dataset, and zero restricted datasets (`Confidential` / `Highly Confidential`) marked `allow_public_index=true`. |
 | **`DRG004`** | Entra ACL enforcement (`acl_enforced=true`), non-empty `acl_group_ids` on non-public datasets, `revocation_lag_minutes <= max_revocation_lag_min` (`15` enterprise / `5` regulated), and zero overdue tombstones (`overdue_tombstones == 0`). |
 | **`DRG005`** | Store-specific production parity: `cosmos-hybrid` requires `vector_index_type` in `{"diskANN", "quantizedFlat", "flat"}`, `hybrid_rrf_enabled=true`, `tenant_partition_key_scoped=true`, and consistent `embedding_dim`; `ai-search` requires `alias_cutover_enabled=true` and `region_lag_pct <= max_region_lag_pct`. |
@@ -92,6 +92,14 @@ Every expected identifier must appear exactly once, with no unexpected identifie
 The field must be a non-empty array of unique, non-empty strings without leading or trailing whitespace. Invalid inventories exit `2` with no stdout before snapshot evidence is read. Omission preserves existing defaults and Decision Studio exports; `null` and empty arrays do not disable the check. This local acceptance contract verifies declared inventory completeness, not artifact authenticity, live connector access, or source-content quality <span class="ev-badge ev-arch">[Arch]</span>.
 
 The kit's offline self-test covers reordered complete snapshots, omitted and substituted datasets, duplicate entries, combined governance failures, and invalid inventory types in text and JSON CLI modes. It runs through `node scripts/run-python.mjs docs/public/kits/data_readiness_gate.py --self-test` in `npm run verify` <span class="ev-badge ev-val">[Validate]</span>.
+
+### Lineage Digest Syntax (`DRG002`) {#lineage-digest-syntax}
+
+Every dataset, across all three store targets, must supply `lineage_sha256` as exactly 64 ASCII hexadecimal characters (`0–9`, `a–f`, `A–F`). Lowercase, uppercase, and mixed-case digests are accepted without normalization. Missing values, non-string types, placeholders, incorrect lengths, non-hex characters, and surrounding or embedded whitespace produce `DRG002` and exit `1`; other findings and dataset counts remain intact. The diagnostic identifies the dataset ordinal and field without echoing the digest or source identifier <span class="ev-badge ev-arch">[Arch]</span>.
+
+This is a local lineage-metadata syntax contract, not a Microsoft service requirement. Generate the digest from an independently defined lineage artifact and retain that artifact for review: the gate does not recompute hashes, authenticate provenance, compare approved lineage pins, or prove zero-copy ingestion. A syntactically valid fabricated or stale digest can still pass <span class="ev-badge ev-arch">[Arch]</span>.
+
+Offline self-tests cover missing and malformed values for every store, valid casing and recovery, combined governance failures, and text/JSON CLI exit codes with non-echoing diagnostics. Existing sample snapshots and Decision Studio contract exports remain compatible. These regressions run in `npm run verify`, without accessing live Fabric, Search, or Cosmos resources <span class="ev-badge ev-val">[Validate]</span>.
 
 ## 3. Continuous Production Drift Monitoring (`data-grounding-freshness-gate.kql`)
 

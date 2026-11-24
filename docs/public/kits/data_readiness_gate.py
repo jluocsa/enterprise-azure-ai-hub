@@ -10,7 +10,7 @@ hybrid search, Azure AI Search alias parity, and corpus anti-poisoning hygiene:
 
   [DRG001] Schema integrity: non-empty datasets[], unique source_id, strict types,
            optional exact expected_source_ids inventory
-  [DRG002] Fabric / OneLake lineage & routing: ai-gold/gold tier, lineage_sha256,
+  [DRG002] Fabric / OneLake lineage & routing: ai-gold/gold tier, 64-hex lineage_sha256,
            valid store_target (fabric-iq | ai-search | cosmos-hybrid), dedicated
            interactive F-SKU isolation when Fabric IQ is active
   [DRG003] Purview DSPM for AI & sensitivity labels: DSPM active, non-empty label,
@@ -280,12 +280,17 @@ def evaluate_snapshot(snapshot: Any, contract: dict[str, Any]) -> dict[str, Any]
                 f"[DRG002] {source_label}: medallion_tier must be 'gold' or 'ai-gold' (Gate D2)."
             )
 
-        for lineage_field in ("source_uri", "lineage_sha256"):
-            val = ds.get(lineage_field)
-            if not isinstance(val, str) or not val.strip():
-                findings.append(
-                    f"[DRG002] {source_label}: missing required OneLake lineage field '{lineage_field}'."
-                )
+        source_uri = ds.get("source_uri")
+        if not isinstance(source_uri, str) or not source_uri.strip():
+            findings.append(
+                f"[DRG002] {source_label}: missing required OneLake lineage field 'source_uri'."
+            )
+
+        lineage_sha256 = ds.get("lineage_sha256")
+        if not isinstance(lineage_sha256, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", lineage_sha256):
+            findings.append(
+                f"[DRG002] {prefix}: lineage_sha256 must be exactly 64 ASCII hexadecimal characters (Gate D2)."
+            )
 
         if store_target == "fabric-iq":
             fsku_iso = ds.get("dedicated_interactive_fsku")
@@ -574,6 +579,36 @@ def run_self_test() -> int:
     res = evaluate_snapshot(clean, default_cfg)
     assert res["passed"], f"Clean snapshot should pass: {res['findings']}"
 
+    invalid_digests = (
+        None, True, 64, 1.5, [], {}, "", " ", "not-a-digest",
+        "a" * 63, "a" * 65, "g" * 64, "\uff41" * 64,
+        " " + "a" * 64, "a" * 64 + " ", "a" * 64 + "\n",
+        "a" * 32 + "\n" + "a" * 32,
+    )
+    for idx in range(len(clean["datasets"])):
+        digest_finding = (
+            f"[DRG002] dataset-{idx + 1}: lineage_sha256 must be exactly 64 ASCII hexadecimal characters (Gate D2)."
+        )
+        for digest in invalid_digests:
+            snapshot = json.loads(json.dumps(clean))
+            snapshot["datasets"][idx]["lineage_sha256"] = digest
+            report = evaluate_snapshot(snapshot, default_cfg)
+            assert not report["passed"] and report["findings"] == [digest_finding], report
+            assert report["datasets_evaluated"] == len(clean["datasets"])
+        del snapshot["datasets"][idx]["lineage_sha256"]
+        assert evaluate_snapshot(snapshot, default_cfg)["findings"] == [digest_finding]
+        for digest in ("a" * 64, "A" * 64, "aB09" * 16):
+            snapshot["datasets"][idx]["lineage_sha256"] = digest
+            assert evaluate_snapshot(snapshot, default_cfg)["passed"]
+
+    combined_lineage = json.loads(json.dumps(clean))
+    combined_lineage["datasets"][0]["lineage_sha256"] = "not-a-digest"
+    combined_lineage["purview_dspm_enabled"] = False
+    lineage_report = evaluate_snapshot(combined_lineage, default_cfg)
+    assert len(lineage_report["findings"]) == 2
+    assert any("[DRG002]" in f for f in lineage_report["findings"])
+    assert any("[DRG003]" in f for f in lineage_report["findings"])
+
     inventory = [ds["source_id"] for ds in clean["datasets"]]
     inventory_cfg = parse_contract({"expected_source_ids": inventory})
     reordered = json.loads(json.dumps(clean))
@@ -668,6 +703,28 @@ def run_self_test() -> int:
         script = str(Path(__file__).resolve())
         for as_json in (False, True):
             contract_file.write_text(json.dumps({"expected_source_ids": inventory}), encoding="utf-8")
+            for digest, expected_exit in (("not-a-digest", 1), ("a" * 64 + "\n", 1), ("aB09" * 16, 0)):
+                snapshot = json.loads(json.dumps(clean))
+                for ds in snapshot["datasets"]:
+                    ds["lineage_sha256"] = digest
+                snap_file.write_text(json.dumps(snapshot), encoding="utf-8")
+                proc = subprocess.run(
+                    [sys.executable, script, str(snap_file), "--contract", str(contract_file),
+                     *(["--json"] if as_json else [])],
+                    capture_output=True, text=True, check=False,
+                )
+                assert proc.returncode == expected_exit and proc.stderr == "", proc.stderr or proc.stdout
+                if as_json:
+                    report = json.loads(proc.stdout)
+                    assert report["passed"] is (expected_exit == 0)
+                    assert report["datasets_evaluated"] == len(clean["datasets"])
+                    assert len(report["findings"]) == (3 if expected_exit else 0)
+                if expected_exit:
+                    assert proc.stdout.count("[DRG002]") == 3
+                    assert "lineage_sha256 must be exactly 64 ASCII hexadecimal characters" in proc.stdout
+                    assert digest not in proc.stdout
+                    assert all(ds["source_id"] not in proc.stdout for ds in snapshot["datasets"])
+
             flags = ["--json"] if as_json else []
             for snapshot, expected_exit in (
                 (reordered, 0), (subset, 1), (substituted, 1), (duplicated, 1), (combined, 1),
@@ -734,7 +791,7 @@ def run_self_test() -> int:
         assert miss_proc.returncode == 2 and miss_proc.stdout == ""
 
     print(
-        "✅ data_readiness_gate.py self-test PASSED (DRG001 exact source inventory/schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
+        "✅ data_readiness_gate.py self-test PASSED (DRG001 exact source inventory/schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake/64-hex lineage/CLI exit-1 + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
     )
     return 0
 
