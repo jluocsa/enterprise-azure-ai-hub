@@ -155,6 +155,8 @@ Zero-dependency Python 3 CLI (`DRG001–DRG007`) verifying offline AI data-plane
 
 Fail-closed input rules (`DRG001`) exit `2` with no stdout on unreadable/invalid UTF-8 files, duplicate JSON object keys (including nested objects), excessive JSON nesting, or unsupported top-level contract fields. See [Playbook 05 · Ch 05](/playbooks/ai-data-strategy/05-data-governance-release-gates#drg-contract) for the full contract specification.
 
+An optional `expected_source_ids` contract inventory requires exactly the approved datasets, preventing a clean subset or substituted corpus from passing `DRG001`. Missing/unexpected sources exit `1`; invalid inventories exit `2` before evidence is read. Omission preserves Studio compatibility and defaults. Approve the inventory independently; completeness does not prove authenticity or grounding quality. See the [inventory format and offline regressions](/playbooks/ai-data-strategy/05-data-governance-release-gates#expected-source-inventory) <span class="ev-badge ev-arch">[Arch]</span>.
+
 ```bash
 python3 data_readiness_gate.py --self-test
 python3 data_readiness_gate.py ./artifacts/data-snapshot.json --contract ./data-readiness-contract.json --json

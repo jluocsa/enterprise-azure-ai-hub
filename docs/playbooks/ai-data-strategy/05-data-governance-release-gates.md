@@ -54,7 +54,7 @@ The MIT-licensed, zero-dependency Python 3 CLI ([`docs/public/kits/data_readines
 
 | Rule ID | Deterministic Check Enforced |
 | :--- | :--- |
-| **`DRG001`** | Snapshot schema integrity, non-empty `datasets[]`, unique `source_id` entries, explicit types/booleans, finite numeric bounds. |
+| **`DRG001`** | Snapshot schema integrity, non-empty `datasets[]`, unique `source_id` entries, optional exact `expected_source_ids` inventory, explicit types/booleans, finite numeric bounds. |
 | **`DRG002`** | Fabric / OneLake lineage (`medallion_tier` in `gold`/`ai-gold`, non-empty `source_uri` and `lineage_sha256`), valid `store_target` (`fabric-iq`, `ai-search`, `cosmos-hybrid`), and `dedicated_interactive_fsku=true` when `fabric-iq` is enabled. |
 | **`DRG003`** | Microsoft Purview DSPM for AI active (`purview_dspm_enabled=true`), valid non-empty `sensitivity_label` on every dataset, and zero restricted datasets (`Confidential` / `Highly Confidential`) marked `allow_public_index=true`. |
 | **`DRG004`** | Entra ACL enforcement (`acl_enforced=true`), non-empty `acl_group_ids` on non-public datasets, `revocation_lag_minutes <= max_revocation_lag_min` (`15` enterprise / `5` regulated), and zero overdue tombstones (`overdue_tombstones == 0`). |
@@ -72,6 +72,26 @@ python3 docs/public/kits/data_readiness_gate.py ./artifacts/data-snapshot.json \
 ```
 
 ---
+
+### Approved Dataset Inventory (`DRG001`) {#expected-source-inventory}
+
+An optional `expected_source_ids` contract field blocks a clean subset or substituted corpus from passing readiness. `required_stores` checks store coverage, not dataset completeness: several required corpora can share the same store. Approve the inventory independently of the submitted snapshot <span class="ev-badge ev-arch">[Arch]</span>.
+
+```json
+{
+  "expected_source_ids": [
+    "fabric-finance-kpis",
+    "search-regulatory-corpus",
+    "cosmos-agent-episodic-memory"
+  ]
+}
+```
+
+Every expected identifier must appear exactly once, with no unexpected identifiers; matching is exact and case-sensitive, and dataset order is irrelevant. Existing duplicate-source checks remain active. Missing or unexpected sources produce `DRG001` and exit `1`, preserving other findings and dataset counts. Inventory diagnostics use counts and dataset ordinals, never the missing or unexpected identifier values <span class="ev-badge ev-arch">[Arch]</span>.
+
+The field must be a non-empty array of unique, non-empty strings without leading or trailing whitespace. Invalid inventories exit `2` with no stdout before snapshot evidence is read. Omission preserves existing defaults and Decision Studio exports; `null` and empty arrays do not disable the check. This local acceptance contract verifies declared inventory completeness, not artifact authenticity, live connector access, or source-content quality <span class="ev-badge ev-arch">[Arch]</span>.
+
+The kit's offline self-test covers reordered complete snapshots, omitted and substituted datasets, duplicate entries, combined governance failures, and invalid inventory types in text and JSON CLI modes. It runs through `node scripts/run-python.mjs docs/public/kits/data_readiness_gate.py --self-test` in `npm run verify` <span class="ev-badge ev-val">[Validate]</span>.
 
 ## 3. Continuous Production Drift Monitoring (`data-grounding-freshness-gate.kql`)
 

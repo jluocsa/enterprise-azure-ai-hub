@@ -8,7 +8,8 @@ D1-D12 governance contracts covering Microsoft Fabric / OneLake & Fabric IQ,
 Microsoft Purview DSPM for AI, Entra ACL tombstoning, Azure Cosmos DB DiskANN/RRF
 hybrid search, Azure AI Search alias parity, and corpus anti-poisoning hygiene:
 
-  [DRG001] Schema integrity: non-empty datasets[], unique source_id, strict types
+  [DRG001] Schema integrity: non-empty datasets[], unique source_id, strict types,
+           optional exact expected_source_ids inventory
   [DRG002] Fabric / OneLake lineage & routing: ai-gold/gold tier, lineage_sha256,
            valid store_target (fabric-iq | ai-search | cosmos-hybrid), dedicated
            interactive F-SKU isolation when Fabric IQ is active
@@ -76,6 +77,7 @@ ALLOWED_CONTRACT_FIELDS = {
     "require_eval_flywheel",
     "require_pos6_ordering",
     "required_stores",
+    "expected_source_ids",
 }
 
 
@@ -133,6 +135,7 @@ def parse_contract(raw_contract: Any) -> dict[str, Any]:
         "require_eval_flywheel": False,
         "require_pos6_ordering": True,
         "required_stores": [],
+        "expected_source_ids": None,
     }
 
     cfg = dict(defaults)
@@ -190,6 +193,25 @@ def parse_contract(raw_contract: Any) -> dict[str, Any]:
             )
         cfg["required_stores"] = sorted(set(stores))
 
+    if "expected_source_ids" in raw_contract:
+        sources = raw_contract["expected_source_ids"]
+        if (
+            not isinstance(sources, list)
+            or not sources
+            or any(
+                not isinstance(source, str)
+                or not source.strip()
+                or source != source.strip()
+                for source in sources
+            )
+        ):
+            raise ValueError(
+                "[DRG001] contract expected_source_ids must be a non-empty array of trimmed, non-empty strings."
+            )
+        if len(set(sources)) != len(sources):
+            raise ValueError("[DRG001] contract expected_source_ids must not contain duplicates.")
+        cfg["expected_source_ids"] = set(sources)
+
     return cfg
 
 
@@ -237,6 +259,11 @@ def evaluate_snapshot(snapshot: Any, contract: dict[str, Any]) -> dict[str, Any]
                     f"[DRG001] {prefix}: duplicate source_id detected in snapshot."
                 )
             seen_sources.add(source_id)
+            if (
+                contract["expected_source_ids"] is not None
+                and source_id not in contract["expected_source_ids"]
+            ):
+                findings.append(f"[DRG001] {prefix}: unexpected source_id outside approved inventory.")
 
         # DRG002: Fabric / OneLake lineage & store routing
         store_target = ds.get("store_target")
@@ -447,6 +474,11 @@ def evaluate_snapshot(snapshot: Any, contract: dict[str, Any]) -> dict[str, Any]
                 f"[DRG007] {source_label}: OTel-to-Fabric Gold eval flywheel not enabled (Gate D12)."
             )
 
+    if contract["expected_source_ids"] is not None:
+        missing_count = len(contract["expected_source_ids"] - seen_sources)
+        if missing_count:
+            findings.append(f"[DRG001] snapshot is missing {missing_count} expected source_id(s).")
+
     if len(cosmos_dims) > 1:
         findings.append(
             "[DRG005] inconsistent Cosmos DB embedding_dim values detected across datasets (vector policy immutability conflict)."
@@ -542,6 +574,37 @@ def run_self_test() -> int:
     res = evaluate_snapshot(clean, default_cfg)
     assert res["passed"], f"Clean snapshot should pass: {res['findings']}"
 
+    inventory = [ds["source_id"] for ds in clean["datasets"]]
+    inventory_cfg = parse_contract({"expected_source_ids": inventory})
+    reordered = json.loads(json.dumps(clean))
+    reordered["datasets"].reverse()
+    assert evaluate_snapshot(reordered, inventory_cfg)["passed"]
+
+    subset = json.loads(json.dumps(clean))
+    subset["datasets"].pop()
+    assert evaluate_snapshot(subset, parse_contract({}))["passed"]
+    missing = evaluate_snapshot(subset, inventory_cfg)
+    assert not missing["passed"] and missing["findings"] == [
+        "[DRG001] snapshot is missing 1 expected source_id(s)."
+    ]
+
+    substituted = json.loads(json.dumps(clean))
+    substituted["datasets"][2]["source_id"] = "replacement-memory"
+    replacement = evaluate_snapshot(substituted, inventory_cfg)
+    assert not replacement["passed"] and replacement["findings"] == [
+        "[DRG001] dataset-3: unexpected source_id outside approved inventory.",
+        "[DRG001] snapshot is missing 1 expected source_id(s).",
+    ]
+    duplicated = json.loads(json.dumps(clean))
+    duplicated["datasets"].append(dict(clean["datasets"][0]))
+    duplicate = evaluate_snapshot(duplicated, inventory_cfg)
+    assert not duplicate["passed"] and any("duplicate source_id" in f for f in duplicate["findings"])
+    combined = json.loads(json.dumps(subset))
+    combined["purview_dspm_enabled"] = False
+    combined_result = evaluate_snapshot(combined, inventory_cfg)
+    assert any("[DRG003]" in f for f in combined_result["findings"])
+    assert any("missing 1 expected" in f for f in combined_result["findings"])
+
     # Test DRG002: shared batch F-SKU failure
     bad_fsku = json.loads(json.dumps(clean, sort_keys=True))
     bad_fsku["datasets"][0]["dedicated_interactive_fsku"] = False
@@ -602,6 +665,46 @@ def run_self_test() -> int:
         assert ok_proc.returncode == 0, ok_proc.stderr or ok_proc.stdout
         assert json.loads(ok_proc.stdout)["passed"] is True
 
+        script = str(Path(__file__).resolve())
+        for as_json in (False, True):
+            contract_file.write_text(json.dumps({"expected_source_ids": inventory}), encoding="utf-8")
+            flags = ["--json"] if as_json else []
+            for snapshot, expected_exit in (
+                (reordered, 0), (subset, 1), (substituted, 1), (duplicated, 1), (combined, 1),
+            ):
+                snap_file.write_text(json.dumps(snapshot), encoding="utf-8")
+                proc = subprocess.run(
+                    [sys.executable, script, str(snap_file), "--contract", str(contract_file), *flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert proc.returncode == expected_exit and proc.stderr == "", proc.stderr or proc.stdout
+                if as_json:
+                    report = json.loads(proc.stdout)
+                    assert report["passed"] is (expected_exit == 0)
+                    assert report["datasets_evaluated"] == len(snapshot["datasets"])
+                if snapshot is substituted:
+                    assert "replacement-memory" not in proc.stdout
+                    assert inventory[2] not in proc.stdout
+
+            for invalid_inventory in (
+                None, False, 1, "source", {}, [], [None], [True], [1], [{}], [[]],
+                [""], [" "], [" padded"], ["padded "], ["same", "same"],
+            ):
+                contract_file.write_text(
+                    json.dumps({"expected_source_ids": invalid_inventory}), encoding="utf-8",
+                )
+                proc = subprocess.run(
+                    [sys.executable, script, str(tmp_path / "missing.json"),
+                     "--contract", str(contract_file), *flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert proc.returncode == 2 and proc.stdout == ""
+                assert "[DRG001] contract expected_source_ids" in proc.stderr
+                assert "unable to read data snapshot" not in proc.stderr
+                assert "Traceback" not in proc.stderr
+
+        snap_file.write_text(json.dumps(clean), encoding="utf-8")
+
         dup_file = tmp_path / "dup.json"
         dup_file.write_text('{"purview_dspm_enabled": false, "purview_dspm_enabled": true, "datasets": []}', encoding="utf-8")
         dup_proc = subprocess.run(
@@ -631,7 +734,7 @@ def run_self_test() -> int:
         assert miss_proc.returncode == 2 and miss_proc.stdout == ""
 
     print(
-        "✅ data_readiness_gate.py self-test PASSED (DRG001 schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
+        "✅ data_readiness_gate.py self-test PASSED (DRG001 exact source inventory/schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
     )
     return 0
 
