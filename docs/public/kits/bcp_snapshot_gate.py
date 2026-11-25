@@ -3,6 +3,8 @@
 
 Usage: python bcp_snapshot_gate.py evidence.json --expected expected-stamps.json
 Both inputs are JSON arrays; evidence rows come from bcp-failover-readiness-gate.kql.
+Expected rows allow only reqModel, stampRegion, expectedSnapshot, and optional metadata.
+Unsupported manifest fields exit 2 before evidence is read; metadata is not enforced.
 Every JSON object must have unique member names, including nested metadata.
 Non-standard JSON numeric constants (NaN, Infinity, -Infinity) are rejected.
 Region identity is case-insensitive; model and snapshot identities remain exact.
@@ -66,12 +68,18 @@ def identifier(row: dict[str, Any], field: str) -> str:
 def validate_expected(raw: Any) -> dict[tuple[str, str], str]:
     if not isinstance(raw, list) or not raw:
         raise ValueError("expected stamps must be a non-empty JSON array")
+    allowed_fields = ("reqModel", "stampRegion", "expectedSnapshot", "metadata")
     expected: dict[tuple[str, str], str] = {}
     model_snapshots: dict[str, set[str]] = {}
     model_regions: dict[str, set[str]] = {}
     for index, row in enumerate(raw, 1):
         if not isinstance(row, dict):
             raise ValueError(f"expected row-{index} must be an object")
+        if any(field not in allowed_fields for field in row):
+            raise ValueError(
+                f"expected row-{index}: unsupported fields; allowed fields: "
+                + ", ".join(allowed_fields)
+            )
         try:
             model = identifier(row, "reqModel")
             region = identifier(row, "stampRegion")
@@ -495,6 +503,59 @@ class SnapshotGateTests(unittest.TestCase):
         ):
             with self.subTest(manifest=manifest), self.assertRaises(ValueError):
                 validate_expected(manifest)
+
+    def test_manifest_rejects_unsupported_fields_without_echoing_them(self):
+        for field in ("expected_snapshot", "req_model", "max_age_minutes",
+                      "expectedContentFilter", "private-field"):
+            for index in (0, 1):
+                manifest = deepcopy(self.manifest)
+                manifest[index][field] = "private-value"
+                with self.subTest(field=field, index=index):
+                    with self.assertRaises(ValueError) as caught:
+                        validate_expected(manifest)
+                    self.assertEqual(
+                        str(caught.exception),
+                        f"expected row-{index + 1}: unsupported fields; allowed fields: "
+                        "reqModel, stampRegion, expectedSnapshot, metadata",
+                    )
+
+    def test_cli_manifest_field_validation_precedes_evidence_and_recovers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time,
+                         Escaped429Count=0, BcpGateStatus="observed stamp")
+                    for row in self.rows]
+            command = [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                       "--expected", str(manifest)]
+            for field in ("expected_snapshot", "max_age_minutes", "private-field"):
+                manifest_rows = deepcopy(self.manifest)
+                manifest_rows[1][field] = {"private-value": False}
+                manifest.write_text(json.dumps(manifest_rows), encoding="utf-8")
+                for evidence_present in (True, False):
+                    if evidence_present:
+                        evidence.write_text(json.dumps(rows), encoding="utf-8")
+                    else:
+                        evidence.unlink()
+                    result = subprocess.run(command, capture_output=True, text=True, check=False)
+                    with self.subTest(field=field, evidence_present=evidence_present):
+                        self.assertEqual(result.returncode, 2, result.stderr)
+                        self.assertEqual(result.stdout, "")
+                        self.assertEqual(
+                            result.stderr.strip(),
+                            "BCP snapshot gate input error: expected row-2: unsupported fields; "
+                            "allowed fields: reqModel, stampRegion, expectedSnapshot, metadata",
+                        )
+            manifest.write_text(json.dumps([
+                dict(row, metadata={"private-field": {"max_age_minutes": 1}})
+                for row in self.manifest
+            ]), encoding="utf-8")
+            evidence.write_text(json.dumps(rows), encoding="utf-8")
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stderr, "")
+            self.assertIn("PASSED", result.stdout)
 
     def test_cli_rejects_duplicate_json_members_in_both_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
