@@ -230,6 +230,11 @@ const validatedInputs = computed(() => {
       rw === null || mult === null || months === null) {
     return { errors, values: null }
   }
+  if (input < 1024 && hitPct > 0) {
+    errors.cacheHitPct = 'Cached Input Share: use 0% below 1,024 modeled input tokens; prompt caching requires at least 1,024 tokens with an identical prefix.'
+    errors.avgInput = 'Avg Input Tokens: model at least 1,024 tokens before assuming positive cache savings. Size mixed-length traffic as separate eligible and ineligible cohorts.'
+    return { errors, values: null }
+  }
   const arithmeticBudget = rpm * (input * 1.25 + output * 6) * mult * 12
   if (!Number.isFinite(arithmeticBudget) || arithmeticBudget > Number.MAX_SAFE_INTEGER) {
     errors.peakRpm = 'Traffic and token volumes exceed safe integer precision for workload and annual surge arithmetic; reduce RPM, output tokens, or surge.'
