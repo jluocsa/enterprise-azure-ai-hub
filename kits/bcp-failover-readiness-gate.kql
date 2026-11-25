@@ -1,0 +1,78 @@
+// ============================================================================
+// Enterprise Azure AI Solution Industrialization Hub — MIT Engineering Kit
+// Artifact: bcp-failover-readiness-gate.kql (Playbook 03)
+// Purpose:  Audits multi-region Microsoft Foundry stamp health, snapshot drift,
+//           cold-cache failover surge TPM, and HTTP 429 escape rate during
+//           Game-Day drills or live regional cutovers.
+// Export result objects to bcp_snapshot_gate.py with an expected-stamp manifest
+// to verify cross-region pinned snapshot parity and detect missing secondaries.
+// ============================================================================
+
+let lookback = 2h;
+let steadyCachedHitTargetPct = 60.0;
+let Spans =
+    AppDependencies
+    | where TimeGenerated >= ago(lookback)
+    | where Type in ("GenAI", "HTTP", "Azure.OpenAI")
+    | extend dims = todynamic(Properties)
+    | extend
+        stampRegion   = coalesce(tostring(dims["x-ms-region"]), tostring(dims["cloud.region"]), "unknown-region"),
+        reqModel      = tostring(dims["gen_ai.request.model"]),
+        resSnapshot   = coalesce(tostring(dims["gen_ai.response.model"]), tostring(dims["llm.model_snapshot"]), "unreported"),
+        inputTok      = tolong(coalesce(dims["gen_ai.usage.input_tokens"], dims["llm.input_tokens"], 0)),
+        cachedTok     = tolong(coalesce(dims["gen_ai.usage.cached_tokens"], dims["llm.cached_tokens"], 0)),
+        outputTok     = tolong(coalesce(dims["gen_ai.usage.output_tokens"], dims["llm.output_tokens"], 0)),
+        statusCode    = toint(ResultCode)
+    | where isnotempty(reqModel)
+    | extend successfulInference = statusCode >= 200 and statusCode < 300;
+let MinuteRegionalTpm =
+    Spans
+    | summarize
+        MinuteCalls   = count(),
+        MinuteNormTPM = sum((inputTok - cachedTok) + 5 * outputTok + tolong(0.1 * cachedTok)),
+        Minute429s    = countif(statusCode == 429),
+        Minute5xxs    = countif(statusCode >= 500)
+      by bin(TimeGenerated, 1m), reqModel, stampRegion;
+let RegionalPeak =
+    MinuteRegionalTpm
+    | summarize
+        PeakMinuteNormTPM = max(MinuteNormTPM),
+        AvgMinuteNormTPM  = round(avg(MinuteNormTPM), 0),
+        Escaped429Count   = sum(Minute429s),
+        Escaped5xxCount   = sum(Minute5xxs)
+      by reqModel, stampRegion;
+Spans
+| summarize
+    TotalCalls        = count(),
+    LastSeen          = max(TimeGenerated),
+    SuccessfulCalls   = countif(successfulInference),
+    LastSuccessfulSeen = maxif(TimeGenerated, successfulInference),
+    DistinctSnapshots = dcount(resSnapshot),
+    SnapshotsObserved = make_set(resSnapshot, 5),
+    CachedSharePct    = round(100.0 * sum(cachedTok) / max_of(sum(inputTok), 1), 1),
+    TTFT_P95_ms       = round(percentile(DurationMs, 95), 0)
+  by reqModel, stampRegion
+| join kind=inner RegionalPeak on reqModel, stampRegion
+| extend
+    ColdCacheSurgeRatio = round(todouble(PeakMinuteNormTPM) / max_of(AvgMinuteNormTPM, 1.0), 2),
+    BcpGateStatus = case(
+        Escaped429Count > 0 or Escaped5xxCount > 0, "FAIL: Client-Visible 429/5xx During Cutover",
+        DistinctSnapshots > 1, "WARN: Model Snapshot Drift Detected Within Stamp",
+        CachedSharePct < steadyCachedHitTargetPct and TotalCalls > 50, "INFO: Secondary KV Cache Still Warming (<60%)",
+        "PASS: Observed Stamp Healthy; Cross-Region Parity Requires Snapshot Gate"
+    )
+| project
+    reqModel,
+    stampRegion,
+    TotalCalls,
+    LastSeen,
+    SuccessfulCalls,
+    LastSuccessfulSeen,
+    SnapshotsObserved,
+    CachedSharePct,
+    PeakMinuteNormTPM,
+    ColdCacheSurgeRatio,
+    TTFT_P95_ms,
+    Escaped429Count,
+    BcpGateStatus
+| order by TotalCalls desc

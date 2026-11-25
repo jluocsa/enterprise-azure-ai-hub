@@ -1,0 +1,277 @@
+WEBVTT
+
+1
+00:00:00.850 --> 00:00:04.169
+In enterprise AI, building a prototype is easy—
+
+2
+00:00:04.169 --> 00:00:08.606
+surviving production cutover is where architectures stall.
+
+3
+00:00:08.606 --> 00:00:14.836
+Migrating stateless workloads from GPT-4.x and o3-mini onto GPT-5.6, GPT-6,
+
+4
+00:00:15.181 --> 00:00:17.744
+and GPT-6.1 exposes four coupled failure modes:
+
+5
+00:00:17.744 --> 00:00:22.194
+silent prefix misses triggering a 2.56× PTU spike,
+
+6
+00:00:22.194 --> 00:00:30.399
+HTTP 429 gateway storms and buffered SSE stalls, cold-cache regional failover surges,
+
+7
+00:00:30.719 --> 00:00:34.236
+and shared-process agent tools with flaky CI evals.
+
+8
+00:00:35.060 --> 00:00:41.122
+Welcome to the Enterprise Azure AI Solution Industrialization Hub, version 2.0.
+
+9
+00:00:41.442 --> 00:00:46.134
+Across the Home Overview, Architecture Catalog, and 52 verified subpages,
+
+10
+00:00:46.617 --> 00:00:52.179
+this governed workbench unites five live Customer-Zero playbooks spanning 39 chapters,
+
+11
+00:00:52.179 --> 00:00:59.092
+a Regulated Multi-Engagement Profile, a 6-tool Decision Studio, two printable white papers,
+
+12
+00:00:59.092 --> 00:01:01.797
+7 MIT kits, and 64 cutover controls.
+
+13
+00:01:02.623 --> 00:01:07.124
+Playbook 01 spans fifteen chapters— covering Model 2 hydration tax,
+
+14
+00:01:07.432 --> 00:01:16.869
+exact 1,024-token wire matching, node archetypes, 1:1 break-even math, the 6-position Scope-by-Volatility stack,
+
+15
+00:01:16.869 --> 00:01:20.569
+six anti-patterns, and key sharding above 15 RPM.
+
+16
+00:01:20.569 --> 00:01:28.244
+Two-regime sizing contrasts GPT-5.6 zero-weight cached PTU reads against GPT-6 and 6.1 normalized weights,
+
+17
+00:01:28.244 --> 00:01:30.907
+backed by 7-layer DeepEval and KQL gates.
+
+18
+00:01:30.907 --> 00:01:34.969
+Paired with Posture A ethical walls and workpaper lineage,
+
+19
+00:01:34.969 --> 00:01:37.587
+teams save 71% on seasonal filing cliffs.
+
+20
+00:01:38.408 --> 00:01:45.439
+Playbook 02's six subpages centralize traffic behind a Multi-Backend Foundry APIM AI Gateway.
+
+21
+00:01:45.746 --> 00:01:47.159
+They map gateway topologies,
+
+22
+00:01:47.159 --> 00:01:51.571
+size APIM v2 scale units for 400K-token payloads and unbuffered SSE,
+
+23
+00:01:51.571 --> 00:01:56.209
+and wire Managed Identity RBAC with Retry-After circuit breakers plus
+
+24
+00:01:56.209 --> 00:02:01.196
+body-safe routing that snapshots and restores JSON around GPT-5.6 breakpoint stripping.
+
+25
+00:02:01.196 --> 00:02:11.476
+Out-of-band cost-center FinOps metrics, TPM ceilings, and 4-step 429 chaos drills enforce G1-to-G12.
+
+26
+00:02:12.314 --> 00:02:17.004
+Playbook 03's six subpages engineer continuity at the full AI Stamp level.
+
+27
+00:02:17.004 --> 00:02:21.466
+They enforce Residency Symmetry across Global, Data Zone, and Regional SKUs,
+
+28
+00:02:21.466 --> 00:02:24.679
+and size secondary PAYG buffers to absorb the
+
+29
+00:02:24.679 --> 00:02:28.954
+2.56× 15-minute cold-cache surge without doubling idle PTUs.
+
+30
+00:02:28.954 --> 00:02:36.671
+RA-GZRS ADLS storage feeds dual Azure AI Search stamps alongside multi-region Cosmos DB threads,
+
+31
+00:02:37.154 --> 00:02:43.284
+verified by quarterly Game-Day drills, <15s RTO, and B1-to-B12 gates.
+
+32
+00:02:44.113 --> 00:02:50.289
+Playbook 04's six subpages industrialize agents across a 3-tier sandboxed runtime.
+
+33
+00:02:50.289 --> 00:02:54.727
+A stateless SDK-free orchestrator proxies typed AG-UI streams from
+
+34
+00:02:54.727 --> 00:02:58.519
+one Git-SHA microVM per session in ACA Dynamic Sessions,
+
+35
+00:02:58.989 --> 00:03:03.802
+while Content Understanding converts binary PDFs into faithful Markdown.
+
+36
+00:03:03.802 --> 00:03:06.939
+Foundry IQ MCP enforces Entra ACL trimming at Position Six,
+
+37
+00:03:06.939 --> 00:03:14.757
+while deterministic ARG contracts block PR regressions and W3C traceparent spans verify A1-to-A12.
+
+38
+00:03:15.571 --> 00:03:21.137
+Playbook 05's six subpages unify the enterprise AI data plane across three governed Azure stores.
+
+39
+00:03:21.137 --> 00:03:24.374
+Microsoft Fabric, OneLake zero-copy shortcuts,
+
+40
+00:03:24.374 --> 00:03:29.562
+and Fabric IQ serve certified structured analytics on dedicated interactive F-SKU capacities,
+
+41
+00:03:29.562 --> 00:03:33.737
+while Azure AI Search indexes unstructured corpora and Cosmos DB
+
+42
+00:03:33.737 --> 00:03:38.174
+pairs DiskANN vectors with BM25 RRF hybrid search inside tenant-scoped partitions.
+
+43
+00:03:38.174 --> 00:03:46.637
+Microsoft Purview DSPM for AI enforces sensitivity-label inheritance, <5-minute regulated ACL tombstoning,
+
+44
+00:03:46.637 --> 00:03:51.729
+anti-poisoning scans, and D1-to-D12 release gates.
+
+45
+00:03:52.556 --> 00:03:57.742
+At /studio/, the Architecture Decision Studio hosts six deep-linked,
+
+46
+00:03:57.742 --> 00:04:03.630
+client-side calculators with zero external telemetry and automated keyboard and range tests:
+
+47
+00:04:03.630 --> 00:04:07.317
+the two-regime PTU and spillover TCO simulator;
+
+48
+00:04:07.317 --> 00:04:10.067
+the SKU-aware APIM XML policy builder;
+
+49
+00:04:10.067 --> 00:04:16.167
+the multi-region cold-cache surge advisor; the ACA microVM and contract builder;
+
+50
+00:04:16.167 --> 00:04:20.185
+the AI Data Strategy advisor for Fabric IQ, Purview DSPM,
+
+51
+00:04:20.592 --> 00:04:25.147
+and Cosmos hybrid sizing; and the 30-minute 9-boundary intake triage.
+
+52
+00:04:26.006 --> 00:04:30.632
+Across the five Papers and Kits subpages, every track ships runnable deliverables:
+
+53
+00:04:31.039 --> 00:04:35.827
+two print-ready PDF white papers— the Full-Stack Blueprint and the GPT-5.6 Caching Paper—
+
+54
+00:04:35.827 --> 00:04:41.477
+plus 7 zero-dependency MIT kits: the PCR Python AST linter, agent trace,
+
+55
+00:04:41.477 --> 00:04:47.102
+BCP snapshot, and data_readiness_gate.py CLIs, APIM spillover XML,
+
+56
+00:04:47.102 --> 00:04:50.727
+and three Application Insights KQL workbooks,
+
+57
+00:04:50.727 --> 00:04:57.119
+paired with 64 PR checklists and four companion harnesses including microsoft/waza.
+
+58
+00:04:57.947 --> 00:05:00.724
+The three Operating Model subpages govern how field wins scale:
+
+59
+00:05:00.724 --> 00:05:07.836
+a 5-stage Customer-Zero factory with automated sanitization, 4-tier Microsoft Learn evidence tags,
+
+60
+00:05:07.836 --> 00:05:13.249
+tri-path IP routing, and a bounded 3-week delivery sprint across four workstreams.
+
+61
+00:05:13.249 --> 00:05:13.386
+Meanwhile,
+
+62
+00:05:13.386 --> 00:05:17.586
+a built-in 24/7 dual-agent loop pairs an isolated worktree improver
+
+63
+00:05:17.586 --> 00:05:22.099
+agent with an independent ARB reviewer agent to continuously harden tests,
+
+64
+00:05:22.099 --> 00:05:23.279
+kits, and GitHub Pages.
+
+65
+00:05:24.103 --> 00:05:27.318
+Put all 52 subpages to work on your next Foundry architecture review:
+
+66
+00:05:27.318 --> 00:05:32.881
+simulate sizing, gateway policies, and data strategy in the Decision Studio,
+
+67
+00:05:32.881 --> 00:05:35.018
+wire the 7 MIT kits and 64 checklists into CI,
+
+68
+00:05:35.018 --> 00:05:38.968
+and bring your toughest Customer-Zero breakthrough into the factory—
+
+69
+00:05:38.968 --> 00:05:42.423
+so every team can solve once, govern cleanly, and scale everywhere.

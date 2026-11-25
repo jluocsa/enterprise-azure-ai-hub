@@ -1,0 +1,63 @@
+// ============================================================================
+// Enterprise Azure AI Solution Industrialization Hub — MIT Engineering Kit
+// Artifact: data-grounding-freshness-gate.kql (Playbook 05)
+// Purpose:  Monitors AI Data Plane health across Microsoft Fabric / Fabric IQ,
+//           Microsoft Purview DSPM sensitivity label coverage, Entra ACL
+//           revocation lag, Azure Cosmos DB DiskANN/RRF hybrid RU & 429 rates,
+//           and Azure AI Search zero-grounding drift (Gates D3-D12).
+// ============================================================================
+
+let lookback = 24h;
+let maxRevocationLagMin = 15.0;   // Set to 5.0 for Regulated Ethical-Wall posture (Gate D6)
+let maxFreshnessLagMin  = 60.0;   // Gate D11 corpus freshness SLO
+let maxCosmosP95RU      = 120.0;  // Single-partition DiskANN+RRF RU ceiling (Gate D7)
+AppDependencies
+| where TimeGenerated >= ago(lookback)
+| where Type in ("FabricIQ", "Azure.Search", "Azure.CosmosDB", "DataPlane.Grounding")
+| extend dims = todynamic(Properties)
+| extend
+    storeTarget      = coalesce(tostring(dims["ai.data.store_target"]), Type),
+    datasetId        = coalesce(tostring(dims["ai.data.source_id"]), "unattributed"),
+    sensitivityLabel = tostring(dims["purview.sensitivity_label"]),
+    aclTrimmed       = tobool(coalesce(dims["ai.data.acl_trimmed"], "false")),
+    revocationLagMin = todouble(coalesce(dims["ai.data.revocation_lag_min"], -1)),
+    freshnessLagMin  = todouble(coalesce(dims["ai.data.freshness_lag_min"], -1)),
+    cosmosRuCharge   = todouble(coalesce(dims["cosmos.request_charge_ru"], 0)),
+    returnedDocs     = tolong(coalesce(dims["ai.data.retrieved_count"], 0)),
+    statusCode       = toint(ResultCode)
+| summarize
+    TotalQueries           = count(),
+    UnlabelledCount        = countif(isempty(sensitivityLabel)),
+    UntrimmedAclCount      = countif(not(aclTrimmed)),
+    MaxRevocationLagMin    = round(max(revocationLagMin), 1),
+    MaxFreshnessLagMin     = round(max(freshnessLagMin), 1),
+    Throttle429Count       = countif(statusCode == 429),
+    CosmosP95_RU           = round(percentile(cosmosRuCharge, 95), 1),
+    ZeroResultRatePct      = round(100.0 * countif(returnedDocs == 0) / max_of(count(), 1), 1),
+    LatencyP95_ms          = round(percentile(DurationMs, 95), 0)
+  by storeTarget, datasetId
+| extend
+    DataGateStatus = case(
+        UnlabelledCount > 0, "FAIL (D5): Missing Purview Sensitivity Label",
+        UntrimmedAclCount > 0, "FAIL (D5): Untrimmed ACL Retrieval Detected",
+        MaxRevocationLagMin > maxRevocationLagMin, "FAIL (D6): ACL Revocation Lag Exceeded SLA",
+        Throttle429Count > 0, "WARN (D3/D7): Store 429 Throttling (Check F-SKU CU / Cosmos RU)",
+        storeTarget == "cosmos-hybrid" and CosmosP95_RU > maxCosmosP95RU, "WARN (D7): High Cosmos Hybrid RU (Check Partition Scoping)",
+        MaxFreshnessLagMin > maxFreshnessLagMin, "WARN (D11): Corpus Freshness Lag Exceeded SLA",
+        ZeroResultRatePct > 15.0 and TotalQueries >= 50, "WARN (D12): Elevated Zero-Result Drift (Feed Gold Eval Lake)",
+        "PASS: AI Data Plane Healthy"
+    )
+| project
+    storeTarget,
+    datasetId,
+    TotalQueries,
+    UnlabelledCount,
+    UntrimmedAclCount,
+    MaxRevocationLagMin,
+    MaxFreshnessLagMin,
+    Throttle429Count,
+    CosmosP95_RU,
+    ZeroResultRatePct,
+    LatencyP95_ms,
+    DataGateStatus
+| order by TotalQueries desc
