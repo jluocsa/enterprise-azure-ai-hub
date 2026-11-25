@@ -7,7 +7,7 @@ description: Native Azure API Management backend-pool circuit breakers honoring 
 
 <PlaybookMeta
   track="02 · Multi-Backend Foundry APIM AI Gateway & Governance"
-  verified="2026-11-19 22:12 PST"
+  verified="2026-11-25 11:37 PST"
   status="Live v2.0"
   kitHref="/papers/engineering-kits#apim-policy"
 />
@@ -114,6 +114,14 @@ Keep `forward-request`'s [`fail-on-error-status-code`](https://learn.microsoft.c
 The [`set-variable` policy](https://learn.microsoft.com/en-us/azure/api-management/set-variable-policy) assigns a named context variable and is available in all four policy sections <span class="ev-badge ev-m">[M]</span>. The local gate therefore requires **exactly one** `set-variable` assignment to `original-request-body` across the entire document, not merely one direct inbound capture. A nested assignment after the PTU rewrite could replace the saved original with the stripped body while leaving the Standard restoration expression unchanged. Additional assignments are rejected regardless of section, branch condition, or value, including assignments before the capture and repeated identical expressions. Offline regressions cover both kit and rendered-Studio CLI inputs, exit `1` with no pass message, and recovery after removing the extra assignment; unrelated variable names remain allowed. This is a conservative single-write contract for these reference artifacts, not a C# interpreter or effective-policy analysis: inherited policies and other variable-writing policies still require review and live probes <span class="ev-badge ev-arch">[Arch]</span>.
 
 Before release, probe both API payload shapes with `429`, `503`, an already-open PTU breaker, and successful `200` streaming: confirm Standard receives the original cache fields, PTU receives the stripped body with the same cache key and content, and no retry occurs after stream headers. Include string content, multimodal blocks, and absent, GPT-6, or arbitrary `x-target-regime` header values; the header must not alter the fixed GPT-5.6 primary's rewrite. Transport/on-error failures are outside this response-based retry contract <span class="ev-badge ev-val">[Validate]</span>.
+
+### Keep Policy Output Variables Separate From the Saved Body
+
+[`send-request`](https://learn.microsoft.com/en-us/azure/api-management/send-request-policy#attributes) writes a response object to `response-variable-name`; with `ignore-error="true"`, a failed call can instead leave that variable null. [`authentication-managed-identity`](https://learn.microsoft.com/en-us/azure/api-management/authentication-managed-identity-policy#attributes) can write its string token to `output-token-variable-name` <span class="ev-badge ev-m">[M]</span>. Neither write uses `set-variable`, so counting only explicit assignments cannot protect the saved request. A collision after capture can replace the original body with a response, null, or a token before Standard restoration <span class="ev-badge ev-arch">[Arch]</span>.
+
+The local gate rejects either policy when its output attribute is literally `original-request-body`, anywhere in the document, including nested authentication inside `send-request`. It conservatively rejects collisions before the snapshot and in inactive branches too, without evaluating ordering, conditions, or `ignore-error`. Rename the output to a separate variable rather than changing the body snapshot or restoration. Offline regressions cover both writers, before/after placement, true/false branches, both error-handling flags, kit and rendered-Studio CLI failures (exit `1`, no pass message), and recovery by renaming the output; existing `msi-access-token` authentication remains unchanged <span class="ev-badge ev-arch">[Arch]</span>.
+
+This is a literal-name reference-artifact guard, not a full variable-write inventory or C# interpreter. Dynamic `send-request` output-name expressions, other output-writing policies, inherited policies, and runtime behavior still require effective-policy review and staging probes. Offline success does not certify live payload integrity <span class="ev-badge ev-val">[Validate]</span>.
 
 ### No Unvetted Inbound Request-Body Reads
 

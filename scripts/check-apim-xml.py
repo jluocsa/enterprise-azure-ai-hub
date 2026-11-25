@@ -121,6 +121,15 @@ def validate_spillover(root):
         "document, including nested branches and other policy sections",
     )
     require(
+        not (
+            root.findall(".//send-request[@response-variable-name='original-request-body']")
+            + root.findall(".//authentication-managed-identity"
+                           "[@output-token-variable-name='original-request-body']")
+        ),
+        "send-request and authentication-managed-identity must not use "
+        "original-request-body as an output variable",
+    )
+    require(
         snapshots[0].get("value")
         == "@(context.Request.Body.As<string>(preserveContent: true))",
         "snapshot must preserve the original string without JSON reserialization",
@@ -302,6 +311,92 @@ class ApimXmlTests(unittest.TestCase):
         validate_ptu_rewrite(validate_studio(rendered))
         validate_spillover(validate_studio(rendered))
         validate_sse(validate_studio(rendered))
+
+    def test_rejects_saved_body_output_variable_collisions_and_recovers(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for tag, attribute in (
+            ("send-request", "response-variable-name"),
+            ("authentication-managed-identity", "output-token-variable-name"),
+        ):
+            for placement in ("before-snapshot", "after-rewrite", "nested-true", "nested-false"):
+                for ignore_error in ("true", "false"):
+                    with self.subTest(tag=tag, placement=placement, ignore_error=ignore_error):
+                        root = deepcopy(source)
+                        inbound = root.find("inbound")
+                        writer = ET.Element(tag, {attribute: "original-request-body",
+                                                  "ignore-error": ignore_error})
+                        if tag == "send-request":
+                            writer.set("mode", "new")
+                            ET.SubElement(writer, "set-url").text = "https://example.com/metadata"
+                            ET.SubElement(writer, "set-method").text = "GET"
+                        else:
+                            writer.set("resource", "https://cognitiveservices.azure.com")
+                        if placement == "before-snapshot":
+                            snapshot = inbound.find("set-variable[@name='original-request-body']")
+                            inbound.insert(list(inbound).index(snapshot), writer)
+                        elif placement.startswith("nested-"):
+                            branch = ET.SubElement(
+                                ET.SubElement(inbound, "choose"), "when",
+                                condition=f"@({placement.removeprefix('nested-')})",
+                            )
+                            branch.append(writer)
+                        else:
+                            inbound.append(writer)
+                        validate_ptu_rewrite(root)
+                        validate_sse(root)
+                        with self.assertRaisesRegex(ValueError, "spillover body contract:.*output variable"):
+                            validate_spillover(root)
+                        writer.set(attribute, "independent-result")
+                        validate_spillover(root)
+
+    def test_cli_blocks_saved_body_output_collisions_in_kit_and_studio(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for tag, attribute in (
+                ("send-request", "response-variable-name"),
+                ("authentication-managed-identity", "output-token-variable-name"),
+            ):
+                policy = validate_policy(source)
+                request = ET.SubElement(
+                    policy.find("inbound"), "send-request", mode="new",
+                    **{"response-variable-name": "metadata-response"},
+                )
+                ET.SubElement(request, "set-url").text = "https://example.com/private-probe"
+                ET.SubElement(request, "set-method").text = "GET"
+                writer = request if tag == "send-request" else ET.SubElement(
+                    request, tag, resource="https://cognitiveservices.azure.com",
+                )
+                writer.set(attribute, "original-request-body")
+                regression = ET.tostring(policy, encoding="unicode")
+                writer.set(attribute, "independent-result")
+                recovered = ET.tostring(policy, encoding="unicode")
+                for target in ("kit", "studio", None):
+                    kit.write_text(regression if target == "kit" else recovered, encoding="utf-8")
+                    rendered = regression if target == "studio" else recovered
+                    studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                      encoding="utf-8")
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with self.subTest(tag=tag, target=target), \
+                            patch.dict(globals(), ROOT=root, KIT=kit), \
+                            patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                            redirect_stdout(stdout), redirect_stderr(stderr):
+                        self.assertEqual(main(), 0 if target is None else 1)
+                    if target is None:
+                        self.assertIn("PASSED", stdout.getvalue())
+                        self.assertEqual(stderr.getvalue(), "")
+                    else:
+                        self.assertEqual(stdout.getvalue(), "")
+                        self.assertIn("spillover body contract", stderr.getvalue())
+                        self.assertIn("output variable", stderr.getvalue())
+                        self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                      stderr.getvalue())
+                        self.assertNotIn("private-probe", stderr.getvalue())
+                        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_rejects_extra_inbound_request_body_access(self):
         source = validate_policy(KIT.read_text(encoding="utf-8"))
