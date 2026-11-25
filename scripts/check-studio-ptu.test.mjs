@@ -195,6 +195,7 @@ test('short-context boundaries remain usable and default sizing/export are prese
     assert.match(calculator.copied[0], /100 Peak RPM/)
     assert.match(calculator.copied[0], /\*\*170 PTUs\*\*/)
     for (const input of [100, 272000]) {
+      await calculator.set('Cached Input Share', input < 1024 ? 0 : 80)
       await calculator.set('Avg Input Tokens', input)
       assert.equal(calculator.copyButton().props.disabled, false)
       assert.ok(!calculator.all().some(el => el.props.role === 'alert'))
@@ -203,6 +204,48 @@ test('short-context boundaries remain usable and default sizing/export are prese
     }
     await calculator.set('Cached Input Share', 0)
     assert.equal(calculator.copyButton().props.disabled, false)
+  } finally { calculator.close() }
+})
+
+test('sub-minimum prompts block positive cache savings across models and recover at the eligibility boundary', async () => {
+  const calculator = mountCalculator()
+  try {
+    for (const model of calculator.field('Target Foundry Model').options) {
+      await calculator.set('Target Foundry Model', model.props.value)
+      for (const input of [100, 1023, 1023.5]) {
+        await calculator.set('Avg Input Tokens', input)
+        for (const share of [0.1, 80, 98]) {
+          await calculator.set('Cached Input Share', share)
+          assertBlocked(calculator, 'Cached Input Share')
+          assert.equal(calculator.field('Avg Input Tokens').props['aria-invalid'], true)
+          assert.equal(calculator.field('Avg Input Tokens').props['aria-describedby'], 'ptu-input-errors')
+          assert.match(calculator.text(), /1,024/)
+          await calculator.copyButton().props.onClick()
+          assert.deepEqual(calculator.copied, [])
+        }
+        await calculator.set('Cached Input Share', 0)
+        assert.equal(calculator.copyButton().props.disabled, false)
+        assert.ok(!calculator.all().some(el => el.props.role === 'alert'))
+        await calculator.copyButton().props.onClick()
+        const estimate = calculator.copied.pop()
+        assert.match(estimate, /Tuned PTU Allocation \(0% Cache Hit\)/)
+        assert.match(estimate, /1\.00× spike · saves 0 PTUs/)
+      }
+      await calculator.set('Cached Input Share', 80)
+      assertBlocked(calculator, 'Cached Input Share')
+      await calculator.set('Avg Input Tokens', 1024)
+      assert.equal(calculator.copyButton().props.disabled, false)
+      assert.equal(calculator.field('Cached Input Share').props['aria-invalid'], false)
+      assert.equal(calculator.field('Avg Input Tokens').props['aria-invalid'], false)
+      await calculator.copyButton().props.onClick()
+      assert.match(calculator.copied.pop(), /Tuned PTU Allocation \(80% Cache Hit\)/)
+    }
+    await calculator.set('Avg Input Tokens', 100)
+    assertBlocked(calculator, 'Cached Input Share')
+    await calculator.preset('Document Review Agent (Default)')
+    assert.equal(calculator.copyButton().props.disabled, false)
+    assert.ok(!calculator.all().some(el => el.props.role === 'alert'))
+    assert.match(calculator.text(), /170 PTUs/)
   } finally { calculator.close() }
 })
 
