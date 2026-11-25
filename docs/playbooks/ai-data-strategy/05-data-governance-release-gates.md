@@ -50,7 +50,7 @@ The MIT-licensed, zero-dependency Python 3 CLI ([`docs/public/kits/data_readines
 
 - **Exit `0` (`PASS`):** Every declared dataset/corpus passed all configured `DRG001–DRG007` contracts.
 - **Exit `1` (`BLOCKED — Gate Violation`):** Valid JSON inputs violated one or more readiness rules (`DRG001–DRG007`).
-- **Exit `2` (`BLOCKED — Invalid Input / Contract`):** Unreadable file, invalid UTF-8, duplicate JSON object keys (including nested objects), excessive JSON nesting, malformed/unknown top-level contract fields, or contradictory threshold bounds—never silently downgraded to defaults <span class="ev-badge ev-arch">[Arch]</span>.
+- **Exit `2` (`BLOCKED — Invalid Input / Contract`):** Unreadable file, invalid UTF-8, duplicate JSON object keys (including nested objects), unquoted non-standard numeric constants, excessive JSON nesting, malformed/unknown top-level contract fields, or contradictory threshold bounds—never silently downgraded to defaults <span class="ev-badge ev-arch">[Arch]</span>.
 
 | Rule ID | Deterministic Check Enforced |
 | :--- | :--- |
@@ -72,6 +72,14 @@ python3 docs/public/kits/data_readiness_gate.py ./artifacts/data-snapshot.json \
 ```
 
 ---
+
+### Strict JSON Numeric Constants (`DRG001`) {#strict-json-constants}
+
+Both the acceptance contract and data snapshot reject unquoted `NaN`, `Infinity`, and `-Infinity` anywhere, including ignored root metadata and metadata in a later dataset after otherwise valid evidence. These inputs exit `2` before snapshot evaluation, with no stdout or partial readiness report. The diagnostic identifies the input role without echoing paths, member names, or constant values. Invalid contract JSON is rejected before the snapshot file is read <span class="ev-badge ev-arch">[Arch]</span>.
+
+Quoted strings such as `"NaN"`, ordinary JSON scalars, and nested metadata remain supported. This is a local JSON-integrity policy, not a Microsoft service requirement, metadata-schema validator, or evidence-authenticity check. Standard JSON numbers that overflow floating-point parsing are not rejected by this constant rule; existing finite-number checks still apply to enforced numeric fields <span class="ev-badge ev-arch">[Arch]</span>.
+
+Offline regressions exercise all three constants in enforced fields and ignored nested metadata for both inputs, text/JSON CLI exit `2`, contract-before-snapshot validation, and exit `0` recovery with valid metadata. They run through `node scripts/run-python.mjs docs/public/kits/data_readiness_gate.py --self-test` in `npm run verify`, without live Azure access <span class="ev-badge ev-val">[Validate]</span>.
 
 ### Approved Dataset Inventory (`DRG001`) {#expected-source-inventory}
 

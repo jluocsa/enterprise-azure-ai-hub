@@ -26,6 +26,9 @@ hybrid search, Azure AI Search alias parity, and corpus anti-poisoning hygiene:
   [DRG007] Grounding freshness & cache-safe flywheel: freshness_lag_minutes <= SLA,
            Pos 6 cache-safe ordering, optional OTel-to-Fabric eval flywheel
 
+Both JSON inputs reject unquoted NaN, Infinity, and -Infinity, including metadata.
+Invalid JSON exits 2 before snapshot evaluation; constant diagnostics omit values.
+
 Usage:
   python3 data_readiness_gate.py ./artifacts/data-snapshot.json
   python3 data_readiness_gate.py ./artifacts/data-snapshot.json --contract ./data-readiness-contract.json
@@ -91,6 +94,10 @@ def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return obj
 
 
+def reject_json_constant(value: str) -> Any:
+    raise ValueError("non-standard JSON numeric constants are not allowed.")
+
+
 def is_finite_number(value: Any) -> bool:
     if type(value) not in (int, float):
         return False
@@ -106,7 +113,9 @@ def load_strict_json(path: Path, label: str) -> Any:
     except (OSError, UnicodeDecodeError) as exc:
         raise ValueError(f"[DRG001] unable to read {label} as UTF-8 JSON.") from exc
     try:
-        return json.loads(raw, object_pairs_hook=unique_json_object)
+        return json.loads(
+            raw, object_pairs_hook=unique_json_object, parse_constant=reject_json_constant,
+        )
     except RecursionError as exc:
         raise ValueError(f"[DRG001] {label} exceeds supported JSON nesting depth.") from exc
     except ValueError as exc:
@@ -742,6 +751,77 @@ def run_self_test() -> int:
 
         script = str(Path(__file__).resolve())
         for as_json in (False, True):
+            flags = ["--json"] if as_json else []
+            for target, label in (
+                ("contract", "acceptance contract"), ("snapshot", "data snapshot"),
+            ):
+                for token in ("NaN", "Infinity", "-Infinity"):
+                    direct_contract = {"max_revocation_lag_min": "constant-probe"}
+                    nested_contract = {"metadata": {"private-field": ["constant-probe"]}}
+                    direct_snapshot = json.loads(json.dumps(clean))
+                    direct_snapshot["datasets"][-1]["freshness_lag_minutes"] = "constant-probe"
+                    nested_snapshot = json.loads(json.dumps(clean))
+                    nested_snapshot["datasets"][-1]["metadata"] = {
+                        "private-field": [{"nested": "constant-probe"}],
+                    }
+                    root_snapshot = dict(clean, metadata={"private-field": "constant-probe"})
+                    fixtures = (
+                        (direct_contract, nested_contract) if target == "contract"
+                        else (direct_snapshot, nested_snapshot, root_snapshot)
+                    )
+                    for fixture in fixtures:
+                        contract_file.write_text("{}", encoding="utf-8")
+                        snap_file.write_text(json.dumps(clean), encoding="utf-8")
+                        target_file = contract_file if target == "contract" else snap_file
+                        target_file.write_text(
+                            json.dumps(fixture).replace('"constant-probe"', token),
+                            encoding="utf-8",
+                        )
+                        proc = subprocess.run(
+                            [sys.executable, script, str(snap_file),
+                             "--contract", str(contract_file), *flags],
+                            capture_output=True, text=True, check=False,
+                        )
+                        assert proc.returncode == 2 and proc.stdout == "", proc
+                        assert proc.stderr.strip() == (
+                            f"[DRG001] invalid {label} JSON: "
+                            "non-standard JSON numeric constants are not allowed."
+                        ), proc
+                        assert all(marker not in proc.stderr for marker in (
+                            token, "private-field", str(target_file), "Traceback",
+                        )), proc
+
+                    if target == "contract":
+                        proc = subprocess.run(
+                            [sys.executable, script, str(tmp_path / "missing.json"),
+                             "--contract", str(contract_file), *flags],
+                            capture_output=True, text=True, check=False,
+                        )
+                        assert proc.returncode == 2 and proc.stdout == "", proc
+                        assert "non-standard JSON numeric constants" in proc.stderr, proc
+                        assert "unable to read data snapshot" not in proc.stderr, proc
+
+                metadata = {
+                    "private-field": [None, True, 0, -1.5, "NaN", "Infinity", "-Infinity"],
+                    "nested": {"first": {"label": "a"}, "second": {"label": "b"}},
+                }
+                contract_file.write_text(json.dumps({"metadata": metadata}), encoding="utf-8")
+                recovery = json.loads(json.dumps(clean))
+                recovery["metadata"] = metadata
+                recovery["datasets"][-1]["metadata"] = metadata
+                snap_file.write_text(json.dumps(recovery), encoding="utf-8")
+                proc = subprocess.run(
+                    [sys.executable, script, str(snap_file),
+                     "--contract", str(contract_file), *flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert proc.returncode == 0 and proc.stderr == "", proc
+                if as_json:
+                    assert json.loads(proc.stdout)["passed"] is True, proc
+                else:
+                    assert proc.stdout.startswith("PASSED:"), proc
+
+        for as_json in (False, True):
             contract_file.write_text("{}", encoding="utf-8")
             for vtype, limit in (("flat", 505), ("quantizedFlat", 4096), ("diskANN", 4096)):
                 for dim, expected_exit in ((limit, 0), (limit + 1, 1)):
@@ -853,7 +933,7 @@ def run_self_test() -> int:
         assert miss_proc.returncode == 2 and miss_proc.stdout == ""
 
     print(
-        "✅ data_readiness_gate.py self-test PASSED (DRG001 exact source inventory/schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake/64-hex lineage/CLI exit-1 + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos index dimension limits/CLI exit-1 + DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
+        "✅ data_readiness_gate.py self-test PASSED (DRG001 non-standard JSON constants/CLI recovery + exact source inventory/schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake/64-hex lineage/CLI exit-1 + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos index dimension limits/CLI exit-1 + DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
     )
     return 0
 
