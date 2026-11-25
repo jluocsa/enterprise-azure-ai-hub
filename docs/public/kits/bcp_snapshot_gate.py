@@ -9,6 +9,7 @@ Every JSON object must have unique member names, including nested metadata.
 Non-standard JSON numeric constants (NaN, Infinity, -Infinity) are rejected.
 Region identity is case-insensitive; model and snapshot identities remain exact.
 JSON parser nesting failures produce an input error, not a traceback.
+File read failures produce a fixed diagnostic without paths or OS/decoding details.
 Exit codes: 0 = fresh snapshot parity, 1 = evidence failure, 2 = invalid input/configuration.
 LastSeen and LastSuccessfulSeen must be timezone-aware and no older than
 --max-age-minutes (default: 15). SuccessfulCalls must be positive (HTTP 2xx).
@@ -20,8 +21,10 @@ This checks B2 snapshot parity and B11 coverage, not the entire BCP readiness st
 from __future__ import annotations
 
 import argparse
+import contextlib
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -29,6 +32,7 @@ import sys
 import tempfile
 from typing import Any
 import unittest
+from unittest.mock import patch
 
 
 def unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -690,6 +694,69 @@ class SnapshotGateTests(unittest.TestCase):
                         self.assertEqual(result.stderr, "")
                         self.assertIn("PASSED", result.stdout)
 
+    def test_cli_sanitizes_file_read_failures_in_both_inputs_and_recovers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "expected.json"
+            evidence = Path(directory) / "evidence.json"
+            missing = Path(directory) / "private-missing.json"
+            invalid_utf8 = Path(directory) / "private-invalid.json"
+            fresh_time = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+            rows = [dict(row, LastSeen=fresh_time, LastSuccessfulSeen=fresh_time)
+                    for row in self.rows]
+            manifest.write_text(json.dumps(self.manifest), encoding="utf-8")
+            evidence.write_text(json.dumps(rows), encoding="utf-8")
+            for target in ("manifest", "evidence"):
+                valid_text = json.dumps(self.manifest if target == "manifest" else rows)
+                invalid_utf8.write_bytes(valid_text.encode("utf-8") + b"\xff")
+                for unreadable in (missing, Path(directory), invalid_utf8):
+                    command = [
+                        sys.executable, str(Path(__file__).resolve()),
+                        str(unreadable if target == "evidence" else evidence),
+                        "--expected", str(unreadable if target == "manifest" else manifest),
+                    ]
+                    result = subprocess.run(command, capture_output=True, text=True, check=False)
+                    with self.subTest(target=target, unreadable=unreadable.name):
+                        self.assertEqual(result.returncode, 2)
+                        self.assertEqual(result.stdout, "")
+                        self.assertEqual(
+                            result.stderr,
+                            "BCP snapshot gate input error: could not read UTF-8 input file.\n",
+                        )
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), str(evidence),
+                 "--expected", str(manifest)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stderr, "")
+            self.assertIn("PASSED", result.stdout)
+
+    def test_permission_and_io_failures_never_evaluate_partial_evidence(self):
+        for target in ("manifest", "evidence"):
+            for error in (PermissionError("private-path\nprivate-detail"),
+                          OSError("private-path\nprivate-detail")):
+                reads = [error] if target == "manifest" else [json.dumps(self.manifest), error]
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with (
+                    self.subTest(target=target, error=type(error).__name__),
+                    patch.object(sys, "argv", [
+                        "bcp_snapshot_gate.py", "private-evidence.json",
+                        "--expected", "private-expected.json",
+                    ]),
+                    patch.object(Path, "read_text", side_effect=reads) as read,
+                    patch(__name__ + ".evaluate_evidence") as evaluate,
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    self.assertEqual(main(), 2)
+                    self.assertEqual(read.call_count, len(reads))
+                    evaluate.assert_not_called()
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertEqual(
+                    stderr.getvalue(),
+                    "BCP snapshot gate input error: could not read UTF-8 input file.\n",
+                )
+
     def test_cli_exit_codes_and_file_errors(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = Path(directory) / "expected.json"
@@ -787,7 +854,10 @@ def main() -> int:
         expected = validate_expected(load_json(args.expected))
         raw = load_json(args.evidence)
         failures = evaluate_evidence(raw, expected, max_age_minutes=args.max_age_minutes)
-    except (OSError, UnicodeError, ValueError) as error:
+    except (OSError, UnicodeError):
+        print("BCP snapshot gate input error: could not read UTF-8 input file.", file=sys.stderr)
+        return 2
+    except ValueError as error:
         print(f"BCP snapshot gate input error: {error}", file=sys.stderr)
         return 2
     if failures:
