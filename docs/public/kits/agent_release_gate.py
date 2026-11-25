@@ -988,6 +988,55 @@ def run_self_test() -> int:
                 output = json.loads(result.stdout)
                 assert output["passed"] is False and output["record_count"] == 1, output
 
+        unicode_record = {
+            **valid_records[0],
+            "assistant_response": "Private answer\u0085next\u2028line\u2029paragraph.\nEscaped newline.",
+            "metadata": {"label": "Private label\u2028continued"},
+        }
+        for newline in ("\n", "\r\n"):
+            for status, expected_code in (("ok", 0), ("private-status", 1)):
+                content = newline.join((
+                    json.dumps({**unicode_record, "status": status}, ensure_ascii=False),
+                    "",
+                    json.dumps(valid_records[1]),
+                ))
+                trace.write_bytes(content.encode("utf-8"))
+                for output_flags in ([], ["--json"]):
+                    result = subprocess.run(
+                        [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                        capture_output=True, text=True, check=False,
+                    )
+                    assert result.returncode == expected_code and not result.stderr, result
+                    assert all(value not in result.stdout for value in (
+                        "Private answer", "Private label", "private-status",
+                    )), result
+                    if output_flags:
+                        output = json.loads(result.stdout)
+                        assert output["passed"] is (expected_code == 0), output
+                        assert output["record_count"] == 2, output
+                    if expected_code:
+                        assert "[ARG001] row-1: terminal status must be 'ok'." in result.stdout, result
+                    else:
+                        assert "PASSED" in result.stdout or output_flags, result
+
+        for separator in ("\v", "\f", "\x1c", "\x1d", "\x1e", "\x85", "\u2028", "\u2029"):
+            content = (
+                json.dumps(valid_records[0]) + "\n\n"
+                + json.dumps(valid_records[1]) + separator
+                + json.dumps({**valid_records[1], "pass_number": 3})
+            )
+            trace.write_bytes(content.encode("utf-8"))
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(trace), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 2 and not result.stdout, result
+                assert result.stderr == (
+                    "Error: [ARG001] line-3: invalid JSON execution record "
+                    "(malformed JSON, duplicate object members, or non-standard numeric constants).\n"
+                ), result
+
         trace.write_text(json.dumps(valid_records[0]) + "\n{broken\n", encoding="utf-8")
         result = subprocess.run(
             [sys.executable, str(Path(__file__).resolve()), str(trace), "--json"],
@@ -1322,7 +1371,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (opt-in repeat-pass cache evidence/CLI + non-standard JSON constants/CLI recovery + unpadded case identities/latency padding + contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (JSONL framing/Unicode strings/CLI + opt-in repeat-pass cache evidence/CLI + non-standard JSON constants/CLI recovery + unpadded case identities/latency padding + contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
@@ -1365,7 +1414,7 @@ def main() -> int:
         return 2
 
     records: list[Any] = []
-    for line_number, line in enumerate(trace_text.splitlines(), start=1):
+    for line_number, line in enumerate(trace_text.split("\n"), start=1):
         if not line.strip():
             continue
         try:
