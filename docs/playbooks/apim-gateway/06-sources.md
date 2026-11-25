@@ -7,7 +7,7 @@ description: Authoritative Microsoft Learn and Azure Architecture Center sources
 
 <PlaybookMeta
   track="02 · Multi-Backend Foundry APIM AI Gateway & Governance"
-  verified="2026-11-19 22:12 PST"
+  verified="2026-11-25 11:37 PST"
   status="Live v2.0"
 />
 
@@ -29,3 +29,5 @@ description: Authoritative Microsoft Learn and Azure Architecture Center sources
 | **`G-R4`** | [Azure Architecture Center — Gateway in Front of Multiple Azure OpenAI Deployments](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/azure-openai-gateway-multi-backend) | Reference trade-offs across single-resource, PTU-to-PAYG priority spillover, and multi-region gateway topologies. | `2026-11-19` |
 | **`G-R5`** | [Role-Based Access Control for Azure OpenAI in Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/role-based-access-control) | `Cognitive Services OpenAI User` least-privilege Managed Identity assignment and `disableLocalAuth` key retirement. | `2026-11-19` |
 | **`G-R6`** | [Azure OpenAI Prompt Caching Specification](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/prompt-caching) | Subscription-scoped KV cache isolation, `prompt_cache_key` routing, and SKU support boundaries for explicit breakpoints. | `2026-11-19` |
+| **`G-R7`** | [APIM `send-request` Policy Specification](https://learn.microsoft.com/en-us/azure/api-management/send-request-policy) | `response-variable-name` receives a response object; ignored request errors can leave it null. Output-name expressions are supported. | `2026-11-25` |
+| **`G-R8`** | [APIM Managed Identity Authentication Policy](https://learn.microsoft.com/en-us/azure/api-management/authentication-managed-identity-policy) | `output-token-variable-name` receives a string token and does not accept policy expressions. | `2026-11-25` |
