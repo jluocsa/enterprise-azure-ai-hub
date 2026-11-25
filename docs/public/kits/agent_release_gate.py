@@ -8,7 +8,7 @@ production acceptance contracts:
   [ARG001] Schema integrity: required fields, unique case/pass pairs, optional corpus coverage & status=='ok'
   [ARG002] Tool governance: zero forbidden tools + optional required grounding tools
   [ARG003] Citation grounding: well-formed inline [cite:ID] markers resolve to retrieved_doc_ids
-  [ARG004] Two-pass prefix cache parity: pass>=2 turns with >=1,024 input tokens hit KV cache
+  [ARG004] Two-pass prefix cache parity: eligible repeat turns hit KV cache; optional evidence requirement
   [ARG005] Latency SLO: p95 turn duration stays within configured budget
   [ARG006] Foundry IQ ACL trimming (A5): non-empty RAG retrievals never report acl_trimmed=False
   [ARG007] Metadata-only OTel privacy (A12): zero raw prompt/message content logged in telemetry
@@ -133,12 +133,14 @@ def evaluate_trace(
     forbid_raw_prompt_logging: bool = True,
     expected_case_passes: set[tuple[str, int]] | None = None,
     require_citations: bool = False,
+    require_pass2_cache_evidence: bool = False,
 ) -> list[str]:
     deny = forbidden_tools if forbidden_tools is not None else DEFAULT_FORBIDDEN_TOOLS
     req = required_tools or set()
     failures: list[str] = []
     latencies: list[float] = []
     seen_turns: dict[tuple[str, int], int] = {}
+    has_cache_evidence = False
 
     if not records:
         return ["[ARG001] Trace file contains zero execution records."]
@@ -193,10 +195,12 @@ def evaluate_trace(
         pass_num = rec["pass_number"]
         input_tok = rec["input_tokens"]
         cached_tok = rec["cached_tokens"]
-        if pass_num >= 2 and input_tok >= min_pass2_cached_tokens and cached_tok < min_pass2_cached_tokens:
-            failures.append(
-                f"[ARG004] row-{i}: pass {pass_num} had {input_tok} input tokens but only {cached_tok} cached_tokens (<{min_pass2_cached_tokens})."
-            )
+        if pass_num >= 2 and input_tok >= min_pass2_cached_tokens:
+            has_cache_evidence = True
+            if cached_tok < min_pass2_cached_tokens:
+                failures.append(
+                    f"[ARG004] row-{i}: pass {pass_num} had {input_tok} input tokens but only {cached_tok} cached_tokens (<{min_pass2_cached_tokens})."
+                )
 
         if require_acl_trimming and retrieved and rec.get("acl_trimmed") is False:
             failures.append(
@@ -217,6 +221,9 @@ def evaluate_trace(
         if missing_count:
             failures.append(f"[ARG001] Trace is missing {missing_count} expected case/pass pair(s).")
 
+    if require_pass2_cache_evidence and not has_cache_evidence:
+        failures.append("[ARG004] Trace contains zero eligible repeat-pass cache records.")
+
     p95 = percentile(latencies, 95.0)
     if latencies and p95 > max_p95_ms:
         failures.append(f"[ARG005] Latency p95 {p95:.0f}ms exceeds budget {max_p95_ms:.0f}ms.")
@@ -231,7 +238,8 @@ def validate_contract(raw: Any) -> dict[str, Any]:
     allowed_fields = {
         "max_p95_ms", "min_pass2_cached_tokens", "required_tools", "forbidden_tools",
         "require_acl_trimming", "forbid_raw_prompt_logging",
-        "expected_case_passes", "require_citations", "contract_version", "track", "metadata",
+        "expected_case_passes", "require_citations", "require_pass2_cache_evidence",
+        "contract_version", "track", "metadata",
     }
     if any(field not in allowed_fields for field in raw):
         raise ValueError(
@@ -264,7 +272,10 @@ def validate_contract(raw: Any) -> dict[str, Any]:
     if required_tools & forbidden_tools:
         raise ValueError("required_tools and forbidden_tools must not overlap.")
 
-    for field in ("require_acl_trimming", "forbid_raw_prompt_logging", "require_citations"):
+    for field in (
+        "require_acl_trimming", "forbid_raw_prompt_logging", "require_citations",
+        "require_pass2_cache_evidence",
+    ):
         if field in raw and type(raw[field]) is not bool:
             raise ValueError(f"{field} must be an explicit boolean.")
 
@@ -299,6 +310,7 @@ def validate_contract(raw: Any) -> dict[str, Any]:
         "forbid_raw_prompt_logging": raw.get("forbid_raw_prompt_logging", True),
         "expected_case_passes": expected_case_passes,
         "require_citations": raw.get("require_citations", False),
+        "require_pass2_cache_evidence": raw.get("require_pass2_cache_evidence", False),
     }
 
 
@@ -347,6 +359,36 @@ def run_self_test() -> int:
     assert evaluate_trace(valid_records, required_tools={"knowledge_base_retrieve"}) == [], (
         "Expected clean golden trace to pass."
     )
+
+    cache_cfg = validate_contract({"require_pass2_cache_evidence": True})
+    missing_cache = "[ARG004] Trace contains zero eligible repeat-pass cache records."
+    cache_cases = [
+        (valid_records[:1], {}, [missing_cache]),
+        ([{**valid_records[1], "input_tokens": 1023, "cached_tokens": 0}], {}, [missing_cache]),
+        (valid_records, {"min_pass2_cached_tokens": 4201}, [missing_cache]),
+        ([{**valid_records[1], "input_tokens": 1024, "cached_tokens": 1024}], {}, []),
+        ([{**valid_records[1], "pass_number": 3}], {}, []),
+        ([{**valid_records[1], "input_tokens": 1, "cached_tokens": 1}],
+         {"min_pass2_cached_tokens": 1}, []),
+        (valid_records, {}, []),
+        (valid_records[:1], {"require_pass2_cache_evidence": False}, []),
+        ([{**valid_records[1], "cached_tokens": 0}], {}, [
+            "[ARG004] row-1: pass 2 had 4200 input tokens but only 0 cached_tokens (<1024).",
+        ]),
+    ]
+    for evidence, overrides, expected in cache_cases:
+        assert evaluate_trace(evidence, **{**cache_cfg, **overrides}) == expected
+    cache_miss = [{**valid_records[1], "cached_tokens": 0}]
+    assert evaluate_trace(cache_miss, **cache_cfg) == evaluate_trace(cache_miss)
+    invalid_repeat = [{**valid_records[1], "raw_prompt_logged": None}]
+    assert evaluate_trace(invalid_repeat, **cache_cfg) == [
+        *evaluate_trace(invalid_repeat), missing_cache,
+    ]
+    slow_cold = [{**valid_records[0], "duration_ms": 16000}]
+    assert evaluate_trace(slow_cold, **cache_cfg) == [
+        missing_cache, *evaluate_trace(slow_cold),
+    ]
+    assert evaluate_trace(valid_records[:1]) == []
 
     same_case_passes = [
         {**rec, "case_id": "golden-case"} for rec in valid_records
@@ -645,6 +687,7 @@ def run_self_test() -> int:
         "require_acl_trimming": False, "forbid_raw_prompt_logging": False,
         "expected_case_passes": None,
         "require_citations": False,
+        "require_pass2_cache_evidence": False,
     }
 
     invalid_contracts = [(value, "JSON object") for value in (None, [], "contract", 1, True)]
@@ -661,6 +704,7 @@ def run_self_test() -> int:
         ("require_acl_trimming", [None, "false", 0, 1, [], {}]),
         ("forbid_raw_prompt_logging", [None, "false", 0, 1, [], {}]),
         ("require_citations", [None, "false", "true", 0, 1, [], {}]),
+        ("require_pass2_cache_evidence", [None, "false", "true", 0, 1, [], {}]),
         ("expected_case_passes", [
             None, True, "golden-case", {}, [], [None], [[]],
             [{"case_id": "golden-case"}],
@@ -686,6 +730,49 @@ def run_self_test() -> int:
         trace = Path(directory) / "trace.jsonl"
         conflict_file = Path(directory) / "conflicting-contract.json"
         privacy_file = Path(directory) / "privacy-contract.json"
+        cache_file = Path(directory) / "cache-contract.json"
+        cache_trace = Path(directory) / "cache-trace.jsonl"
+        for evidence, overrides, expected in cache_cases:
+            cache_file.write_text(json.dumps({
+                "require_pass2_cache_evidence": True, **overrides,
+            }), encoding="utf-8")
+            cache_trace.write_text(
+                "\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8",
+            )
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()), str(cache_trace),
+                     "--contract", str(cache_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == (1 if expected else 0) and not result.stderr, result
+                if output_flags:
+                    payload = json.loads(result.stdout)
+                    assert payload["passed"] is (not expected), result
+                    assert payload["record_count"] == len(evidence), result
+                    assert payload["failures"] == expected, result
+                elif expected:
+                    assert all(finding in result.stdout for finding in expected), result
+                    assert "PASSED" not in result.stdout, result
+                else:
+                    assert "PASSED" in result.stdout, result
+                assert all(rec["case_id"] not in result.stdout for rec in evidence), result
+        for value in (None, "true", 1, [], {}):
+            cache_file.write_text(json.dumps({
+                "require_pass2_cache_evidence": value,
+            }), encoding="utf-8")
+            for output_flags in ([], ["--json"]):
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve()),
+                     str(Path(directory) / "missing-cache-trace.jsonl"),
+                     "--contract", str(cache_file), *output_flags],
+                    capture_output=True, text=True, check=False,
+                )
+                assert result.returncode == 2 and not result.stdout, result
+                assert result.stderr.strip() == (
+                    "Error: invalid acceptance contract: "
+                    "require_pass2_cache_evidence must be an explicit boolean."
+                ), result
         for evidence, contract, count in privacy_cases:
             privacy_file.write_text(json.dumps(contract), encoding="utf-8")
             trace.write_text("\n\n" + "\n\n".join(json.dumps(rec) for rec in evidence), encoding="utf-8")
@@ -1235,7 +1322,7 @@ def run_self_test() -> int:
             assert result.returncode == 2 and "invalid acceptance contract" in result.stderr, result
             assert not result.stdout and "Traceback" not in result.stderr, result
 
-    print("✅ agent_release_gate.py self-test PASSED (non-standard JSON constants/CLI recovery + unpadded case identities/latency padding + contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
+    print("✅ agent_release_gate.py self-test PASSED (opt-in repeat-pass cache evidence/CLI + non-standard JSON constants/CLI recovery + unpadded case identities/latency padding + contradictory tool policies + opt-in citation requirement + unpadded tool identities + expected case/pass inventory + unique case/pass evidence + latency numeric overflow + trace I/O + JSON nesting failures + unique JSON members + unsupported contract fields + fail-closed contracts/CLI + ARG001 schema + ARG003 citation syntax + ARG002–ARG007 verified).")
     return 0
 
 
