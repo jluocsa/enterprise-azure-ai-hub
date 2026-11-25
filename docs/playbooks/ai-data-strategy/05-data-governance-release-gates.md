@@ -101,6 +101,14 @@ The field must be a non-empty array of unique, non-empty strings without leading
 
 The kit's offline self-test covers reordered complete snapshots, omitted and substituted datasets, duplicate entries, combined governance failures, and invalid inventory types in text and JSON CLI modes. It runs through `node scripts/run-python.mjs docs/public/kits/data_readiness_gate.py --self-test` in `npm run verify` <span class="ev-badge ev-val">[Validate]</span>.
 
+### Exact ACL Group Identifiers (`DRG001`, `DRG004`) {#exact-acl-group-identifiers}
+
+Azure AI Search's [security-filter pattern](https://learn.microsoft.com/en-us/azure/search/search-security-trimming-for-azure-search) stores principal identifiers as strings and filters results using those identifiers; the filter itself does not authenticate or authorize the principal <span class="ev-badge ev-m">[M]</span>.
+
+The snapshot gate requires every `acl_group_ids` entry to be a non-empty string without leading or trailing whitespace, including tabs, newlines, and Unicode whitespace. Malformed entries produce `DRG001` and exit `1`, without trimming, case-folding, or echoing group/source identifiers in the new diagnostic. Empty arrays remain valid for public datasets; non-public datasets still require at least one group under `DRG004`. This is a local metadata-integrity policy, not an Entra identifier-format requirement or proof of live group existence, membership, or ACL inheritance <span class="ev-badge ev-arch">[Arch]</span>.
+
+Offline self-tests cover malformed entries across all three stores, exact mixed-case and Unicode strings, public empty arrays, combined governance failures, and text/JSON CLI exit `1` with exit `0` recovery. They run through `node scripts/run-python.mjs docs/public/kits/data_readiness_gate.py --self-test` in `npm run verify`; no live authorization probe is performed <span class="ev-badge ev-val">[Validate]</span>.
+
 ### Lineage Digest Syntax (`DRG002`) {#lineage-digest-syntax}
 
 Every dataset, across all three store targets, must supply `lineage_sha256` as exactly 64 ASCII hexadecimal characters (`0–9`, `a–f`, `A–F`). Lowercase, uppercase, and mixed-case digests are accepted without normalization. Missing values, non-string types, placeholders, incorrect lengths, non-hex characters, and surrounding or embedded whitespace produce `DRG002` and exit `1`; other findings and dataset counts remain intact. The diagnostic identifies the dataset ordinal and field without echoing the digest or source identifier <span class="ev-badge ev-arch">[Arch]</span>.

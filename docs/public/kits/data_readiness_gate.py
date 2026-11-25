@@ -349,10 +349,10 @@ def evaluate_snapshot(snapshot: Any, contract: dict[str, Any]) -> dict[str, Any]
             )
 
         if not isinstance(acl_groups, list) or any(
-            not isinstance(g, str) or not g.strip() for g in acl_groups
+            not isinstance(g, str) or not g.strip() or g != g.strip() for g in acl_groups
         ):
             findings.append(
-                f"[DRG001] {source_label}: acl_group_ids must be an array of non-empty strings."
+                f"[DRG001] {prefix}: acl_group_ids must be an array of non-empty trimmed strings."
             )
         elif not is_public_label and len(acl_groups) == 0:
             findings.append(
@@ -598,6 +598,46 @@ def run_self_test() -> int:
     res = evaluate_snapshot(clean, default_cfg)
     assert res["passed"], f"Clean snapshot should pass: {res['findings']}"
 
+    invalid_acl_groups = (
+        None, True, 1, "grp-reader", {}, [None], [True], [1], [{}], [[]],
+        [""], [" "], [" grp-reader"], ["grp-reader "],
+        ["\tgrp-reader"], ["grp-reader\n"], ["\u00a0grp-reader"],
+        ["grp-valid", "grp-reader "],
+    )
+    for idx in range(len(clean["datasets"])):
+        acl_finding = (
+            f"[DRG001] dataset-{idx + 1}: acl_group_ids must be an array of non-empty trimmed strings."
+        )
+        for groups in invalid_acl_groups:
+            snapshot = json.loads(json.dumps(clean))
+            snapshot["datasets"][idx]["acl_group_ids"] = groups
+            report = evaluate_snapshot(snapshot, default_cfg)
+            assert report["findings"] == [acl_finding] and not report["passed"], report
+            assert report["datasets_evaluated"] == len(clean["datasets"])
+        del snapshot["datasets"][idx]["acl_group_ids"]
+        assert evaluate_snapshot(snapshot, default_cfg)["findings"] == [acl_finding]
+        for groups in (["grp-reader"], ["Grp-Reader", "grp-reader"], ["grp-\u00e9quipe"]):
+            snapshot["datasets"][idx]["acl_group_ids"] = groups
+            assert evaluate_snapshot(snapshot, default_cfg)["passed"]
+            assert snapshot["datasets"][idx]["acl_group_ids"] == groups
+
+    public_snapshot = json.loads(json.dumps(clean))
+    public_snapshot["datasets"][0].update(
+        sensitivity_label="Public", acl_enforced=False, acl_group_ids=[],
+    )
+    assert evaluate_snapshot(public_snapshot, default_cfg)["passed"]
+    public_snapshot["datasets"][0]["acl_group_ids"] = [" grp-reader"]
+    assert evaluate_snapshot(public_snapshot, default_cfg)["findings"] == [
+        "[DRG001] dataset-1: acl_group_ids must be an array of non-empty trimmed strings."
+    ]
+    non_public_empty = json.loads(json.dumps(clean))
+    non_public_empty["datasets"][0]["acl_group_ids"] = []
+    assert any("[DRG004]" in f for f in evaluate_snapshot(non_public_empty, default_cfg)["findings"])
+    combined_acl = json.loads(json.dumps(clean))
+    combined_acl["datasets"][2]["acl_group_ids"] = ["grp-reader "]
+    combined_acl["purview_dspm_enabled"] = False
+    assert len(evaluate_snapshot(combined_acl, default_cfg)["findings"]) == 2
+
     invalid_digests = (
         None, True, 64, 1.5, [], {}, "", " ", "not-a-digest",
         "a" * 63, "a" * 65, "g" * 64, "\uff41" * 64,
@@ -750,6 +790,31 @@ def run_self_test() -> int:
         assert json.loads(ok_proc.stdout)["passed"] is True
 
         script = str(Path(__file__).resolve())
+        for as_json in (False, True):
+            for idx in range(len(clean["datasets"])):
+                for groups, expected_exit in ((["grp-private-probe "], 1), (["grp-reader"], 0)):
+                    snapshot = json.loads(json.dumps(clean))
+                    snapshot["datasets"][idx]["source_id"] = "source-private-probe"
+                    snapshot["datasets"][idx]["acl_group_ids"] = groups
+                    snap_file.write_text(json.dumps(snapshot), encoding="utf-8")
+                    proc = subprocess.run(
+                        [sys.executable, script, str(snap_file), "--contract", str(contract_file),
+                         *(["--json"] if as_json else [])],
+                        capture_output=True, text=True, check=False,
+                    )
+                    assert proc.returncode == expected_exit and proc.stderr == "", proc
+                    if as_json:
+                        report = json.loads(proc.stdout)
+                        assert report["passed"] is (expected_exit == 0)
+                        assert report["datasets_evaluated"] == len(clean["datasets"])
+                        assert len(report["findings"]) == expected_exit
+                    if expected_exit:
+                        assert proc.stdout.count("[DRG001]") == 1
+                        assert f"dataset-{idx + 1}: acl_group_ids" in proc.stdout
+                        assert all(marker not in proc.stdout for marker in (
+                            "grp-private-probe", "source-private-probe", "Traceback",
+                        )), proc
+
         for as_json in (False, True):
             flags = ["--json"] if as_json else []
             for target, label in (
@@ -933,7 +998,7 @@ def run_self_test() -> int:
         assert miss_proc.returncode == 2 and miss_proc.stdout == ""
 
     print(
-        "✅ data_readiness_gate.py self-test PASSED (DRG001 non-standard JSON constants/CLI recovery + exact source inventory/schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake/64-hex lineage/CLI exit-1 + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos index dimension limits/CLI exit-1 + DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
+        "✅ data_readiness_gate.py self-test PASSED (DRG001 unpadded ACL identities/CLI recovery + non-standard JSON constants/CLI recovery + exact source inventory/schema/duplicate-JSON/CLI exit-2 + DRG002 Fabric/OneLake/64-hex lineage/CLI exit-1 + DRG003 Purview DSPM + DRG004 ACL tombstoning + DRG005 Cosmos index dimension limits/CLI exit-1 + DiskANN/RRF & AI Search alias + DRG006 anti-poisoning + DRG007 freshness/Pos6 verified)."
     )
     return 0
 
