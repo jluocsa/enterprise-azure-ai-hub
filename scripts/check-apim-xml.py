@@ -125,6 +125,21 @@ def validate_spillover(root):
         == "@(context.Request.Body.As<string>(preserveContent: true))",
         "snapshot must preserve the original string without JSON reserialization",
     )
+    for policy in inbound.iter():
+        expressions = [policy.tail or ""]
+        # validate_ptu_rewrite separately whitelists every inbound set-body expression.
+        if policy.tag != "set-body":
+            expressions.append(policy.text or "")
+        expressions.extend(
+            value for name, value in policy.attrib.items()
+            if not (policy is snapshots[0] and name == "value")
+        )
+        require(
+            not any(re.search(r"\bcontext\s*\.\s*Request\s*\.\s*Body\b", text)
+                    for text in expressions),
+            "inbound request body access is allowed only in the vetted snapshot "
+            "and PTU rewrite; extra reads can consume the request stream",
+        )
     primary = inbound.findall(".//set-backend-service")
     require(
         len(primary) == 1 and primary[0].get("backend-id") == "foundry-ptu-primary",
@@ -287,6 +302,84 @@ class ApimXmlTests(unittest.TestCase):
         validate_ptu_rewrite(validate_studio(rendered))
         validate_spillover(validate_studio(rendered))
         validate_sse(validate_studio(rendered))
+
+    def test_rejects_extra_inbound_request_body_access(self):
+        source = validate_policy(KIT.read_text(encoding="utf-8"))
+        for expression in (
+            "@(context.Request.Body.As<string>())",
+            "@(context.Request.Body.AsFormUrlEncodedContent())",
+            "@(context.Request.Body.As<string>(preserveContent: false))",
+            "@(context.Request.Body.As<string>(preserveContent: true))",
+            "@{ var stream = context . Request\n . Body; return stream; }",
+        ):
+            for placement in ("before-snapshot", "after-rewrite", "nested"):
+                for slot in ("attribute", "text", "tail", "rewrite-attribute",
+                             "snapshot-attribute"):
+                    with self.subTest(expression=expression, placement=placement, slot=slot):
+                        root = deepcopy(source)
+                        inbound = root.find("inbound")
+                        snapshot = inbound.find("set-variable[@name='original-request-body']")
+                        extra = ET.Element("set-variable", name="extra-body-read")
+                        if slot == "attribute":
+                            extra.set("value", expression)
+                        elif slot in ("text", "tail"):
+                            setattr(extra, slot, expression)
+                        else:
+                            target = inbound.find("set-body") if slot == "rewrite-attribute" else snapshot
+                            target.set("extra", expression)
+                        if placement == "before-snapshot":
+                            inbound.insert(list(inbound).index(snapshot), extra)
+                        elif placement == "nested":
+                            branch = ET.SubElement(ET.SubElement(inbound, "choose"), "when",
+                                                   condition="@(false)")
+                            branch.append(extra)
+                        else:
+                            inbound.append(extra)
+                        validate_ptu_rewrite(root)
+                        with self.assertRaisesRegex(ValueError, "spillover body contract:.*extra reads"):
+                            validate_spillover(root)
+        root = deepcopy(source)
+        ET.SubElement(root.find("inbound"), "set-variable", name="header-only",
+                      value='@(context.Request.Headers.GetValueOrDefault("x-mode", "safe"))')
+        validate_ptu_rewrite(root)
+        validate_spillover(root)
+
+    def test_cli_blocks_consuming_body_reads_in_kit_and_studio_and_recovers(self):
+        from html import escape
+        source = KIT.read_text(encoding="utf-8")
+        policy = validate_policy(source)
+        policy.find("inbound").insert(1, ET.Element(
+            "set-variable", name="private-body-probe",
+            value="@(context.Request.Body.As<string>())",
+        ))
+        regression = ET.tostring(policy, encoding="unicode")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            kit = root / "policy.xml"
+            studio = root / "docs" / ".vitepress" / "dist" / "studio" / "index.html"
+            studio.parent.mkdir(parents=True)
+            for target in ("kit", "studio", None):
+                kit.write_text(regression if target == "kit" else source, encoding="utf-8")
+                rendered = regression if target == "studio" else source
+                studio.write_text(f'<pre class="apim-code"><code>{escape(rendered)}</code></pre>',
+                                  encoding="utf-8")
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with self.subTest(target=target), \
+                        patch.dict(globals(), ROOT=root, KIT=kit), \
+                        patch.object(sys, "argv", ["check-apim-xml.py"]), \
+                        redirect_stdout(stdout), redirect_stderr(stderr):
+                    self.assertEqual(main(), 0 if target is None else 1)
+                if target is None:
+                    self.assertIn("PASSED", stdout.getvalue())
+                    self.assertEqual(stderr.getvalue(), "")
+                else:
+                    self.assertEqual(stdout.getvalue(), "")
+                    self.assertIn("spillover body contract", stderr.getvalue())
+                    self.assertIn("extra reads", stderr.getvalue())
+                    self.assertIn(str((kit if target == "kit" else studio).relative_to(root)),
+                                  stderr.getvalue())
+                    self.assertNotIn("private-body-probe", stderr.getvalue())
+                    self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_rejects_template_modes_on_csharp_body_expressions(self):
         source = validate_policy(KIT.read_text(encoding="utf-8"))
@@ -685,6 +778,10 @@ class ApimXmlTests(unittest.TestCase):
                             ):
                                 validate_spillover(root)
                             assignment.set("name", "independent-body-copy")
+                            if "context.Request.Body" in value:
+                                with self.assertRaisesRegex(ValueError, "extra reads"):
+                                    validate_spillover(root)
+                                assignment.set("value", "@(context.Request.Method)")
                             validate_spillover(root)
 
     def test_cli_blocks_original_body_overwrites_in_kit_and_rendered_studio(self):
